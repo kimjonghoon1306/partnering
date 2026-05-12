@@ -543,3 +543,22 @@ footer {
   .cta-actions { flex-direction: column; align-items: center; }
   .cta-actions .btn-primary { width: 100%; justify-content: center; max-width: 320px; }
 }
+
+/* ── 라이트 모드 텍스트 오버라이드 ── */
+[data-theme="light"] .stat-num { color: #FF2D78; }
+[data-theme="light"] .hero h1 em { color: #FF2D78; }
+[data-theme="light"] .hero h1 em::after { background: #FF2D78; }
+[data-theme="light"] .how-num { color: rgba(255, 45, 120, 0.08); }
+[data-theme="light"] .earn-num { color: #FF2D78; }
+[data-theme="light"] .bar.active { background: #FF2D78; }
+[data-theme="light"] .t-earn { color: #FF2D78; background: rgba(255,45,120,0.08); border-color: rgba(255,45,120,0.2); }
+[data-theme="light"] .payout-val.lime { color: #FF2D78; }
+[data-theme="light"] .cta-inner { background: linear-gradient(135deg, rgba(255,45,120,0.07), rgba(255,45,120,0.02)); border-color: rgba(255,45,120,0.2); }
+[data-theme="light"] .hero-badge { background: rgba(255,45,120,0.08); border-color: rgba(255,45,120,0.2); color: #FF2D78; }
+[data-theme="light"] .hero-badge::before { background: #FF2D78; }
+[data-theme="light"] .section-tag { color: #FF2D78; }
+[data-theme="light"] .cat-pill.active { border-color: #FF2D78; background: rgba(255,45,120,0.08); color: #FF2D78; }
+[data-theme="light"] .cat-pill .rate { color: #FF2D78; background: rgba(255,45,120,0.1); }
+[data-theme="light"] .badge-lime { background: rgba(255,45,120,0.1); border-color: rgba(255,45,120,0.2); color: #FF2D78; }
+[data-theme="light"] .link-result { background: rgba(255,45,120,0.06); border-color: rgba(255,45,120,0.2); color: #FF2D78; }
+[data-theme="light"] .footer-logo span { color: #FF2D78; }
