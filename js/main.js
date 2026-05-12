@@ -1,3 +1,26 @@
+// ── 테마 토글
+function initTheme() {
+  const saved = localStorage.getItem('ptnr-theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+  updateThemeBtn(saved);
+}
+
+function updateThemeBtn(theme) {
+  const btn = document.getElementById('theme-btn');
+  if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'dark';
+  const next = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('ptnr-theme', next);
+  updateThemeBtn(next);
+}
+
+document.getElementById('theme-btn')?.addEventListener('click', toggleTheme);
+initTheme();
+
 // ── 스크롤 리빌 애니메이션
 const observer = new IntersectionObserver((entries) => {
   entries.forEach((entry, i) => {

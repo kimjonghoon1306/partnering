@@ -498,3 +498,47 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   .summary-grid { grid-template-columns: 1fr; }
   .topbar { padding: 0 16px; }
 }
+
+/* ── 토글 스위치 ── */
+.toggle-wrap { cursor: pointer; }
+.toggle-track {
+  width: 40px; height: 22px;
+  border-radius: 11px;
+  background: var(--dark5);
+  border: 1px solid var(--border);
+  position: relative;
+  transition: all 0.2s;
+}
+.toggle-track.on { background: rgba(190,255,0,0.25); border-color: var(--lime-border); }
+.toggle-thumb {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--text3);
+  position: absolute;
+  top: 2px; left: 2px;
+  transition: all 0.2s;
+}
+.toggle-track.on .toggle-thumb {
+  background: var(--lime);
+  left: 20px;
+}
+
+/* ── 설정 그리드 반응형 ── */
+.settings-grid { grid-template-columns: 1fr 1fr 1fr; }
+
+@media (max-width: 1100px) {
+  .settings-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 768px) {
+  .settings-grid { grid-template-columns: 1fr; }
+}
+
+/* ── 라이트 모드 대시보드 ── */
+[data-theme="light"] .sidebar { background: var(--dark2); }
+[data-theme="light"] .topbar { background: rgba(244,244,240,0.85); }
+[data-theme="light"] .chart-card { background: var(--dark3); box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+[data-theme="light"] .summary-card { box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+[data-theme="light"] .table-card { box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+[data-theme="light"] .page { background: var(--bg); }
+[data-theme="light"] .gen-input { background: var(--dark4); color: var(--text); }
+[data-theme="light"] .link-input { background: var(--dark4); color: var(--text); }

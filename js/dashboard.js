@@ -1,3 +1,23 @@
+// ── 테마 토글
+function initTheme() {
+  const saved = localStorage.getItem('ptnr-theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+  updateThemeIcon(saved);
+}
+function updateThemeIcon(theme) {
+  const btn = document.getElementById('theme-btn');
+  if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+}
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'dark';
+  const next = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('ptnr-theme', next);
+  updateThemeIcon(next);
+}
+document.getElementById('theme-btn')?.addEventListener('click', toggleTheme);
+initTheme();
+
 // ── 사이드바 네비게이션
 const navItems = document.querySelectorAll('.nav-item[data-page]');
 const pages = document.querySelectorAll('.page');
@@ -179,4 +199,13 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     requestAnimationFrame(update);
   });
+});
+
+// ── 알림 토글 스위치
+document.addEventListener('click', (e) => {
+  const wrap = e.target.closest('.toggle-wrap');
+  if (!wrap) return;
+  const track = wrap.querySelector('.toggle-track');
+  track.classList.toggle('on');
+  wrap.dataset.on = track.classList.contains('on') ? 'true' : 'false';
 });

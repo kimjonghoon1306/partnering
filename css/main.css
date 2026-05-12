@@ -10,8 +10,9 @@ nav {
   justify-content: space-between;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  background: rgba(8, 8, 8, 0.75);
+  background: var(--nav-bg);
   border-bottom: 1px solid var(--border);
+  transition: background 0.3s ease, border-color 0.3s ease;
 }
 
 .nav-logo {
@@ -43,6 +44,23 @@ nav {
 }
 .nav-links .nav-cta:hover { background: var(--lime-dim); transform: translateY(-1px); }
 
+.theme-btn {
+  width: 36px; height: 36px;
+  border-radius: var(--radius-sm);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.theme-btn:hover { background: rgba(255,255,255,0.1); transform: scale(1.05); }
+[data-theme="light"] .theme-btn { background: rgba(0,0,0,0.05); }
+[data-theme="light"] .theme-btn:hover { background: rgba(0,0,0,0.1); }
+
 /* ── HERO ── */
 .hero {
   position: relative;
@@ -67,6 +85,9 @@ nav {
   transform: translate(-50%, -60%);
   pointer-events: none;
   animation: pulse 4s ease-in-out infinite;
+}
+[data-theme="light"] .hero-glow {
+  background: radial-gradient(circle, rgba(100,160,0,0.1) 0%, transparent 70%);
 }
 
 .hero-badge {
