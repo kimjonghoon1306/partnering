@@ -1,0 +1,406 @@
+/* ── AUTH 공통 레이아웃 ── */
+.auth-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 24px 40px;
+  position: relative;
+  z-index: 1;
+}
+
+.auth-glow {
+  position: fixed;
+  width: 500px; height: 500px;
+  border-radius: 50%;
+  top: -100px; left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(circle, var(--lime-glow) 0%, transparent 70%);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 440px;
+  background: var(--dark3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 40px;
+  position: relative;
+  z-index: 1;
+}
+
+.auth-card-wide {
+  max-width: 600px;
+}
+
+/* ── 헤더 ── */
+.auth-logo {
+  text-align: center;
+  margin-bottom: 28px;
+}
+.auth-logo a {
+  font-size: 22px;
+  font-weight: 900;
+  text-decoration: none;
+  color: var(--text);
+}
+.auth-logo a span { color: var(--lime); }
+
+.auth-title {
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: -0.8px;
+  margin-bottom: 6px;
+  text-align: center;
+}
+.auth-sub {
+  font-size: 14px;
+  color: var(--text2);
+  text-align: center;
+  margin-bottom: 32px;
+  line-height: 1.6;
+}
+
+/* ── 폼 ── */
+.form-group {
+  margin-bottom: 16px;
+}
+.form-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text2);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.form-input {
+  width: 100%;
+  background: var(--dark4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  font-size: 15px;
+  color: var(--text);
+  font-family: var(--font);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+.form-input:focus {
+  border-color: var(--lime);
+  box-shadow: 0 0 0 3px var(--lime-glow);
+}
+.form-input::placeholder { color: var(--text3); }
+
+.form-input-wrap {
+  position: relative;
+}
+.form-input-wrap .form-input { padding-right: 48px; }
+.input-eye {
+  position: absolute;
+  right: 14px; top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  color: var(--text3);
+  padding: 4px;
+  transition: color 0.2s;
+}
+.input-eye:hover { color: var(--text2); }
+
+.form-select {
+  width: 100%;
+  background: var(--dark4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  font-size: 15px;
+  color: var(--text);
+  font-family: var(--font);
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+.form-select:focus { border-color: var(--lime); }
+
+.form-textarea {
+  width: 100%;
+  background: var(--dark4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  font-size: 15px;
+  color: var(--text);
+  font-family: var(--font);
+  outline: none;
+  resize: vertical;
+  min-height: 100px;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+  line-height: 1.6;
+}
+.form-textarea:focus { border-color: var(--lime); }
+.form-textarea::placeholder { color: var(--text3); }
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.form-hint {
+  font-size: 12px;
+  color: var(--text3);
+  margin-top: 6px;
+  line-height: 1.5;
+}
+
+.form-error {
+  font-size: 12px;
+  color: #FF4D6A;
+  margin-top: 6px;
+  display: none;
+}
+.form-error.show { display: block; }
+
+/* ── 비번 강도 ── */
+.pw-strength { margin-top: 8px; }
+.pw-bars { display: flex; gap: 4px; margin-bottom: 5px; }
+.pw-bar {
+  flex: 1; height: 4px;
+  border-radius: 2px;
+  background: var(--dark5);
+  transition: background 0.3s;
+}
+.pw-bar.weak   { background: #FF4D6A; }
+.pw-bar.medium { background: #FFD60A; }
+.pw-bar.strong { background: var(--lime); }
+.pw-label { font-size: 11px; color: var(--text3); }
+.pw-label.weak   { color: #FF4D6A; }
+.pw-label.medium { color: #FFD60A; }
+.pw-label.strong { color: var(--lime); }
+
+/* ── 체크박스 ── */
+.form-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  margin-bottom: 16px;
+}
+.form-check input[type="checkbox"] { display: none; }
+.check-box {
+  width: 18px; height: 18px;
+  border-radius: 5px;
+  border: 1.5px solid var(--border);
+  background: var(--dark4);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+  transition: all 0.2s;
+  font-size: 11px;
+}
+.form-check input:checked + .check-box {
+  background: var(--lime);
+  border-color: var(--lime);
+  color: var(--dark);
+}
+.check-label {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.5;
+}
+.check-label a { color: var(--lime); text-decoration: underline; }
+
+/* ── 구분선 ── */
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0;
+}
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.auth-divider span {
+  font-size: 12px;
+  color: var(--text3);
+  white-space: nowrap;
+}
+
+/* ── 소셜 로그인 ── */
+.social-btns { display: flex; gap: 10px; }
+.social-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--dark4);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: var(--font);
+}
+.social-btn:hover { background: var(--dark5); border-color: var(--border-hover); }
+.social-btn.kakao { background: #FEE500; color: #191919; border-color: #FEE500; }
+.social-btn.kakao:hover { background: #F0D800; }
+.social-btn.naver { background: #03C75A; color: white; border-color: #03C75A; }
+.social-btn.naver:hover { background: #02B351; }
+
+/* ── 제출 버튼 ── */
+.auth-submit {
+  width: 100%;
+  padding: 16px;
+  border-radius: var(--radius);
+  border: none;
+  background: var(--lime);
+  color: var(--dark);
+  font-size: 16px;
+  font-weight: 800;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: -0.3px;
+  margin-top: 8px;
+}
+.auth-submit:hover {
+  background: var(--lime-dim);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lime);
+}
+.auth-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ── 하단 링크 ── */
+.auth-footer {
+  text-align: center;
+  margin-top: 24px;
+  font-size: 14px;
+  color: var(--text2);
+}
+.auth-footer a { color: var(--lime); font-weight: 700; }
+.auth-footer a:hover { text-decoration: underline; }
+
+/* ── 단계 표시 (회원가입용) ── */
+.steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: 32px;
+}
+.step-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.step-circle {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 800;
+  border: 2px solid var(--border);
+  color: var(--text3);
+  background: var(--dark4);
+  transition: all 0.3s;
+  flex-shrink: 0;
+}
+.step-circle.done { background: var(--lime); border-color: var(--lime); color: var(--dark); }
+.step-circle.active { border-color: var(--lime); color: var(--lime); background: rgba(190,255,0,0.08); }
+.step-label { font-size: 12px; color: var(--text3); font-weight: 600; }
+.step-label.active { color: var(--lime); }
+.step-label.done { color: var(--text2); }
+.step-line { width: 32px; height: 1px; background: var(--border); margin: 0 4px; }
+.step-line.done { background: var(--lime); }
+
+/* ── 태그 선택 (관심 카테고리) ── */
+.tag-select { display: flex; flex-wrap: wrap; gap: 8px; }
+.tag-item {
+  padding: 8px 14px;
+  border-radius: 100px;
+  border: 1px solid var(--border);
+  background: var(--dark4);
+  font-size: 13px; font-weight: 600;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+}
+.tag-item:hover { border-color: var(--lime-border); color: var(--text); }
+.tag-item.selected { border-color: var(--lime); background: var(--lime-glow); color: var(--lime); }
+
+/* ── 입점 신청 진행 상태 ── */
+.apply-progress {
+  background: var(--lime-glow);
+  border: 1px solid var(--lime-border);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  margin-bottom: 24px;
+  font-size: 13px;
+  color: var(--lime);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ── 상단 네브 ── */
+.auth-nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 60px;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--nav-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  z-index: 100;
+}
+.auth-nav-logo { font-size: 18px; font-weight: 900; text-decoration: none; color: var(--text); }
+.auth-nav-logo span { color: var(--lime); }
+.auth-nav-right { display: flex; align-items: center; gap: 10px; }
+.auth-nav-link { font-size: 13px; color: var(--text2); font-weight: 500; transition: color 0.2s; }
+.auth-nav-link:hover { color: var(--text); }
+
+/* ── 라이트 모드 오버라이드 ── */
+[data-theme="light"] .form-input:focus { box-shadow: 0 0 0 3px rgba(255,45,120,0.1); }
+[data-theme="light"] .pw-bar.strong { background: #FF2D78; }
+[data-theme="light"] .pw-label.strong { color: #FF2D78; }
+[data-theme="light"] .form-check input:checked + .check-box { background: #FF2D78; border-color: #FF2D78; color: white; }
+[data-theme="light"] .tag-item.selected { border-color: #FF2D78; background: rgba(255,45,120,0.08); color: #FF2D78; }
+[data-theme="light"] .apply-progress { background: rgba(255,45,120,0.06); border-color: rgba(255,45,120,0.2); color: #FF2D78; }
+[data-theme="light"] .step-circle.done { background: #FF2D78; border-color: #FF2D78; color: white; }
+[data-theme="light"] .step-circle.active { border-color: #FF2D78; color: #FF2D78; background: rgba(255,45,120,0.08); }
+[data-theme="light"] .step-label.active { color: #FF2D78; }
+[data-theme="light"] .step-line.done { background: #FF2D78; }
+
+/* ── 반응형 ── */
+@media (max-width: 480px) {
+  .auth-card { padding: 28px 20px; border-radius: var(--radius-lg); }
+  .form-grid { grid-template-columns: 1fr; }
+  .social-btns { flex-direction: column; }
+  .auth-title { font-size: 22px; }
+}
