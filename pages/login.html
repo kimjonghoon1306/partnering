@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>로그인 — 파트너링</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="../css/variables.css">
+<link rel="stylesheet" href="../css/reset.css">
+<link rel="stylesheet" href="../css/auth.css">
+</head>
+<body>
+
+<nav class="auth-nav">
+  <a href="../index.html" class="auth-nav-logo">파트너<span>링</span></a>
+  <div class="auth-nav-right">
+    <button class="theme-btn" id="theme-btn" title="테마 전환">☀️</button>
+    <a href="signup.html" class="btn-ghost" style="font-size:13px;padding:8px 14px;">회원가입</a>
+  </div>
+</nav>
+
+<div class="auth-glow"></div>
+
+<div class="auth-wrap">
+  <div class="auth-card">
+
+    <div class="auth-logo">
+      <a href="../index.html">파트너<span>링</span></a>
+    </div>
+
+    <h1 class="auth-title">다시 만나서 반가워요 👋</h1>
+    <p class="auth-sub">계속해서 수익을 만들어보세요</p>
+
+    <!-- 소셜 로그인 -->
+    <div class="social-btns">
+      <button class="social-btn kakao">
+        <span style="font-size:18px;">💬</span> 카카오
+      </button>
+      <button class="social-btn naver">
+        <span style="font-size:16px;font-weight:900;">N</span> 네이버
+      </button>
+    </div>
+
+    <div class="auth-divider"><span>또는 이메일로 로그인</span></div>
+
+    <!-- 이메일 로그인 폼 -->
+    <form id="login-form" onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label>이메일</label>
+        <input class="form-input" type="email" id="email" placeholder="hello@example.com" autocomplete="email" required>
+        <div class="form-error" id="email-error">올바른 이메일을 입력해주세요.</div>
+      </div>
+
+      <div class="form-group">
+        <label>비밀번호</label>
+        <div class="form-input-wrap">
+          <input class="form-input" type="password" id="password" placeholder="비밀번호 입력" autocomplete="current-password" required>
+          <button type="button" class="input-eye" id="pw-eye">👁</button>
+        </div>
+        <div class="form-error" id="pw-error">비밀번호가 올바르지 않습니다.</div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <label class="form-check" style="margin-bottom:0;">
+          <input type="checkbox" id="remember">
+          <div class="check-box">✓</div>
+          <span class="check-label">로그인 상태 유지</span>
+        </label>
+        <a href="#" style="font-size:13px;color:var(--text3);">비밀번호 찾기</a>
+      </div>
+
+      <div class="form-error" id="login-error" style="text-align:center;margin-bottom:12px;font-size:13px;">
+        이메일 또는 비밀번호를 확인해주세요.
+      </div>
+
+      <button type="submit" class="auth-submit" id="submit-btn">로그인</button>
+    </form>
+
+    <div class="auth-footer">
+      아직 계정이 없으신가요? <a href="signup.html">무료 가입하기</a>
+    </div>
+
+    <!-- 쇼핑몰 입점 링크 -->
+    <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border);text-align:center;">
+      <p style="font-size:12px;color:var(--text3);">쇼핑몰 운영자이신가요?</p>
+      <a href="shop-register.html" style="font-size:13px;color:var(--text2);font-weight:600;margin-top:4px;display:inline-block;">
+        쇼핑몰 입점 신청 →
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<script src="../js/auth.js"></script>
+</body>
+</html>

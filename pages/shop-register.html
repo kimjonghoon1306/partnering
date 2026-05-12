@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>쇼핑몰 입점 신청 — 파트너링</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="../css/variables.css">
+<link rel="stylesheet" href="../css/reset.css">
+<link rel="stylesheet" href="../css/auth.css">
+</head>
+<body>
+
+<nav class="auth-nav">
+  <a href="../index.html" class="auth-nav-logo">파트너<span>링</span></a>
+  <div class="auth-nav-right">
+    <button class="theme-btn" id="theme-btn" title="테마 전환">☀️</button>
+    <a href="login.html" class="auth-nav-link">파트너 로그인</a>
+  </div>
+</nav>
+
+<div class="auth-glow"></div>
+
+<div class="auth-wrap" style="padding-top:90px;padding-bottom:60px;align-items:flex-start;">
+  <div class="auth-card auth-card-wide">
+
+    <div class="auth-logo">
+      <a href="../index.html">파트너<span>링</span></a>
+    </div>
+
+    <!-- 단계 표시 -->
+    <div class="steps">
+      <div class="step-item">
+        <div class="step-circle active" id="s1">1</div>
+        <span class="step-label active" id="sl1">쇼핑몰 정보</span>
+      </div>
+      <div class="step-line" id="ln1"></div>
+      <div class="step-item">
+        <div class="step-circle" id="s2">2</div>
+        <span class="step-label" id="sl2">수수료 설정</span>
+      </div>
+      <div class="step-line" id="ln2"></div>
+      <div class="step-item">
+        <div class="step-circle" id="s3">3</div>
+        <span class="step-label" id="sl3">담당자 계정</span>
+      </div>
+    </div>
+
+    <!-- STEP 1: 쇼핑몰 정보 -->
+    <div id="sp1">
+      <h1 class="auth-title">쇼핑몰 입점 신청 🛒</h1>
+      <p class="auth-sub">파트너링에 쇼핑몰을 등록하고<br>수천 명의 파트너와 함께 매출을 키워보세요</p>
+
+      <!-- 혜택 요약 -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:28px;">
+        <div style="background:var(--dark4);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center;">
+          <div style="font-size:20px;margin-bottom:6px;">🔗</div>
+          <div style="font-size:12px;font-weight:700;margin-bottom:3px;">스크립트 1줄</div>
+          <div style="font-size:11px;color:var(--text3);">쇼핑몰에 심으면 끝</div>
+        </div>
+        <div style="background:var(--dark4);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center;">
+          <div style="font-size:20px;margin-bottom:6px;">💰</div>
+          <div style="font-size:12px;font-weight:700;margin-bottom:3px;">성과 기반 수수료</div>
+          <div style="font-size:11px;color:var(--text3);">판매될 때만 지급</div>
+        </div>
+        <div style="background:var(--dark4);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center;">
+          <div style="font-size:20px;margin-bottom:6px;">📊</div>
+          <div style="font-size:12px;font-weight:700;margin-bottom:3px;">실시간 현황</div>
+          <div style="font-size:11px;color:var(--text3);">파트너별 성과 확인</div>
+        </div>
+      </div>
+
+      <form id="form-s1" onsubmit="shopNextStep(event, 2)">
+        <div class="form-group">
+          <label>쇼핑몰 이름 *</label>
+          <input class="form-input" type="text" id="shop-name" placeholder="예) 영광 굴비 직판장" required>
+        </div>
+        <div class="form-group">
+          <label>쇼핑몰 URL *</label>
+          <input class="form-input" type="url" id="shop-url" placeholder="https://yourshop.com" required>
+          <div class="form-hint">파트너들이 링크를 만들 쇼핑몰 주소입니다.</div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>카테고리 *</label>
+            <select class="form-select" id="shop-category" required>
+              <option value="">선택</option>
+              <option value="food">수산·식품</option>
+              <option value="beauty">뷰티·화장품</option>
+              <option value="fashion">패션·의류</option>
+              <option value="home">가구·인테리어</option>
+              <option value="kitchen">주방·생활</option>
+              <option value="health">건강·운동</option>
+              <option value="pet">반려동물</option>
+              <option value="book">도서·교육</option>
+              <option value="tech">전자·디지털</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>월 평균 매출 규모</label>
+            <select class="form-select" id="shop-revenue">
+              <option value="">선택 안 함</option>
+              <option value="under1k">1천만원 미만</option>
+              <option value="1k-5k">1천 ~ 5천만원</option>
+              <option value="5k-1e">5천만원 ~ 1억</option>
+              <option value="over1e">1억 이상</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>쇼핑몰 소개</label>
+          <textarea class="form-textarea" id="shop-intro" placeholder="파트너들에게 쇼핑몰을 소개해주세요. 주요 상품, 강점, 특징 등을 알려주세요."></textarea>
+        </div>
+        <div class="form-group">
+          <label>사업자등록번호</label>
+          <input class="form-input" type="text" id="biz-num" placeholder="000-00-00000">
+          <div class="form-hint">입점 승인 후 정산 처리를 위해 필요합니다. 나중에 입력해도 됩니다.</div>
+        </div>
+
+        <button type="submit" class="auth-submit">다음 단계 →</button>
+      </form>
+    </div>
+
+    <!-- STEP 2: 수수료 설정 -->
+    <div id="sp2" style="display:none;">
+      <h1 class="auth-title">수수료율 설정 💸</h1>
+      <p class="auth-sub">카테고리별로 수수료율을 설정할 수 있어요<br>높을수록 파트너가 더 열심히 홍보해요</p>
+
+      <div class="apply-progress">
+        💡 파트너링 평균 수수료율: 식품 7%, 뷰티 10%, 패션 9%
+      </div>
+
+      <!-- 기본 수수료 -->
+      <div class="form-group">
+        <label>기본 수수료율 (전체 상품 공통) *</label>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <input class="form-input" type="range" id="base-rate" min="1" max="20" value="7" oninput="updateRate('base')" style="flex:1;padding:8px 0;background:transparent;border:none;box-shadow:none;">
+          <div style="font-size:22px;font-weight:900;color:var(--lime);min-width:52px;text-align:right;" id="base-rate-display">7%</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-top:4px;">
+          <span>1% (최소)</span><span>20% (최대)</span>
+        </div>
+      </div>
+
+      <!-- 카테고리별 개별 설정 -->
+      <div style="margin:20px 0 10px;font-size:12px;font-weight:700;color:var(--text2);letter-spacing:0.5px;text-transform:uppercase;">
+        카테고리별 개별 설정 (선택)
+      </div>
+      <div id="cat-rates" style="display:flex;flex-direction:column;gap:10px;">
+        <!-- JS로 생성 -->
+      </div>
+
+      <!-- 쿠키 유지 기간 -->
+      <div class="form-group" style="margin-top:20px;">
+        <label>쿠키 유지 기간</label>
+        <select class="form-select" id="cookie-days">
+          <option value="7">7일 (기본)</option>
+          <option value="14">14일</option>
+          <option value="30">30일 (추천)</option>
+          <option value="60">60일</option>
+          <option value="90">90일</option>
+        </select>
+        <div class="form-hint">파트너 링크 클릭 후 이 기간 내 구매 시 수수료가 지급됩니다.</div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:8px;">
+        <button type="button" class="btn-secondary" onclick="shopGoStep(1)" style="flex:1;justify-content:center;padding:15px;">← 이전</button>
+        <button type="button" class="auth-submit" style="flex:2;" onclick="shopNextStep(event, 3)">다음 단계 →</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: 담당자 계정 -->
+    <div id="sp3" style="display:none;">
+      <h1 class="auth-title">담당자 계정 만들기 👤</h1>
+      <p class="auth-sub">쇼핑몰 관리자 계정을 만들어주세요<br>파트너 현황과 정산을 이 계정으로 관리합니다</p>
+
+      <form id="form-s3" onsubmit="shopSubmit(event)">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>담당자 이름 *</label>
+            <input class="form-input" type="text" id="manager-name" placeholder="홍길동" required>
+          </div>
+          <div class="form-group">
+            <label>직책</label>
+            <input class="form-input" type="text" id="manager-role" placeholder="대표, 마케팅 팀장 등">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>이메일 *</label>
+          <input class="form-input" type="email" id="manager-email" placeholder="manager@yourshop.com" required>
+        </div>
+        <div class="form-group">
+          <label>연락처</label>
+          <input class="form-input" type="tel" id="manager-phone" placeholder="010-0000-0000">
+        </div>
+        <div class="form-group">
+          <label>비밀번호 *</label>
+          <div class="form-input-wrap">
+            <input class="form-input" type="password" id="manager-pw" placeholder="8자 이상" required>
+            <button type="button" class="input-eye" id="spw-eye">👁</button>
+          </div>
+        </div>
+
+        <!-- 정산 계좌 -->
+        <div style="margin:20px 0 10px;font-size:12px;font-weight:700;color:var(--text2);letter-spacing:0.5px;text-transform:uppercase;">
+          정산 계좌 (나중에 입력 가능)
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>은행</label>
+            <select class="form-select" id="bank">
+              <option value="">선택</option>
+              <option>국민은행</option><option>신한은행</option><option>우리은행</option>
+              <option>하나은행</option><option>카카오뱅크</option><option>토스뱅크</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>계좌번호</label>
+            <input class="form-input" type="text" id="account" placeholder="숫자만 입력">
+          </div>
+        </div>
+
+        <label class="form-check">
+          <input type="checkbox" id="shop-agree" required>
+          <div class="check-box">✓</div>
+          <span class="check-label">
+            <a href="#">파트너링 쇼핑몰 입점 약관</a>에 동의합니다 (필수)
+          </span>
+        </label>
+
+        <div style="display:flex;gap:10px;margin-top:8px;">
+          <button type="button" class="btn-secondary" onclick="shopGoStep(2)" style="flex:1;justify-content:center;padding:15px;">← 이전</button>
+          <button type="submit" class="auth-submit" style="flex:2;">입점 신청 완료</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- STEP 완료 -->
+    <div id="sp-done" style="display:none;text-align:center;">
+      <div style="font-size:64px;margin-bottom:20px;animation:bounceIn 0.6s ease;">✅</div>
+      <h1 class="auth-title">신청 완료!</h1>
+      <p class="auth-sub">입점 신청이 접수되었습니다.<br>관리자 검토 후 영업일 기준 1~2일 내 승인 이메일을 보내드려요.</p>
+
+      <div style="background:var(--dark4);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;margin:24px 0;text-align:left;">
+        <div style="font-size:13px;font-weight:700;margin-bottom:12px;">📋 승인 후 진행 순서</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="font-size:13px;color:var(--text2);display:flex;gap:10px;">
+            <span style="color:var(--lime);font-weight:700;flex-shrink:0;">1.</span>
+            승인 이메일 수신
+          </div>
+          <div style="font-size:13px;color:var(--text2);display:flex;gap:10px;">
+            <span style="color:var(--lime);font-weight:700;flex-shrink:0;">2.</span>
+            tracker.js 스크립트를 쇼핑몰에 삽입 (1줄)
+          </div>
+          <div style="font-size:13px;color:var(--text2);display:flex;gap:10px;">
+            <span style="color:var(--lime);font-weight:700;flex-shrink:0;">3.</span>
+            파트너들이 내 쇼핑몰 링크를 생성 · 공유 시작
+          </div>
+          <div style="font-size:13px;color:var(--text2);display:flex;gap:10px;">
+            <span style="color:var(--lime);font-weight:700;flex-shrink:0;">4.</span>
+            매달 1일 자동 정산
+          </div>
+        </div>
+      </div>
+
+      <a href="../index.html" class="auth-submit" style="display:block;text-decoration:none;text-align:center;">
+        메인으로 돌아가기
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<style>
+input[type="range"] {
+  -webkit-appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--dark5);
+  outline: none;
+  border: none !important;
+  box-shadow: none !important;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--lime);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(190,255,0,0.4);
+}
+[data-theme="light"] input[type="range"]::-webkit-slider-thumb {
+  background: #FF2D78;
+  box-shadow: 0 2px 8px rgba(255,45,120,0.4);
+}
+@keyframes bounceIn {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); }
+}
+</style>
+
+<script src="../js/auth.js"></script>
+</body>
+</html>

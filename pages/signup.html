@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>회원가입 — 파트너링</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="../css/variables.css">
+<link rel="stylesheet" href="../css/reset.css">
+<link rel="stylesheet" href="../css/auth.css">
+</head>
+<body>
+
+<nav class="auth-nav">
+  <a href="../index.html" class="auth-nav-logo">파트너<span>링</span></a>
+  <div class="auth-nav-right">
+    <button class="theme-btn" id="theme-btn" title="테마 전환">☀️</button>
+    <a href="login.html" class="btn-ghost" style="font-size:13px;padding:8px 14px;">로그인</a>
+  </div>
+</nav>
+
+<div class="auth-glow"></div>
+
+<div class="auth-wrap">
+  <div class="auth-card auth-card-wide">
+
+    <div class="auth-logo">
+      <a href="../index.html">파트너<span>링</span></a>
+    </div>
+
+    <!-- 단계 표시 -->
+    <div class="steps" id="steps">
+      <div class="step-item">
+        <div class="step-circle active" id="step-1">1</div>
+        <span class="step-label active">기본 정보</span>
+      </div>
+      <div class="step-line" id="line-1"></div>
+      <div class="step-item">
+        <div class="step-circle" id="step-2">2</div>
+        <span class="step-label">활동 채널</span>
+      </div>
+      <div class="step-line" id="line-2"></div>
+      <div class="step-item">
+        <div class="step-circle" id="step-3">3</div>
+        <span class="step-label">완료</span>
+      </div>
+    </div>
+
+    <!-- STEP 1: 기본 정보 -->
+    <div id="page-1">
+      <h1 class="auth-title">파트너로 시작하기</h1>
+      <p class="auth-sub">계정을 만들고 지금 바로 수익을 시작하세요</p>
+
+      <div class="social-btns" style="margin-bottom:20px;">
+        <button class="social-btn kakao">
+          <span style="font-size:18px;">💬</span> 카카오로 시작하기
+        </button>
+        <button class="social-btn naver">
+          <span style="font-size:16px;font-weight:900;">N</span> 네이버로 시작하기
+        </button>
+      </div>
+
+      <div class="auth-divider"><span>또는 이메일로 가입</span></div>
+
+      <form id="form-1" onsubmit="nextStep(event, 2)">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>이름</label>
+            <input class="form-input" type="text" id="name" placeholder="홍길동" required>
+          </div>
+          <div class="form-group">
+            <label>닉네임</label>
+            <input class="form-input" type="text" id="nickname" placeholder="파트너 활동명" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>이메일</label>
+          <input class="form-input" type="email" id="email" placeholder="hello@example.com" required>
+        </div>
+        <div class="form-group">
+          <label>비밀번호</label>
+          <div class="form-input-wrap">
+            <input class="form-input" type="password" id="password" placeholder="8자 이상 입력" required oninput="checkPwStrength(this.value)">
+            <button type="button" class="input-eye" id="pw-eye-1">👁</button>
+          </div>
+          <div class="pw-strength" id="pw-strength" style="display:none;">
+            <div class="pw-bars">
+              <div class="pw-bar" id="pb1"></div>
+              <div class="pw-bar" id="pb2"></div>
+              <div class="pw-bar" id="pb3"></div>
+              <div class="pw-bar" id="pb4"></div>
+            </div>
+            <div class="pw-label" id="pw-label">약함</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>비밀번호 확인</label>
+          <div class="form-input-wrap">
+            <input class="form-input" type="password" id="password-confirm" placeholder="비밀번호 재입력" required>
+            <button type="button" class="input-eye" id="pw-eye-2">👁</button>
+          </div>
+          <div class="form-error" id="pw-match-error">비밀번호가 일치하지 않습니다.</div>
+        </div>
+
+        <label class="form-check">
+          <input type="checkbox" id="agree-terms" required>
+          <div class="check-box">✓</div>
+          <span class="check-label">
+            <a href="#">이용약관</a> 및 <a href="#">개인정보처리방침</a>에 동의합니다 (필수)
+          </span>
+        </label>
+        <label class="form-check">
+          <input type="checkbox" id="agree-marketing">
+          <div class="check-box">✓</div>
+          <span class="check-label">수익 팁, 이벤트 등 마케팅 정보 수신 동의 (선택)</span>
+        </label>
+
+        <button type="submit" class="auth-submit">다음 단계 →</button>
+      </form>
+
+      <div class="auth-footer">
+        이미 계정이 있으신가요? <a href="login.html">로그인</a>
+      </div>
+    </div>
+
+    <!-- STEP 2: 활동 채널 -->
+    <div id="page-2" style="display:none;">
+      <h1 class="auth-title">어디서 활동하세요? 📱</h1>
+      <p class="auth-sub">활동 채널을 알려주시면 맞춤 팁을 드릴게요<br>나중에도 변경 가능해요</p>
+
+      <form id="form-2" onsubmit="nextStep(event, 3)">
+        <div class="form-group">
+          <label>주요 채널 (복수 선택)</label>
+          <div class="tag-select" id="channel-tags" style="margin-top:4px;">
+            <div class="tag-item" data-val="instagram">📸 인스타그램</div>
+            <div class="tag-item" data-val="youtube">📺 유튜브</div>
+            <div class="tag-item" data-val="blog">📝 블로그</div>
+            <div class="tag-item" data-val="kakao">💬 카카오</div>
+            <div class="tag-item" data-val="twitter">🐦 X/트위터</div>
+            <div class="tag-item" data-val="tiktok">🎵 틱톡</div>
+            <div class="tag-item" data-val="community">💬 커뮤니티</div>
+            <div class="tag-item" data-val="etc">✏️ 기타</div>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top:20px;">
+          <label>관심 카테고리 (복수 선택)</label>
+          <div class="tag-select" id="category-tags" style="margin-top:4px;">
+            <div class="tag-item" data-val="food">🐟 수산·식품</div>
+            <div class="tag-item" data-val="beauty">💄 뷰티·화장품</div>
+            <div class="tag-item" data-val="fashion">👗 패션·의류</div>
+            <div class="tag-item" data-val="home">🏠 가구·인테리어</div>
+            <div class="tag-item" data-val="kitchen">🍳 주방·생활</div>
+            <div class="tag-item" data-val="health">🧘 건강·운동</div>
+            <div class="tag-item" data-val="pet">🐾 반려동물</div>
+            <div class="tag-item" data-val="book">📚 도서·교육</div>
+            <div class="tag-item" data-val="tech">🖥️ 전자·디지털</div>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top:20px;">
+          <label>팔로워 / 구독자 수 (선택)</label>
+          <select class="form-select" id="followers">
+            <option value="">선택 안 함</option>
+            <option value="under1k">1천 명 미만</option>
+            <option value="1k-5k">1천 ~ 5천 명</option>
+            <option value="5k-10k">5천 ~ 1만 명</option>
+            <option value="10k-50k">1만 ~ 5만 명</option>
+            <option value="50k-100k">5만 ~ 10만 명</option>
+            <option value="over100k">10만 명 이상</option>
+          </select>
+          <div class="form-hint">정확하지 않아도 괜찮아요. 맞춤 쇼핑몰 추천에만 사용됩니다.</div>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:8px;">
+          <button type="button" class="btn-secondary" onclick="goStep(1)" style="flex:1;justify-content:center;padding:15px;">← 이전</button>
+          <button type="submit" class="auth-submit" style="flex:2;">다음 단계 →</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- STEP 3: 완료 -->
+    <div id="page-3" style="display:none;text-align:center;">
+      <div style="font-size:64px;margin-bottom:20px;animation:bounceIn 0.6s ease;">🎉</div>
+      <h1 class="auth-title">가입 완료!</h1>
+      <p class="auth-sub">파트너링에 오신 걸 환영해요.<br>지금 바로 첫 링크를 만들고 수익을 시작해보세요!</p>
+
+      <div style="background:var(--lime-glow);border:1px solid var(--lime-border);border-radius:var(--radius-lg);padding:20px;margin:24px 0;text-align:left;">
+        <div style="font-size:13px;font-weight:700;color:var(--lime);margin-bottom:12px;">🚀 시작 가이드</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;gap:10px;align-items:center;font-size:13px;color:var(--text2);">
+            <span style="width:22px;height:22px;border-radius:50%;background:var(--lime);color:var(--dark);font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1</span>
+            마음에 드는 쇼핑몰을 둘러보세요
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;font-size:13px;color:var(--text2);">
+            <span style="width:22px;height:22px;border-radius:50%;background:var(--lime);color:var(--dark);font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;">2</span>
+            상품 URL로 내 파트너 링크 생성
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;font-size:13px;color:var(--text2);">
+            <span style="width:22px;height:22px;border-radius:50%;background:var(--lime);color:var(--dark);font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</span>
+            SNS, 블로그에 공유하고 수익 확인
+          </div>
+        </div>
+      </div>
+
+      <a href="dashboard.html" class="auth-submit" style="display:block;text-decoration:none;text-align:center;">
+        대시보드로 이동 →
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<style>
+@keyframes bounceIn {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); }
+}
+</style>
+
+<script src="../js/auth.js"></script>
+</body>
+</html>
