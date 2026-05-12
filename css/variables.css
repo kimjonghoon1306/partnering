@@ -61,7 +61,12 @@
 
   --shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
 
-  --lime-border: rgba(100, 160, 0, 0.3);
+  /* 라이트 모드에서 lime → 핑크 (가독성) */
+  --lime:        #FF2D78;
+  --lime-dim:    #E6216A;
+  --lime-glow:   rgba(255, 45, 120, 0.12);
+  --lime-border: rgba(255, 45, 120, 0.25);
+  --shadow-lime: 0 12px 40px rgba(255, 45, 120, 0.25);
 
   --theme-icon: '🌙';
   --nav-bg: rgba(244, 244, 240, 0.85);
