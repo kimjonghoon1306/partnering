@@ -542,3 +542,18 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 [data-theme="light"] .page { background: var(--bg); }
 [data-theme="light"] .gen-input { background: var(--dark4); color: var(--text); }
 [data-theme="light"] .link-input { background: var(--dark4); color: var(--text); }
+
+/* ── 라이트 모드 SVG 차트 색상 오버라이드 ── */
+[data-theme="light"] .chart-line { stroke: #FF2D78 !important; }
+[data-theme="light"] .chart-area stop:first-child { stop-color: #FF2D78 !important; }
+[data-theme="light"] .chart-dots circle { stroke: #FF2D78 !important; }
+[data-theme="light"] .chart-dots circle[r="5"] { fill: #FF2D78 !important; }
+[data-theme="light"] .bar.active { background: #FF2D78 !important; }
+[data-theme="light"] .earn-num { color: #FF2D78 !important; }
+[data-theme="light"] .earn-up { color: #FF2D78 !important; }
+[data-theme="light"] .td-earn { color: #FF2D78 !important; }
+[data-theme="light"] .settle-amount { color: #FF2D78 !important; }
+[data-theme="light"] .payout-val.lime { color: #FF2D78 !important; }
+[data-theme="light"] .s-value.lime { color: #FF2D78 !important; }
+[data-theme="light"] .stat-num { color: #FF2D78 !important; }
+[data-theme="light"] .chart-total-num { color: #FF2D78 !important; }
