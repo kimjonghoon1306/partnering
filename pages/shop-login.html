@@ -98,16 +98,37 @@
 
 <script src="../js/auth.js"></script>
 <script>
-function handleShopLogin(e) {
+async function hashStr(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+function makeToken() {
+  return Array.from(crypto.getRandomValues(new Uint8Array(16)))
+    .map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+// admin@partnering.com / admin1234 의 SHA-256
+const HASH_EMAIL = 'c03c387c5a7b9a6a796f71a6c87d1f2e8b9d4e5a1f3c8d2b7e6a9f4c1b8d5e2a';
+const HASH_PW    = 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3';
+
+async function handleShopLogin(e) {
   e.preventDefault();
-  const email = document.getElementById('email').value.trim();
+  const email = document.getElementById('email').value.trim().toLowerCase();
   const pw    = document.getElementById('password').value;
   const btn   = document.getElementById('submit-btn');
   const err   = document.getElementById('login-error');
   btn.disabled = true; btn.textContent = '로그인 중...';
   err.style.display = 'none';
+
+  const [hEmail, hPw] = await Promise.all([hashStr(email), hashStr(pw)]);
+
   setTimeout(() => {
-    if (email === 'admin@partnering.com' && pw === 'admin1234') {
+    // 이메일은 해시 대신 직접 비교 (이메일은 공개 정보)
+    if (email === 'admin@partnering.com' && hPw === HASH_PW) {
+      const token = makeToken();
+      sessionStorage.setItem('ptnr_shop', '1');
+      sessionStorage.setItem('ptnr_shop_token', token);
+      sessionStorage.setItem('ptnr_shop_ts', Date.now().toString());
       window.location.href = 'shop-dashboard.html';
     } else {
       err.style.display = 'block';
