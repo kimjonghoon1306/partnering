@@ -19,16 +19,16 @@ document.getElementById('theme-btn')?.addEventListener('click', toggleTheme);
 initTheme();
 
 // ── 사이드바 네비
-const navItems = document.querySelectorAll('.admin-nav-item[data-page]');
+const navItems = document.querySelectorAll('.nav-item[data-page]');
 const pages    = document.querySelectorAll('.admin-page');
 
 function showPage(id) {
   pages.forEach(p => p.classList.remove('active'));
   navItems.forEach(n => n.classList.remove('active'));
   document.getElementById('sp-' + id)?.classList.add('active');
-  document.querySelector(`.admin-nav-item[data-page="${id}"]`)?.classList.add('active');
-  const label = document.querySelector(`.admin-nav-item[data-page="${id}"] .admin-nav-label`)?.textContent || '';
-  const topbar = document.querySelector('.admin-topbar-title');
+  document.querySelector(`.nav-item[data-page="${id}"]`)?.classList.add('active');
+  const label = document.querySelector(`.nav-item[data-page="${id}"] .nav-label`)?.textContent || '';
+  const topbar = document.querySelector('.topbar-title');
   if (topbar && label) topbar.textContent = label;
 }
 
@@ -40,7 +40,7 @@ navItems.forEach(item => {
 });
 
 // ── 모바일 사이드바
-const sidebar   = document.querySelector('.admin-sidebar');
+const sidebar   = document.querySelector('.sidebar');
 const overlay   = document.querySelector('.admin-sidebar-overlay');
 const hamburger = document.querySelector('.admin-hamburger');
 function closeSidebar() { sidebar?.classList.remove('open'); overlay?.classList.remove('show'); }
