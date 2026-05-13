@@ -166,3 +166,11 @@
 [data-theme="light"] .unpaid-banner { background: rgba(255,214,10,0.06); }
 [data-theme="light"] .shop-hero-card { background: rgba(255,45,120,0.05); border-color: rgba(255,45,120,0.2); }
 [data-theme="light"] .code-box { background: #1a1a1a; }
+
+/* 승인 대기 타이틀 */
+.pending-title { color: #FFD60A; }
+[data-theme="light"] .pending-title { color: #8B1A2F; }
+[data-theme="light"] .unpaid-banner {
+  background: rgba(139,26,47,0.06);
+  border-color: rgba(139,26,47,0.2);
+}
