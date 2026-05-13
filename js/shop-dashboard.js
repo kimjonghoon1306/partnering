@@ -1,3 +1,15 @@
+// ── 쇼핑몰 인증 확인
+(function() {
+  const flag  = sessionStorage.getItem('ptnr_shop');
+  const token = sessionStorage.getItem('ptnr_shop_token');
+  const ts    = parseInt(sessionStorage.getItem('ptnr_shop_ts') || '0');
+  const SESSION_TTL = 4 * 60 * 60 * 1000;
+  if (!flag || !token || !ts || (Date.now() - ts > SESSION_TTL)) {
+    sessionStorage.clear();
+    window.location.href = 'shop-login.html';
+  }
+})();
+
 // ── 테마
 function initTheme() {
   const saved = localStorage.getItem('ptnr-theme') || 'dark';
