@@ -115,7 +115,23 @@ function togglePw() {
   btn.textContent = input.type === 'password' ? '👁' : '🙈';
 }
 
-function handleAdminLogin(e) {
+// 간단한 해시 함수 (평문 비번 소스 노출 방지)
+async function hashStr(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+// 토큰 생성
+function makeToken() {
+  return Array.from(crypto.getRandomValues(new Uint8Array(16)))
+    .map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+// 저장된 해시 (admin / admin1234 의 SHA-256)
+const HASH_ID = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918';
+const HASH_PW = 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3';
+
+async function handleAdminLogin(e) {
   e.preventDefault();
   const id = document.getElementById('admin-id').value.trim();
   const pw = document.getElementById('admin-pw').value;
@@ -126,10 +142,14 @@ function handleAdminLogin(e) {
   btn.textContent = '로그인 중...';
   err.style.display = 'none';
 
+  const [hId, hPw] = await Promise.all([hashStr(id), hashStr(pw)]);
+
   setTimeout(() => {
-    /* 데모: admin / admin1234 */
-    if (id === 'admin' && pw === 'admin1234') {
+    if (hId === HASH_ID && hPw === HASH_PW) {
+      const token = makeToken();
       sessionStorage.setItem('ptnr_admin', '1');
+      sessionStorage.setItem('ptnr_token', token);
+      sessionStorage.setItem('ptnr_ts', Date.now().toString());
       window.location.href = 'admin.html';
     } else {
       err.style.display = 'block';
