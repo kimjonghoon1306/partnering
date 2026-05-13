@@ -3,8 +3,25 @@ if (!sessionStorage.getItem('ptnr_admin')) {
   window.location.href = 'admin-login.html';
 }
 
-// ── 테마 (항상 다크 고정)
-document.documentElement.setAttribute('data-theme', 'dark');
+// ── 테마 토글
+function initTheme() {
+  const saved = localStorage.getItem('ptnr-theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+  updateThemeIcon(saved);
+}
+function updateThemeIcon(theme) {
+  const btn = document.getElementById('theme-btn');
+  if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+}
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('ptnr-theme', next);
+  updateThemeIcon(next);
+}
+document.getElementById('theme-btn')?.addEventListener('click', toggleTheme);
+initTheme();
 
 // ── 사이드바 네비
 const adminNavItems = document.querySelectorAll('.admin-nav-item[data-page]');
