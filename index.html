@@ -75,6 +75,166 @@
   <div class="stat-item reveal"><div class="stat-num">최대 15%</div><div class="stat-label">카테고리별 수수료</div></div>
 </div>
 
+<!-- ── 프로모션 애니메이션 섹션 ── -->
+<section class="promo-section" id="promo">
+  <div class="promo-tag reveal">✦ 이렇게 작동해요</div>
+  <h2 class="promo-title reveal">링크 하나가<br><em>수익이 되는 순간</em></h2>
+
+  <div class="promo-screen reveal">
+    <!-- 상단 탭 -->
+    <div class="promo-tabs">
+      <button class="promo-tab active" data-step="0">링크 생성</button>
+      <button class="promo-tab" data-step="1">공유하기</button>
+      <button class="promo-tab" data-step="2">구매 발생</button>
+      <button class="promo-tab" data-step="3">수익 적립</button>
+    </div>
+
+    <!-- 진행 바 -->
+    <div class="promo-progress-wrap">
+      <div class="promo-progress-bar" id="promo-progress"></div>
+    </div>
+
+    <!-- 스텝별 화면 -->
+    <div class="promo-stage">
+
+      <!-- STEP 0: 링크 생성 -->
+      <div class="promo-step active" id="pstep-0">
+        <div class="promo-phone">
+          <div class="promo-phone-bar">
+            <div class="promo-phone-dot"></div><div class="promo-phone-dot"></div><div class="promo-phone-dot"></div>
+          </div>
+          <div class="promo-phone-body">
+            <div class="promo-phone-label">🔗 내 링크 만들기</div>
+            <div class="promo-url-box">
+              <span class="promo-url-text" id="url-text"></span>
+              <span class="promo-cursor">|</span>
+            </div>
+            <div class="promo-arrow-down">↓</div>
+            <div class="promo-result-box" id="promo-result">
+              <span class="promo-result-icon">✨</span>
+              <span id="promo-result-url">ptnr.ing/r/abc123</span>
+              <span class="promo-copy">복사</span>
+            </div>
+          </div>
+        </div>
+        <div class="promo-desc">
+          <div class="promo-desc-num">01</div>
+          <h3>상품 URL을 붙여넣기만 하면</h3>
+          <p>내 고유 파트너 링크가 즉시 생성됩니다. 어떤 쇼핑몰이든 가능해요.</p>
+        </div>
+      </div>
+
+      <!-- STEP 1: 공유하기 -->
+      <div class="promo-step" id="pstep-1">
+        <div class="promo-phone">
+          <div class="promo-phone-bar">
+            <div class="promo-phone-dot"></div><div class="promo-phone-dot"></div><div class="promo-phone-dot"></div>
+          </div>
+          <div class="promo-phone-body">
+            <div class="promo-phone-label">📱 공유하기</div>
+            <div class="promo-share-grid">
+              <div class="promo-share-item" style="--d:0.1s">
+                <div class="promo-share-icon" style="background:#FEE500;color:#191919;">💬</div>
+                <span>카카오</span>
+              </div>
+              <div class="promo-share-item" style="--d:0.2s">
+                <div class="promo-share-icon" style="background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);color:white;">📸</div>
+                <span>인스타</span>
+              </div>
+              <div class="promo-share-item" style="--d:0.3s">
+                <div class="promo-share-icon" style="background:#03C75A;color:white;">N</div>
+                <span>블로그</span>
+              </div>
+              <div class="promo-share-item" style="--d:0.4s">
+                <div class="promo-share-icon" style="background:#FF0000;color:white;">▶</div>
+                <span>유튜브</span>
+              </div>
+            </div>
+            <div class="promo-send-btn">공유 완료 ✓</div>
+          </div>
+        </div>
+        <div class="promo-desc">
+          <div class="promo-desc-num">02</div>
+          <h3>SNS, 블로그 어디든 공유</h3>
+          <p>카카오, 인스타그램, 유튜브, 블로그 등 내가 활동하는 곳에 링크를 올려요.</p>
+        </div>
+      </div>
+
+      <!-- STEP 2: 구매 발생 -->
+      <div class="promo-step" id="pstep-2">
+        <div class="promo-phone">
+          <div class="promo-phone-bar">
+            <div class="promo-phone-dot"></div><div class="promo-phone-dot"></div><div class="promo-phone-dot"></div>
+          </div>
+          <div class="promo-phone-body">
+            <div class="promo-phone-label">🛒 구매 발생</div>
+            <div class="promo-order-card">
+              <div class="promo-order-thumb">🐟</div>
+              <div class="promo-order-info">
+                <div class="promo-order-name">영광 굴비 선물세트</div>
+                <div class="promo-order-price">₩125,000</div>
+              </div>
+            </div>
+            <div class="promo-order-flow">
+              <div class="promo-flow-item done">링크 클릭 ✓</div>
+              <div class="promo-flow-arrow">→</div>
+              <div class="promo-flow-item done">장바구니 ✓</div>
+              <div class="promo-flow-arrow">→</div>
+              <div class="promo-flow-item active">결제 완료 ✓</div>
+            </div>
+          </div>
+        </div>
+        <div class="promo-desc">
+          <div class="promo-desc-num">03</div>
+          <h3>누군가 내 링크로 구매하면</h3>
+          <p>클릭부터 구매까지 자동으로 추적됩니다. 내가 자는 동안에도 구매가 일어나요.</p>
+        </div>
+      </div>
+
+      <!-- STEP 3: 수익 적립 -->
+      <div class="promo-step" id="pstep-3">
+        <div class="promo-phone">
+          <div class="promo-phone-bar">
+            <div class="promo-phone-dot"></div><div class="promo-phone-dot"></div><div class="promo-phone-dot"></div>
+          </div>
+          <div class="promo-phone-body">
+            <div class="promo-phone-label">💰 수익 적립</div>
+            <div class="promo-earn-noti">
+              <div class="promo-noti-icon">💰</div>
+              <div>
+                <div class="promo-noti-title">수익 발생!</div>
+                <div class="promo-noti-sub">굴비가게 · 구매 1건</div>
+              </div>
+              <div class="promo-noti-amount" id="earn-counter">+₩0</div>
+            </div>
+            <div class="promo-total-box">
+              <div class="promo-total-label">이번 달 총 수익</div>
+              <div class="promo-total-num" id="total-counter">₩0</div>
+              <div class="promo-total-bar">
+                <div class="promo-total-fill" id="total-fill"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="promo-desc">
+          <div class="promo-desc-num">04</div>
+          <h3>수수료가 자동으로 적립</h3>
+          <p>판매금액의 최대 15%가 내 계좌에 매달 1일 자동 입금됩니다.</p>
+        </div>
+      </div>
+
+    </div><!-- promo-stage -->
+
+    <!-- 하단 네비 점 -->
+    <div class="promo-dots">
+      <div class="promo-dot active" data-step="0"></div>
+      <div class="promo-dot" data-step="1"></div>
+      <div class="promo-dot" data-step="2"></div>
+      <div class="promo-dot" data-step="3"></div>
+    </div>
+  </div><!-- promo-screen -->
+</section>
+
 <section class="how-section" id="how">
   <div class="section-tag">✦ 사용 방법</div>
   <h2 class="section-title">3분이면<br>시작할 수 있어요</h2>
