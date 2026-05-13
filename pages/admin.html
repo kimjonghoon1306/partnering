@@ -11,76 +11,37 @@
 <link rel="stylesheet" href="../css/admin.css">
 </head>
 <body>
-
 <div class="admin-wrap">
 
-  <!-- ── 사이드바 ── -->
   <aside class="admin-sidebar">
     <div class="admin-sidebar-header">
-      <div class="admin-logo">
-        파트너<span>링</span>
-        <span class="admin-badge">ADMIN</span>
-      </div>
+      <div class="admin-logo">파트너<span>링</span><span class="admin-badge">ADMIN</span></div>
     </div>
-
     <nav class="admin-nav">
       <div class="admin-nav-label">대시보드</div>
-      <a class="admin-nav-item" data-page="overview">
-        <span class="admin-nav-icon">📊</span>
-        <span class="admin-nav-label">오버뷰</span>
-      </a>
+      <a class="admin-nav-item" data-page="overview"><span class="admin-nav-icon">📊</span><span class="admin-nav-label">오버뷰</span></a>
 
       <div class="admin-nav-label" style="margin-top:8px;">파트너 관리</div>
-      <a class="admin-nav-item" data-page="partners">
-        <span class="admin-nav-icon">👥</span>
-        <span class="admin-nav-label">파트너 목록</span>
-      </a>
-      <a class="admin-nav-item" data-page="partner-apply">
-        <span class="admin-nav-icon">📋</span>
-        <span class="admin-nav-label">가입 승인</span>
-        <span class="admin-nav-badge">3</span>
-      </a>
+      <a class="admin-nav-item" data-page="partners"><span class="admin-nav-icon">👥</span><span class="admin-nav-label">파트너 목록</span></a>
+      <a class="admin-nav-item" data-page="partner-apply"><span class="admin-nav-icon">📋</span><span class="admin-nav-label">가입 승인</span><span class="admin-nav-badge" id="badge-partner">0</span></a>
 
       <div class="admin-nav-label" style="margin-top:8px;">쇼핑몰 관리</div>
-      <a class="admin-nav-item" data-page="shops">
-        <span class="admin-nav-icon">🛒</span>
-        <span class="admin-nav-label">쇼핑몰 목록</span>
-      </a>
-      <a class="admin-nav-item" data-page="shop-apply">
-        <span class="admin-nav-icon">📝</span>
-        <span class="admin-nav-label">입점 신청</span>
-        <span class="admin-nav-badge">2</span>
-      </a>
+      <a class="admin-nav-item" data-page="shops"><span class="admin-nav-icon">🛒</span><span class="admin-nav-label">쇼핑몰 목록</span></a>
+      <a class="admin-nav-item" data-page="shop-apply"><span class="admin-nav-icon">📝</span><span class="admin-nav-label">입점 신청</span><span class="admin-nav-badge" id="badge-shop">0</span></a>
 
       <div class="admin-nav-label" style="margin-top:8px;">정산</div>
-      <a class="admin-nav-item" data-page="settle">
-        <span class="admin-nav-icon">💸</span>
-        <span class="admin-nav-label">정산 처리</span>
-        <span class="admin-nav-badge lime">8</span>
-      </a>
-      <a class="admin-nav-item" data-page="settle-history">
-        <span class="admin-nav-icon">🏦</span>
-        <span class="admin-nav-label">정산 내역</span>
-      </a>
+      <a class="admin-nav-item" data-page="settle"><span class="admin-nav-icon">💸</span><span class="admin-nav-label">정산 처리</span></a>
+      <a class="admin-nav-item" data-page="settle-history"><span class="admin-nav-icon">🏦</span><span class="admin-nav-label">정산 내역</span></a>
     </nav>
-
     <div class="admin-sidebar-bottom">
-      <a class="admin-nav-item" href="../index.html">
-        <span class="admin-nav-icon">🏠</span>
-        <span class="admin-nav-label">메인으로</span>
-      </a>
-      <a class="admin-nav-item" onclick="adminLogout()" style="cursor:pointer;">
-        <span class="admin-nav-icon">🚪</span>
-        <span class="admin-nav-label">로그아웃</span>
-      </a>
+      <a class="admin-nav-item" href="../index.html"><span class="admin-nav-icon">🏠</span><span class="admin-nav-label">메인으로</span></a>
+      <a class="admin-nav-item" onclick="adminLogout()" style="cursor:pointer;"><span class="admin-nav-icon">🚪</span><span class="admin-nav-label">로그아웃</span></a>
     </div>
   </aside>
 
   <div class="admin-sidebar-overlay"></div>
 
-  <!-- ── 메인 콘텐츠 ── -->
   <main class="admin-main">
-
     <div class="admin-topbar">
       <div style="display:flex;align-items:center;gap:10px;">
         <button class="admin-hamburger">☰</button>
@@ -88,513 +49,129 @@
       </div>
       <div class="admin-topbar-right">
         <button class="admin-icon-btn">🔍</button>
-        <button class="admin-icon-btn">
-          🔔
-          <div class="admin-notif-dot"></div>
-        </button>
-        <div style="width:30px;height:30px;border-radius:50%;background:rgba(190,255,0,0.15);border:1px solid rgba(190,255,0,0.3);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#BEFF00;cursor:pointer;">A</div>
+        <button class="admin-icon-btn">🔔<div class="admin-notif-dot"></div></button>
+        <div style="width:30px;height:30px;border-radius:50%;background:rgba(190,255,0,0.15);border:1px solid rgba(190,255,0,0.3);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#BEFF00;">A</div>
       </div>
     </div>
 
-    <!-- ══ 오버뷰 ══ -->
+    <!-- 오버뷰 -->
     <div class="admin-page" id="ap-overview">
-
       <div class="admin-summary">
-        <div class="admin-card">
-          <div class="admin-card-accent" style="background:var(--lime);"></div>
-          <div class="admin-card-icon">👥</div>
-          <div class="admin-card-label">전체 파트너</div>
-          <div class="admin-card-value" style="color:var(--lime);">2,847</div>
-          <div class="admin-card-change up">▲ 127명 이번 달</div>
-        </div>
-        <div class="admin-card">
-          <div class="admin-card-accent" style="background:var(--orange);"></div>
-          <div class="admin-card-icon">🛒</div>
-          <div class="admin-card-label">연동 쇼핑몰</div>
-          <div class="admin-card-value" style="color:var(--orange);">384</div>
-          <div class="admin-card-change up">▲ 12개 이번 달</div>
-        </div>
-        <div class="admin-card">
-          <div class="admin-card-accent" style="background:var(--purple);"></div>
-          <div class="admin-card-icon">💰</div>
-          <div class="admin-card-label">이번 달 총 거래액</div>
-          <div class="admin-card-value" style="color:var(--purple);">₩4.8억</div>
-          <div class="admin-card-change up">▲ 23% 전월 대비</div>
-        </div>
-        <div class="admin-card">
-          <div class="admin-card-accent" style="background:var(--blue);"></div>
-          <div class="admin-card-icon">📈</div>
-          <div class="admin-card-label">플랫폼 수익</div>
-          <div class="admin-card-value" style="color:var(--blue);">₩9.6M</div>
-          <div class="admin-card-change up">▲ 18% 전월 대비</div>
-        </div>
+        <div class="admin-card"><div class="admin-card-accent" style="background:var(--lime);"></div><div class="admin-card-icon">👥</div><div class="admin-card-label">전체 파트너</div><div class="admin-card-value" style="color:var(--lime);">0</div><div class="admin-card-change neutral">아직 가입자 없음</div></div>
+        <div class="admin-card"><div class="admin-card-accent" style="background:var(--orange);"></div><div class="admin-card-icon">🛒</div><div class="admin-card-label">연동 쇼핑몰</div><div class="admin-card-value" style="color:var(--orange);">0</div><div class="admin-card-change neutral">아직 입점 없음</div></div>
+        <div class="admin-card"><div class="admin-card-accent" style="background:var(--purple);"></div><div class="admin-card-icon">💰</div><div class="admin-card-label">이번 달 총 거래액</div><div class="admin-card-value" style="color:var(--purple);">₩0</div><div class="admin-card-change neutral">-</div></div>
+        <div class="admin-card"><div class="admin-card-accent" style="background:var(--blue);"></div><div class="admin-card-icon">📈</div><div class="admin-card-label">플랫폼 수익</div><div class="admin-card-value" style="color:var(--blue);">₩0</div><div class="admin-card-change neutral">-</div></div>
       </div>
-
-      <!-- 월별 거래액 차트 -->
-      <div class="admin-table-card" style="padding:22px;margin-bottom:16px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-          <div style="font-size:14px;font-weight:700;color:#F5F5F5;">월별 총 거래액</div>
-          <div style="font-size:12px;color:rgba(255,255,255,0.3);">2026년</div>
-        </div>
-        <svg id="admin-chart" viewBox="0 0 700 164" style="width:100%;height:164px;">
-          <defs>
-            <linearGradient id="acGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#BEFF00" stop-opacity="0.15"/>
-              <stop offset="100%" stop-color="#BEFF00" stop-opacity="0"/>
-            </linearGradient>
-          </defs>
-          <path class="ac-area" fill="url(#acGrad)"/>
-          <path class="ac-line" fill="none" stroke="#BEFF00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          <g class="ac-dots"></g>
-          <g class="ac-labels"></g>
-        </svg>
-      </div>
-
-      <!-- 하단 2컬럼 -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-
-        <!-- 최근 가입 신청 -->
         <div class="admin-table-card">
-          <div class="admin-table-header">
-            <div class="admin-table-title">⏳ 처리 대기</div>
-            <button class="admin-filter-btn" onclick="showAdminPage('partner-apply')">전체 보기 →</button>
+          <div class="admin-table-header"><div class="admin-table-title">⏳ 처리 대기</div></div>
+          <div style="padding:40px 20px;text-align:center;color:rgba(255,255,255,0.25);font-size:13px;">
+            <div style="font-size:32px;margin-bottom:10px;">📭</div>
+            처리 대기 중인 신청이 없습니다
           </div>
-          <table class="admin-table">
-            <thead><tr><th>유형</th><th>이름</th><th>신청일</th><th>처리</th></tr></thead>
-            <tbody>
-              <tr>
-                <td><span class="status-pending">파트너</span></td>
-                <td>김민준</td>
-                <td style="color:rgba(255,255,255,0.35);font-size:12px;">05.13</td>
-                <td class="action-btns" style="display:flex;gap:4px;">
-                  <button class="admin-action-btn approve" onclick="approvePartner(this)">승인</button>
-                  <button class="admin-action-btn reject" onclick="rejectPartner(this)">거절</button>
-                </td>
-              </tr>
-              <tr>
-                <td><span class="status-pending">파트너</span></td>
-                <td>박서연</td>
-                <td style="color:rgba(255,255,255,0.35);font-size:12px;">05.13</td>
-                <td class="action-btns" style="display:flex;gap:4px;">
-                  <button class="admin-action-btn approve" onclick="approvePartner(this)">승인</button>
-                  <button class="admin-action-btn reject" onclick="rejectPartner(this)">거절</button>
-                </td>
-              </tr>
-              <tr>
-                <td><span class="status-pending" style="background:rgba(79,195,247,0.1);color:#4FC3F7;border-color:rgba(79,195,247,0.25);">쇼핑몰</span></td>
-                <td>수산마켓</td>
-                <td style="color:rgba(255,255,255,0.35);font-size:12px;">05.12</td>
-                <td class="action-btns" style="display:flex;gap:4px;">
-                  <button class="admin-action-btn approve" onclick="approveShop(this)">승인</button>
-                  <button class="admin-action-btn reject" onclick="rejectShop(this)">거절</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
         </div>
-
-        <!-- 정산 대기 -->
         <div class="admin-table-card">
-          <div class="admin-table-header">
-            <div class="admin-table-title">💸 정산 대기</div>
-            <button class="admin-filter-btn" onclick="showAdminPage('settle')">전체 보기 →</button>
+          <div class="admin-table-header"><div class="admin-table-title">💸 정산 대기</div></div>
+          <div style="padding:40px 20px;text-align:center;color:rgba(255,255,255,0.25);font-size:13px;">
+            <div style="font-size:32px;margin-bottom:10px;">💳</div>
+            정산 대기 내역이 없습니다
           </div>
-          <table class="admin-table">
-            <thead><tr><th>파트너</th><th>금액</th><th>방식</th><th>처리</th></tr></thead>
-            <tbody>
-              <tr>
-                <td>김지현</td>
-                <td style="color:var(--lime);font-weight:700;">₩384,200</td>
-                <td style="font-size:12px;color:rgba(255,255,255,0.4);">직접</td>
-                <td><button class="admin-action-btn pay" onclick="openSettleModal('김지현','₩384,200','직접 입금')">처리</button></td>
-              </tr>
-              <tr>
-                <td>이준호</td>
-                <td style="color:var(--lime);font-weight:700;">₩312,000</td>
-                <td style="font-size:12px;color:rgba(255,255,255,0.4);">직접</td>
-                <td><button class="admin-action-btn pay" onclick="openSettleModal('이준호','₩312,000','직접 입금')">처리</button></td>
-              </tr>
-              <tr>
-                <td>박민경</td>
-                <td style="color:var(--lime);font-weight:700;">₩185,000</td>
-                <td style="font-size:12px;color:rgba(255,255,255,0.4);">쇼핑몰</td>
-                <td><button class="admin-action-btn pay" onclick="openSettleModal('박민경','₩185,000','쇼핑몰 직접')">처리</button></td>
-              </tr>
-            </tbody>
-          </table>
         </div>
-
       </div>
     </div>
 
-    <!-- ══ 파트너 목록 ══ -->
+    <!-- 파트너 목록 -->
     <div class="admin-page" id="ap-partners">
       <div class="admin-table-card">
         <div class="admin-table-header">
           <div class="admin-table-title">파트너 목록</div>
           <div class="admin-table-actions">
             <input class="admin-search" data-table="partners-table" placeholder="이름, 이메일 검색...">
-            <button class="admin-filter-btn active">전체</button>
-            <button class="admin-filter-btn">활성</button>
-            <button class="admin-filter-btn">정지</button>
           </div>
         </div>
-        <div class="admin-table-wrap">
-          <table class="admin-table" id="partners-table">
-            <thead>
-              <tr>
-                <th>이름</th><th>이메일</th><th>등급</th><th>이번달 수익</th>
-                <th>누적 수익</th><th>링크 수</th><th>가입일</th><th>상태</th><th>관리</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td style="font-weight:600;">김지현</td>
-                <td style="color:rgba(255,255,255,0.45);font-size:12px;">kim@example.com</td>
-                <td><span style="font-size:11px;font-weight:700;color:#FFD60A;">⭐ 골드</span></td>
-                <td style="color:var(--lime);font-weight:700;">₩384,200</td>
-                <td style="color:rgba(255,255,255,0.6);">₩2,847,000</td>
-                <td>12</td>
-                <td style="color:rgba(255,255,255,0.35);font-size:12px;">2026.01.05</td>
-                <td class="status-cell"><span class="status-active">활성</span></td>
-                <td><button class="admin-action-btn" onclick="openModal('partner-detail-modal')">상세</button></td>
-              </tr>
-              <tr>
-                <td style="font-weight:600;">이준호</td>
-                <td style="color:rgba(255,255,255,0.45);font-size:12px;">lee@example.com</td>
-                <td><span style="font-size:11px;font-weight:700;color:#4FC3F7;">💎 플래티넘</span></td>
-                <td style="color:var(--lime);font-weight:700;">₩440,000</td>
-                <td style="color:rgba(255,255,255,0.6);">₩5,120,000</td>
-                <td>24</td>
-                <td style="color:rgba(255,255,255,0.35);font-size:12px;">2025.11.22</td>
-                <td class="status-cell"><span class="status-active">활성</span></td>
-                <td><button class="admin-action-btn">상세</button></td>
-              </tr>
-              <tr>
-                <td style="font-weight:600;">박민경</td>
-                <td style="color:rgba(255,255,255,0.45);font-size:12px;">park@example.com</td>
-                <td><span style="font-size:11px;font-weight:700;color:rgba(190,255,0,0.7);">🌱 실버</span></td>
-                <td style="color:var(--lime);font-weight:700;">₩185,000</td>
-                <td style="color:rgba(255,255,255,0.6);">₩920,000</td>
-                <td>8</td>
-                <td style="color:rgba(255,255,255,0.35);font-size:12px;">2026.03.14</td>
-                <td class="status-cell"><span class="status-active">활성</span></td>
-                <td><button class="admin-action-btn">상세</button></td>
-              </tr>
-              <tr>
-                <td style="font-weight:600;">최영수</td>
-                <td style="color:rgba(255,255,255,0.45);font-size:12px;">choi@example.com</td>
-                <td><span style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.3);">🥉 브론즈</span></td>
-                <td style="color:rgba(255,255,255,0.4);">₩0</td>
-                <td style="color:rgba(255,255,255,0.6);">₩44,000</td>
-                <td>3</td>
-                <td style="color:rgba(255,255,255,0.35);font-size:12px;">2026.04.30</td>
-                <td class="status-cell"><span class="status-rejected">정지</span></td>
-                <td><button class="admin-action-btn">상세</button></td>
-              </tr>
-            </tbody>
-          </table>
+        <div id="partners-table">
+          <div style="padding:60px 20px;text-align:center;color:rgba(255,255,255,0.25);font-size:13px;">
+            <div style="font-size:40px;margin-bottom:12px;">👥</div>
+            <div style="font-weight:700;margin-bottom:6px;">등록된 파트너가 없습니다</div>
+            <div style="font-size:12px;">파트너가 가입하면 여기에 표시됩니다</div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- ══ 파트너 가입 승인 ══ -->
+    <!-- 파트너 가입 승인 -->
     <div class="admin-page" id="ap-partner-apply">
       <div class="admin-table-card">
         <div class="admin-table-header">
           <div class="admin-table-title">파트너 가입 승인</div>
           <div class="admin-table-actions">
-            <button class="admin-filter-btn active">대기중 (3)</button>
+            <button class="admin-filter-btn active">대기중 (0)</button>
             <button class="admin-filter-btn">처리완료</button>
           </div>
         </div>
-        <div class="admin-table-wrap">
-          <table class="admin-table">
-            <thead>
-              <tr><th>이름</th><th>이메일</th><th>채널</th><th>카테고리</th><th>팔로워</th><th>신청일</th><th>처리</th></tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td style="font-weight:600;">김민준</td>
-                <td style="color:rgba(255,255,255,0.45);font-size:12px;">minjun@example.com</td>
-                <td style="font-size:12px;">📸 인스타그램</td>
-                <td style="font-size:12px;">뷰티·화장품</td>
-                <td style="font-size:12px;">1만~5만</td>
-                <td style="color:rgba(255,255,255,0.35);font-size:12px;">2026.05.13</td>
-                <td class="action-btns" style="display:flex;gap:4px;">
-                  <button class="admin-action-btn approve" onclick="approvePartner(this)">승인</button>
-                  <button class="admin-action-btn reject" onclick="rejectPartner(this)">거절</button>
-                </td>
-              </tr>
-              <tr>
-                <td style="font-weight:600;">박서연</td>
-                <td style="color:rgba(255,255,255,0.45);font-size:12px;">seoyeon@example.com</td>
-                <td style="font-size:12px;">📝 블로그</td>
-                <td style="font-size:12px;">수산·식품</td>
-                <td style="font-size:12px;">5천~1만</td>
-                <td style="color:rgba(255,255,255,0.35);font-size:12px;">2026.05.13</td>
-                <td class="action-btns" style="display:flex;gap:4px;">
-                  <button class="admin-action-btn approve" onclick="approvePartner(this)">승인</button>
-                  <button class="admin-action-btn reject" onclick="rejectPartner(this)">거절</button>
-                </td>
-              </tr>
-              <tr>
-                <td style="font-weight:600;">정하은</td>
-                <td style="color:rgba(255,255,255,0.45);font-size:12px;">haeun@example.com</td>
-                <td style="font-size:12px;">📺 유튜브</td>
-                <td style="font-size:12px;">건강·운동</td>
-                <td style="font-size:12px;">1천~5천</td>
-                <td style="color:rgba(255,255,255,0.35);font-size:12px;">2026.05.12</td>
-                <td class="action-btns" style="display:flex;gap:4px;">
-                  <button class="admin-action-btn approve" onclick="approvePartner(this)">승인</button>
-                  <button class="admin-action-btn reject" onclick="rejectPartner(this)">거절</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div style="padding:60px 20px;text-align:center;color:rgba(255,255,255,0.25);font-size:13px;">
+          <div style="font-size:40px;margin-bottom:12px;">📋</div>
+          <div style="font-weight:700;margin-bottom:6px;">대기 중인 가입 신청이 없습니다</div>
+          <div style="font-size:12px;">파트너가 가입 신청하면 여기에 표시됩니다</div>
         </div>
       </div>
     </div>
 
-    <!-- ══ 쇼핑몰 목록 ══ -->
+    <!-- 쇼핑몰 목록 -->
     <div class="admin-page" id="ap-shops">
       <div class="admin-table-card">
         <div class="admin-table-header">
           <div class="admin-table-title">쇼핑몰 목록</div>
           <div class="admin-table-actions">
-            <input class="admin-search" data-table="shops-table" placeholder="쇼핑몰명 검색...">
-            <button class="admin-filter-btn active">전체</button>
-            <button class="admin-filter-btn">활성</button>
-            <button class="admin-filter-btn">대기</button>
+            <input class="admin-search" placeholder="쇼핑몰명 검색...">
           </div>
         </div>
-        <div class="admin-table-wrap">
-          <table class="admin-table" id="shops-table">
-            <thead>
-              <tr><th>쇼핑몰명</th><th>카테고리</th><th>기본 수수료</th><th>이번달 거래액</th><th>파트너 수</th><th>입점일</th><th>상태</th><th>관리</th></tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td style="font-weight:600;">굴비가게</td>
-                <td style="font-size:12px;">🐟 수산·식품</td>
-                <td style="color:var(--lime);font-weight:700;">8%</td>
-                <td style="font-weight:600;">₩48,200,000</td>
-                <td>142</td>
-                <td style="color:rgba(255,255,255,0.35);font-size:12px;">2026.02.01</td>
-                <td><span class="status-active">활성</span></td>
-                <td><button class="admin-action-btn">설정</button></td>
-              </tr>
-              <tr>
-                <td style="font-weight:600;">뷰티랩</td>
-                <td style="font-size:12px;">💄 뷰티</td>
-                <td style="color:var(--lime);font-weight:700;">12%</td>
-                <td style="font-weight:600;">₩32,400,000</td>
-                <td>98</td>
-                <td style="color:rgba(255,255,255,0.35);font-size:12px;">2026.03.15</td>
-                <td><span class="status-active">활성</span></td>
-                <td><button class="admin-action-btn">설정</button></td>
-              </tr>
-              <tr>
-                <td style="font-weight:600;">패션허브</td>
-                <td style="font-size:12px;">👗 패션</td>
-                <td style="color:var(--lime);font-weight:700;">10%</td>
-                <td style="font-weight:600;">₩21,800,000</td>
-                <td>67</td>
-                <td style="color:rgba(255,255,255,0.35);font-size:12px;">2026.04.01</td>
-                <td><span class="status-active">활성</span></td>
-                <td><button class="admin-action-btn">설정</button></td>
-              </tr>
-              <tr>
-                <td style="font-weight:600;">건강마트</td>
-                <td style="font-size:12px;">🧘 건강</td>
-                <td style="color:rgba(255,255,255,0.4);font-weight:700;">-</td>
-                <td style="color:rgba(255,255,255,0.3);">-</td>
-                <td>0</td>
-                <td style="color:rgba(255,255,255,0.35);font-size:12px;">2026.05.10</td>
-                <td><span class="status-pending">심사중</span></td>
-                <td><button class="admin-action-btn">검토</button></td>
-              </tr>
-            </tbody>
-          </table>
+        <div style="padding:60px 20px;text-align:center;color:rgba(255,255,255,0.25);font-size:13px;">
+          <div style="font-size:40px;margin-bottom:12px;">🛒</div>
+          <div style="font-weight:700;margin-bottom:6px;">입점된 쇼핑몰이 없습니다</div>
+          <div style="font-size:12px;">쇼핑몰 입점 신청을 승인하면 여기에 표시됩니다</div>
         </div>
       </div>
     </div>
 
-    <!-- ══ 쇼핑몰 입점 신청 ══ -->
+    <!-- 쇼핑몰 입점 신청 -->
     <div class="admin-page" id="ap-shop-apply">
       <div class="admin-table-card">
         <div class="admin-table-header">
           <div class="admin-table-title">쇼핑몰 입점 신청</div>
           <div class="admin-table-actions">
-            <button class="admin-filter-btn active">대기중 (2)</button>
+            <button class="admin-filter-btn active">대기중 (<span id="shop-apply-count">0</span>)</button>
             <button class="admin-filter-btn">처리완료</button>
           </div>
         </div>
-        <div class="admin-table-wrap">
-          <table class="admin-table">
-            <thead>
-              <tr><th>쇼핑몰명</th><th>URL</th><th>카테고리</th><th>담당자</th><th>연락처</th><th>신청일</th><th>처리</th></tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td style="font-weight:600;">수산마켓</td>
-                <td style="color:rgba(255,255,255,0.4);font-size:12px;">susanmarket.kr</td>
-                <td style="font-size:12px;">🐟 수산·식품</td>
-                <td style="font-size:12px;">홍길동</td>
-                <td style="font-size:12px;">010-1234-5678</td>
-                <td style="color:rgba(255,255,255,0.35);font-size:12px;">2026.05.12</td>
-                <td class="action-btns" style="display:flex;gap:4px;">
-                  <button class="admin-action-btn approve" onclick="approveShop(this)">승인</button>
-                  <button class="admin-action-btn reject" onclick="rejectShop(this)">거절</button>
-                </td>
-              </tr>
-              <tr>
-                <td style="font-weight:600;">건강마트</td>
-                <td style="color:rgba(255,255,255,0.4);font-size:12px;">healthmart.co.kr</td>
-                <td style="font-size:12px;">🧘 건강</td>
-                <td style="font-size:12px;">이영희</td>
-                <td style="font-size:12px;">010-9876-5432</td>
-                <td style="color:rgba(255,255,255,0.35);font-size:12px;">2026.05.10</td>
-                <td class="action-btns" style="display:flex;gap:4px;">
-                  <button class="admin-action-btn approve" onclick="approveShop(this)">승인</button>
-                  <button class="admin-action-btn reject" onclick="rejectShop(this)">거절</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══ 정산 처리 ══ -->
-    <div class="admin-page" id="ap-settle">
-
-      <!-- 요약 -->
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;">
-        <div class="admin-card">
-          <div class="admin-card-accent" style="background:var(--lime);"></div>
-          <div class="admin-card-label">이번 달 정산 예정</div>
-          <div class="admin-card-value" style="color:var(--lime);font-size:22px;">₩8,420,000</div>
-          <div class="admin-card-change neutral">8명 파트너</div>
-        </div>
-        <div class="admin-card">
-          <div class="admin-card-accent" style="background:var(--orange);"></div>
-          <div class="admin-card-label">직접 정산</div>
-          <div class="admin-card-value" style="color:var(--orange);font-size:22px;">₩5,240,000</div>
-          <div class="admin-card-change neutral">5명 · 내가 입금</div>
-        </div>
-        <div class="admin-card">
-          <div class="admin-card-accent" style="background:var(--purple);"></div>
-          <div class="admin-card-label">간접 정산</div>
-          <div class="admin-card-value" style="color:var(--purple);font-size:22px;">₩3,180,000</div>
-          <div class="admin-card-change neutral">3명 · 쇼핑몰 입금</div>
-        </div>
-      </div>
-
-      <div class="admin-table-card">
-        <div class="admin-table-header">
-          <div class="admin-table-title">정산 대기 목록</div>
-          <div class="admin-table-actions">
-            <button class="admin-filter-btn active">전체 (8)</button>
-            <button class="admin-filter-btn">직접</button>
-            <button class="admin-filter-btn">간접</button>
+        <div id="shop-apply-list">
+          <div style="padding:60px 20px;text-align:center;color:rgba(255,255,255,0.25);font-size:13px;">
+            <div style="font-size:40px;margin-bottom:12px;">📝</div>
+            <div style="font-weight:700;margin-bottom:6px;">대기 중인 입점 신청이 없습니다</div>
+            <div style="font-size:12px;">쇼핑몰이 입점 신청하면 여기에 표시됩니다</div>
           </div>
         </div>
-        <div class="admin-table-wrap">
-          <table class="admin-table">
-            <thead>
-              <tr><th>파트너</th><th>계좌</th><th>정산금액</th><th>정산 방식</th><th>담당 쇼핑몰</th><th>정산 기간</th><th>처리</th></tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td style="font-weight:600;">김지현</td>
-                <td style="font-size:12px;color:rgba(255,255,255,0.4);">국민 ***1234</td>
-                <td style="color:var(--lime);font-weight:800;">₩384,200</td>
-                <td>
-                  <select onchange="this.style.color=this.value==='direct'?'#BEFF00':'#B388FF'" style="background:#1A1A1A;border:1px solid rgba(255,255,255,0.1);border-radius:7px;padding:5px 8px;font-size:11px;color:#BEFF00;font-family:inherit;outline:none;cursor:pointer;">
-                    <option value="direct">직접 입금</option>
-                    <option value="shop">쇼핑몰 위임</option>
-                  </select>
-                </td>
-                <td style="font-size:12px;color:rgba(255,255,255,0.4);">굴비가게</td>
-                <td style="font-size:12px;color:rgba(255,255,255,0.35);">06.01~06.30</td>
-                <td><button class="admin-action-btn pay" onclick="openSettleModal('김지현','₩384,200','직접 입금')">처리</button></td>
-              </tr>
-              <tr>
-                <td style="font-weight:600;">이준호</td>
-                <td style="font-size:12px;color:rgba(255,255,255,0.4);">신한 ***5678</td>
-                <td style="color:var(--lime);font-weight:800;">₩440,000</td>
-                <td>
-                  <select style="background:#1A1A1A;border:1px solid rgba(255,255,255,0.1);border-radius:7px;padding:5px 8px;font-size:11px;color:#BEFF00;font-family:inherit;outline:none;cursor:pointer;">
-                    <option value="direct">직접 입금</option>
-                    <option value="shop">쇼핑몰 위임</option>
-                  </select>
-                </td>
-                <td style="font-size:12px;color:rgba(255,255,255,0.4);">뷰티랩</td>
-                <td style="font-size:12px;color:rgba(255,255,255,0.35);">06.01~06.30</td>
-                <td><button class="admin-action-btn pay" onclick="openSettleModal('이준호','₩440,000','직접 입금')">처리</button></td>
-              </tr>
-              <tr>
-                <td style="font-weight:600;">박민경</td>
-                <td style="font-size:12px;color:rgba(255,255,255,0.4);">카카오 ***9012</td>
-                <td style="color:var(--lime);font-weight:800;">₩185,000</td>
-                <td>
-                  <select style="background:#1A1A1A;border:1px solid rgba(255,255,255,0.1);border-radius:7px;padding:5px 8px;font-size:11px;color:#B388FF;font-family:inherit;outline:none;cursor:pointer;">
-                    <option value="direct">직접 입금</option>
-                    <option value="shop" selected>쇼핑몰 위임</option>
-                  </select>
-                </td>
-                <td style="font-size:12px;color:rgba(255,255,255,0.4);">굴비가게</td>
-                <td style="font-size:12px;color:rgba(255,255,255,0.35);">06.01~06.30</td>
-                <td><button class="admin-action-btn pay" onclick="openSettleModal('박민경','₩185,000','쇼핑몰 위임')">처리</button></td>
-              </tr>
-            </tbody>
-          </table>
+      </div>
+    </div>
+
+    <!-- 정산 처리 -->
+    <div class="admin-page" id="ap-settle">
+      <div class="admin-table-card">
+        <div class="admin-table-header"><div class="admin-table-title">정산 대기 목록</div></div>
+        <div style="padding:60px 20px;text-align:center;color:rgba(255,255,255,0.25);font-size:13px;">
+          <div style="font-size:40px;margin-bottom:12px;">💸</div>
+          <div style="font-weight:700;margin-bottom:6px;">정산 대기 내역이 없습니다</div>
         </div>
       </div>
     </div>
 
-    <!-- ══ 정산 내역 ══ -->
+    <!-- 정산 내역 -->
     <div class="admin-page" id="ap-settle-history">
       <div class="admin-table-card">
-        <div class="admin-table-header">
-          <div class="admin-table-title">정산 완료 내역</div>
-          <div class="admin-table-actions">
-            <input class="admin-search" data-table="history-table" placeholder="파트너명 검색...">
-          </div>
-        </div>
-        <div class="admin-table-wrap">
-          <table class="admin-table" id="history-table">
-            <thead>
-              <tr><th>파트너</th><th>정산금액</th><th>방식</th><th>처리자</th><th>정산일</th><th>상태</th></tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td style="font-weight:600;">김지현</td>
-                <td style="color:var(--lime);font-weight:700;">₩312,000</td>
-                <td style="font-size:12px;">직접 입금</td>
-                <td style="font-size:12px;color:rgba(255,255,255,0.4);">admin</td>
-                <td style="font-size:12px;color:rgba(255,255,255,0.35);">2026.06.01</td>
-                <td><span class="status-done">완료</span></td>
-              </tr>
-              <tr>
-                <td style="font-weight:600;">이준호</td>
-                <td style="color:var(--lime);font-weight:700;">₩398,000</td>
-                <td style="font-size:12px;">직접 입금</td>
-                <td style="font-size:12px;color:rgba(255,255,255,0.4);">admin</td>
-                <td style="font-size:12px;color:rgba(255,255,255,0.35);">2026.06.01</td>
-                <td><span class="status-done">완료</span></td>
-              </tr>
-              <tr>
-                <td style="font-weight:600;">박민경</td>
-                <td style="color:var(--lime);font-weight:700;">₩142,000</td>
-                <td style="font-size:12px;">쇼핑몰 위임</td>
-                <td style="font-size:12px;color:rgba(255,255,255,0.4);">굴비가게</td>
-                <td style="font-size:12px;color:rgba(255,255,255,0.35);">2026.06.01</td>
-                <td><span class="status-done">완료</span></td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="admin-table-header"><div class="admin-table-title">정산 완료 내역</div></div>
+        <div style="padding:60px 20px;text-align:center;color:rgba(255,255,255,0.25);font-size:13px;">
+          <div style="font-size:40px;margin-bottom:12px;">🏦</div>
+          <div style="font-weight:700;margin-bottom:6px;">정산 내역이 없습니다</div>
         </div>
       </div>
     </div>
@@ -602,7 +179,7 @@
   </main>
 </div>
 
-<!-- ══ 정산 처리 모달 ══ -->
+<!-- 정산 처리 모달 -->
 <div class="admin-modal-overlay" id="settle-modal">
   <div class="admin-modal">
     <div class="admin-modal-header">
@@ -611,95 +188,23 @@
     </div>
     <div class="admin-modal-body">
       <div style="background:#1A1A1A;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px;margin-bottom:18px;">
-        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-          <span style="font-size:13px;color:rgba(255,255,255,0.4);">파트너</span>
-          <span style="font-size:13px;font-weight:700;" id="settle-name">-</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-          <span style="font-size:13px;color:rgba(255,255,255,0.4);">정산 금액</span>
-          <span style="font-size:16px;font-weight:900;color:var(--lime);" id="settle-amount">-</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;">
-          <span style="font-size:13px;color:rgba(255,255,255,0.4);">정산 방식</span>
-          <span style="font-size:13px;font-weight:600;" id="settle-method">-</span>
-        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span style="font-size:13px;color:rgba(255,255,255,0.4);">파트너</span><span style="font-size:13px;font-weight:700;" id="settle-name">-</span></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span style="font-size:13px;color:rgba(255,255,255,0.4);">정산 금액</span><span style="font-size:16px;font-weight:900;color:var(--lime);" id="settle-amount">-</span></div>
+        <div style="display:flex;justify-content:space-between;"><span style="font-size:13px;color:rgba(255,255,255,0.4);">정산 방식</span><span style="font-size:13px;font-weight:600;" id="settle-method">-</span></div>
       </div>
-      <div style="margin-bottom:14px;">
-        <label class="admin-label">처리 메모 (선택)</label>
-        <input class="admin-input" id="settle-note" type="text" placeholder="입금 완료, 이체 확인 등">
-      </div>
-      <div style="background:rgba(190,255,0,0.06);border:1px solid rgba(190,255,0,0.18);border-radius:10px;padding:12px 14px;font-size:12px;color:rgba(190,255,0,0.8);line-height:1.6;">
-        ✅ 처리 완료 시 파트너에게 자동 알림이 발송됩니다.
-      </div>
+      <div style="margin-bottom:14px;"><label class="admin-label">처리 메모 (선택)</label><input class="admin-input" id="settle-note" type="text" placeholder="입금 완료, 이체 확인 등"></div>
+      <div style="background:rgba(190,255,0,0.06);border:1px solid rgba(190,255,0,0.18);border-radius:10px;padding:12px 14px;font-size:12px;color:rgba(190,255,0,0.8);line-height:1.6;">✅ 처리 완료 시 파트너에게 자동 알림이 발송됩니다.</div>
     </div>
     <div class="admin-modal-footer">
-      <button class="admin-action-btn" style="flex:1;padding:11px;justify-content:center;" onclick="closeModal('settle-modal')">취소</button>
+      <button class="admin-action-btn" style="flex:1;padding:11px;" onclick="closeModal('settle-modal')">취소</button>
       <button onclick="confirmSettle()" style="flex:2;padding:11px;border-radius:10px;border:none;background:var(--lime);color:#0A0A0A;font-size:14px;font-weight:800;cursor:pointer;font-family:var(--font);">정산 처리 완료</button>
     </div>
   </div>
 </div>
 
-<!-- ══ 파트너 상세 모달 ══ -->
-<div class="admin-modal-overlay" id="partner-detail-modal">
-  <div class="admin-modal">
-    <div class="admin-modal-header">
-      <div class="admin-modal-title">👤 파트너 상세</div>
-      <button class="admin-modal-close" onclick="closeModal('partner-detail-modal')">✕</button>
-    </div>
-    <div class="admin-modal-body">
-      <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">
-        <div style="width:48px;height:48px;border-radius:50%;background:rgba(190,255,0,0.15);border:1px solid rgba(190,255,0,0.3);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:var(--lime);">김</div>
-        <div>
-          <div style="font-size:16px;font-weight:800;">김지현</div>
-          <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:2px;">kim@example.com</div>
-          <span style="font-size:11px;font-weight:700;color:#FFD60A;">⭐ 골드 파트너</span>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
-        <div style="background:#1A1A1A;border-radius:10px;padding:12px;">
-          <div style="font-size:11px;color:rgba(255,255,255,0.35);margin-bottom:4px;">누적 수익</div>
-          <div style="font-size:16px;font-weight:900;color:var(--lime);">₩2,847,000</div>
-        </div>
-        <div style="background:#1A1A1A;border-radius:10px;padding:12px;">
-          <div style="font-size:11px;color:rgba(255,255,255,0.35);margin-bottom:4px;">활성 링크</div>
-          <div style="font-size:16px;font-weight:900;">12개</div>
-        </div>
-        <div style="background:#1A1A1A;border-radius:10px;padding:12px;">
-          <div style="font-size:11px;color:rgba(255,255,255,0.35);margin-bottom:4px;">이번달 전환</div>
-          <div style="font-size:16px;font-weight:900;">142건</div>
-        </div>
-        <div style="background:#1A1A1A;border-radius:10px;padding:12px;">
-          <div style="font-size:11px;color:rgba(255,255,255,0.35);margin-bottom:4px;">전환율</div>
-          <div style="font-size:16px;font-weight:900;">4.2%</div>
-        </div>
-      </div>
-      <div style="margin-bottom:14px;">
-        <label class="admin-label">계정 상태</label>
-        <select class="admin-input" style="cursor:pointer;">
-          <option>활성</option>
-          <option>정지</option>
-          <option>탈퇴처리</option>
-        </select>
-      </div>
-      <div>
-        <label class="admin-label">관리자 메모</label>
-        <textarea class="admin-input" rows="3" placeholder="내부 메모 입력..." style="resize:none;"></textarea>
-      </div>
-    </div>
-    <div class="admin-modal-footer">
-      <button class="admin-action-btn" style="flex:1;padding:11px;" onclick="closeModal('partner-detail-modal')">닫기</button>
-      <button style="flex:2;padding:11px;border-radius:10px;border:none;background:var(--lime);color:#0A0A0A;font-size:14px;font-weight:800;cursor:pointer;font-family:var(--font);" onclick="closeModal('partner-detail-modal');showToast('저장 완료 ✅')">저장</button>
-    </div>
-  </div>
-</div>
-
 <style>
-@keyframes fadeUp {
-  from { opacity:0; transform:translate(-50%,10px); }
-  to { opacity:1; transform:translate(-50%,0); }
-}
+@keyframes fadeUp { from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)} }
 </style>
-
 <script src="../js/admin.js"></script>
 </body>
 </html>
