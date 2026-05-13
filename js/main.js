@@ -106,3 +106,143 @@ const statsObserver = new IntersectionObserver((entries) => {
 
 const statsBar = document.querySelector('.stats-bar');
 if (statsBar) statsObserver.observe(statsBar);
+
+// ── 프로모션 애니메이션
+(function() {
+  const STEPS = 4;
+  const DURATION = 4000; // 스텝당 4초
+  let current = 0;
+  let timer = null;
+  let progress = 0;
+  let progTimer = null;
+
+  const tabs    = document.querySelectorAll('.promo-tab');
+  const steps   = document.querySelectorAll('.promo-step');
+  const dots    = document.querySelectorAll('.promo-dot');
+  const bar     = document.getElementById('promo-progress');
+
+  function goStep(n) {
+    current = n;
+    // 탭/스텝/점 업데이트
+    tabs.forEach((t, i) => t.classList.toggle('active', i === n));
+    steps.forEach((s, i) => s.classList.toggle('active', i === n));
+    dots.forEach((d, i) => d.classList.toggle('active', i === n));
+    // 스텝별 애니메이션
+    if (n === 0) animateStep0();
+    if (n === 1) animateStep1();
+    if (n === 2) animateStep2();
+    if (n === 3) animateStep3();
+    // 진행 바 리셋
+    clearInterval(progTimer);
+    progress = 0;
+    if (bar) bar.style.width = '0%';
+    progTimer = setInterval(() => {
+      progress += 100 / (DURATION / 100);
+      if (bar) bar.style.width = Math.min(progress, 100) + '%';
+    }, 100);
+  }
+
+  function nextStep() {
+    goStep((current + 1) % STEPS);
+  }
+
+  function startAuto() {
+    clearInterval(timer);
+    timer = setInterval(nextStep, DURATION);
+  }
+
+  // 탭/점 클릭 시 수동 전환
+  tabs.forEach((tab, i) => {
+    tab.addEventListener('click', () => { goStep(i); clearInterval(timer); startAuto(); });
+  });
+  dots.forEach((dot, i) => {
+    dot.addEventListener('click', () => { goStep(i); clearInterval(timer); startAuto(); });
+  });
+
+  // 스텝0: 타이핑 효과
+  function animateStep0() {
+    const el = document.getElementById('url-text');
+    const result = document.getElementById('promo-result');
+    if (!el) return;
+    const text = 'gulbi.com/shop/product/123';
+    el.textContent = '';
+    if (result) result.classList.remove('show');
+    let i = 0;
+    const t = setInterval(() => {
+      el.textContent = text.slice(0, ++i);
+      if (i >= text.length) {
+        clearInterval(t);
+        setTimeout(() => result?.classList.add('show'), 300);
+      }
+    }, 55);
+  }
+
+  // 스텝1: 공유 아이템 애니메이션 (CSS로 처리)
+  function animateStep1() {
+    const items = document.querySelectorAll('#pstep-1 .promo-share-item');
+    items.forEach(item => {
+      item.style.opacity = '0';
+      item.style.transform = 'scale(0.8)';
+    });
+    setTimeout(() => {
+      items.forEach(item => {
+        item.style.opacity = '';
+        item.style.transform = '';
+      });
+    }, 50);
+  }
+
+  // 스텝2: 플로우 아이템 순서대로 활성화
+  function animateStep2() {
+    const flows = document.querySelectorAll('#pstep-2 .promo-flow-item');
+    flows.forEach(f => { f.classList.remove('done', 'active'); });
+    let i = 0;
+    const t = setInterval(() => {
+      if (i < flows.length) {
+        if (i > 0) flows[i-1].classList.remove('active');
+        flows[i].classList.add(i < flows.length - 1 ? 'done' : 'active');
+        i++;
+      } else clearInterval(t);
+    }, 600);
+  }
+
+  // 스텝3: 수익 카운트업
+  function animateStep3() {
+    const earnEl = document.getElementById('earn-counter');
+    const totalEl = document.getElementById('total-counter');
+    const fillEl = document.getElementById('total-fill');
+    const earnTarget = 10000;
+    const totalTarget = 384200;
+
+    if (earnEl) {
+      let v = 0;
+      const t = setInterval(() => {
+        v = Math.min(v + 500, earnTarget);
+        earnEl.textContent = '+₩' + v.toLocaleString();
+        if (v >= earnTarget) clearInterval(t);
+      }, 40);
+    }
+    if (totalEl) {
+      let v = 0;
+      const t = setInterval(() => {
+        v = Math.min(v + 8000, totalTarget);
+        totalEl.textContent = '₩' + v.toLocaleString();
+        if (v >= totalTarget) clearInterval(t);
+      }, 30);
+    }
+    if (fillEl) setTimeout(() => { fillEl.style.width = '72%'; }, 200);
+  }
+
+  // 섹션이 화면에 들어올 때 시작
+  const section = document.querySelector('.promo-section');
+  if (section) {
+    const obs = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) {
+        goStep(0);
+        startAuto();
+        obs.unobserve(section);
+      }
+    }, { threshold: 0.3 });
+    obs.observe(section);
+  }
+})();
