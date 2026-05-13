@@ -15,16 +15,31 @@
 
 <nav>
   <a href="/" class="nav-logo">파트너<span>링</span></a>
-  <div class="nav-links">
-    <a href="#how" class="nav-link-hide">사용법</a>
-    <a href="#features" class="nav-link-hide">기능</a>
-    <a href="#testimonials" class="nav-link-hide">후기</a>
-    <a href="pages/dashboard.html" class="nav-link-hide">대시보드</a>
+  <div class="nav-links" id="nav-links">
+    <a href="#how">사용법</a>
+    <a href="#features">기능</a>
+    <a href="#testimonials">후기</a>
     <button class="theme-btn" id="theme-btn" title="테마 전환">☀️</button>
-    <a href="pages/login.html" class="nav-link-hide">로그인</a>
-    <a href="#signup" class="nav-cta">무료로 시작하기 →</a>
+    <a href="pages/login.html" class="nav-login">로그인</a>
+    <a href="pages/signup.html" class="nav-cta">무료로 시작하기 →</a>
+  </div>
+  <div class="nav-mobile-right">
+    <button class="theme-btn" id="theme-btn-mobile" title="테마 전환">☀️</button>
+    <button class="nav-hamburger" id="nav-hamburger" aria-label="메뉴">
+      <span></span><span></span><span></span>
+    </button>
   </div>
 </nav>
+
+<!-- 모바일 드롭다운 메뉴 -->
+<div class="mobile-menu" id="mobile-menu">
+  <a href="#how" class="mobile-menu-item" onclick="closeMobileMenu()">사용법</a>
+  <a href="#features" class="mobile-menu-item" onclick="closeMobileMenu()">기능</a>
+  <a href="#testimonials" class="mobile-menu-item" onclick="closeMobileMenu()">후기</a>
+  <div class="mobile-menu-divider"></div>
+  <a href="pages/login.html" class="mobile-menu-item">로그인</a>
+  <a href="pages/signup.html" class="mobile-menu-cta">무료로 시작하기 →</a>
+</div>
 
 <section class="hero">
   <div class="hero-glow"></div>
