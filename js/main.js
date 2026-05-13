@@ -6,8 +6,11 @@ function initTheme() {
 }
 
 function updateThemeBtn(theme) {
-  const btn = document.getElementById('theme-btn');
-  if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+  const icon = theme === 'dark' ? '☀️' : '🌙';
+  ['theme-btn', 'theme-btn-mobile'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.textContent = icon;
+  });
 }
 
 function toggleTheme() {
@@ -19,7 +22,29 @@ function toggleTheme() {
 }
 
 document.getElementById('theme-btn')?.addEventListener('click', toggleTheme);
+document.getElementById('theme-btn-mobile')?.addEventListener('click', toggleTheme);
 initTheme();
+
+// ── 햄버거 메뉴
+const hamburger = document.getElementById('nav-hamburger');
+const mobileMenu = document.getElementById('mobile-menu');
+
+function closeMobileMenu() {
+  hamburger?.classList.remove('open');
+  mobileMenu?.classList.remove('open');
+}
+
+hamburger?.addEventListener('click', () => {
+  const isOpen = hamburger.classList.toggle('open');
+  mobileMenu?.classList.toggle('open', isOpen);
+});
+
+// 메뉴 외부 클릭 시 닫기
+document.addEventListener('click', e => {
+  if (!hamburger?.contains(e.target) && !mobileMenu?.contains(e.target)) {
+    closeMobileMenu();
+  }
+});
 
 // ── 스크롤 리빌 애니메이션
 const observer = new IntersectionObserver((entries) => {
