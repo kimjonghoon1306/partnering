@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>관리자 로그인 — 파트너링</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="../css/variables.css">
+<link rel="stylesheet" href="../css/reset.css">
+<link rel="stylesheet" href="../css/auth.css">
+<style>
+  body { background: #060606; }
+  .admin-login-card {
+    width: 100%;
+    max-width: 380px;
+    background: #111;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 24px;
+    padding: 40px 36px;
+    position: relative;
+    z-index: 1;
+  }
+  .admin-login-glow {
+    position: fixed;
+    width: 400px; height: 400px;
+    border-radius: 50%;
+    top: -80px; left: 50%;
+    transform: translateX(-50%);
+    pointer-events: none;
+    background: radial-gradient(circle, rgba(190,255,0,0.07) 0%, transparent 70%);
+  }
+  .admin-login-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(190,255,0,0.08);
+    border: 1px solid rgba(190,255,0,0.18);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--lime);
+    margin-bottom: 20px;
+  }
+  .shake { animation: shake 0.4s ease; }
+  @keyframes shake {
+    0%,100%{transform:translateX(0)}
+    20%{transform:translateX(-8px)}
+    40%{transform:translateX(8px)}
+    60%{transform:translateX(-6px)}
+    80%{transform:translateX(6px)}
+  }
+</style>
+</head>
+<body>
+
+<div class="admin-login-glow"></div>
+
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;">
+  <div class="admin-login-card">
+
+    <!-- 로고 -->
+    <div style="text-align:center;margin-bottom:24px;">
+      <div style="font-size:20px;font-weight:900;color:#F5F5F5;">파트너<span style="color:var(--lime);">링</span></div>
+    </div>
+
+    <div style="text-align:center;margin-bottom:28px;">
+      <div class="admin-login-badge">⚙️ 관리자 전용</div>
+      <div style="font-size:22px;font-weight:900;color:#F5F5F5;letter-spacing:-0.5px;">관리자 로그인</div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.4);margin-top:6px;">이 페이지는 관리자 전용입니다</div>
+    </div>
+
+    <form id="admin-login-form" onsubmit="handleAdminLogin(event)">
+      <div style="margin-bottom:14px;">
+        <label style="display:block;font-size:11px;font-weight:700;color:rgba(255,255,255,0.3);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:7px;">관리자 ID</label>
+        <input id="admin-id" type="text" placeholder="admin" autocomplete="off"
+          style="width:100%;background:#1A1A1A;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:13px 16px;font-size:14px;color:#F5F5F5;font-family:var(--font);outline:none;box-sizing:border-box;transition:border-color 0.2s;"
+          onfocus="this.style.borderColor='rgba(190,255,0,0.35)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
+      </div>
+
+      <div style="margin-bottom:22px;">
+        <label style="display:block;font-size:11px;font-weight:700;color:rgba(255,255,255,0.3);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:7px;">비밀번호</label>
+        <div style="position:relative;">
+          <input id="admin-pw" type="password" placeholder="비밀번호 입력" autocomplete="current-password"
+            style="width:100%;background:#1A1A1A;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:13px 48px 13px 16px;font-size:14px;color:#F5F5F5;font-family:var(--font);outline:none;box-sizing:border-box;transition:border-color 0.2s;"
+            onfocus="this.style.borderColor='rgba(190,255,0,0.35)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
+          <button type="button" onclick="togglePw()"
+            style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:17px;color:rgba(255,255,255,0.3);" id="eye-btn">👁</button>
+        </div>
+      </div>
+
+      <div id="login-error" style="display:none;background:rgba(255,77,106,0.1);border:1px solid rgba(255,77,106,0.25);border-radius:10px;padding:10px 14px;font-size:12px;color:#FF4D6A;text-align:center;margin-bottom:14px;">
+        ID 또는 비밀번호가 올바르지 않습니다.
+      </div>
+
+      <button type="submit" id="login-btn"
+        style="width:100%;padding:15px;border-radius:12px;border:none;background:var(--lime);color:#0A0A0A;font-size:15px;font-weight:800;font-family:var(--font);cursor:pointer;transition:all 0.2s;letter-spacing:-0.3px;">
+        로그인
+      </button>
+    </form>
+
+    <div style="text-align:center;margin-top:20px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.07);">
+      <a href="../index.html" style="font-size:12px;color:rgba(255,255,255,0.25);text-decoration:none;">← 메인으로</a>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function togglePw() {
+  const input = document.getElementById('admin-pw');
+  const btn = document.getElementById('eye-btn');
+  input.type = input.type === 'password' ? 'text' : 'password';
+  btn.textContent = input.type === 'password' ? '👁' : '🙈';
+}
+
+function handleAdminLogin(e) {
+  e.preventDefault();
+  const id = document.getElementById('admin-id').value.trim();
+  const pw = document.getElementById('admin-pw').value;
+  const btn = document.getElementById('login-btn');
+  const err = document.getElementById('login-error');
+
+  btn.disabled = true;
+  btn.textContent = '로그인 중...';
+  err.style.display = 'none';
+
+  setTimeout(() => {
+    /* 데모: admin / admin1234 */
+    if (id === 'admin' && pw === 'admin1234') {
+      sessionStorage.setItem('ptnr_admin', '1');
+      window.location.href = 'admin.html';
+    } else {
+      err.style.display = 'block';
+      document.getElementById('admin-login-form').classList.add('shake');
+      setTimeout(() => document.getElementById('admin-login-form').classList.remove('shake'), 400);
+      btn.disabled = false;
+      btn.textContent = '로그인';
+    }
+  }, 600);
+}
+</script>
+</body>
+</html>
