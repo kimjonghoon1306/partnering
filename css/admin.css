@@ -400,3 +400,37 @@
 @media (max-width: 480px) {
   .admin-summary { grid-template-columns: 1fr; }
 }
+
+/* ── 라이트 모드 ── */
+[data-theme="light"] .admin-main { background: #F4F4F0; }
+[data-theme="light"] .admin-sidebar { background: #FFFFFF; border-color: rgba(0,0,0,0.08); }
+[data-theme="light"] .admin-sidebar-header { border-color: rgba(0,0,0,0.08); }
+[data-theme="light"] .admin-logo { color: #0A0A0A; }
+[data-theme="light"] .admin-nav-label { color: rgba(0,0,0,0.28); }
+[data-theme="light"] .admin-nav-item { color: rgba(0,0,0,0.5); }
+[data-theme="light"] .admin-nav-item:hover { background: rgba(0,0,0,0.05); color: #0A0A0A; }
+[data-theme="light"] .admin-nav-item.active { background: rgba(190,255,0,0.1); color: var(--lime-dim); border-color: rgba(190,255,0,0.3); }
+[data-theme="light"] .admin-topbar { background: rgba(244,244,240,0.85); border-color: rgba(0,0,0,0.08); }
+[data-theme="light"] .admin-topbar-title { color: #0A0A0A; }
+[data-theme="light"] .admin-icon-btn { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.1); color: #0A0A0A; }
+[data-theme="light"] .admin-card { background: #FFFFFF; border-color: rgba(0,0,0,0.08); box-shadow: 0 2px 12px rgba(0,0,0,0.05); }
+[data-theme="light"] .admin-card-label { color: rgba(0,0,0,0.4); }
+[data-theme="light"] .admin-table-card { background: #FFFFFF; border-color: rgba(0,0,0,0.08); box-shadow: 0 2px 12px rgba(0,0,0,0.05); }
+[data-theme="light"] .admin-table-header { border-color: rgba(0,0,0,0.06); }
+[data-theme="light"] .admin-table-title { color: #0A0A0A; }
+[data-theme="light"] .admin-table th { color: rgba(0,0,0,0.3); border-color: rgba(0,0,0,0.06); }
+[data-theme="light"] .admin-table td { color: #0A0A0A; border-color: rgba(0,0,0,0.04); }
+[data-theme="light"] .admin-table tr:hover td { background: rgba(0,0,0,0.02); }
+[data-theme="light"] .admin-search { background: #F4F4F0; border-color: rgba(0,0,0,0.1); color: #0A0A0A; }
+[data-theme="light"] .admin-filter-btn { background: #F4F4F0; border-color: rgba(0,0,0,0.1); color: rgba(0,0,0,0.5); }
+[data-theme="light"] .admin-filter-btn:hover { color: #0A0A0A; }
+[data-theme="light"] .admin-filter-btn.active { background: rgba(190,255,0,0.1); border-color: rgba(190,255,0,0.3); color: var(--lime-dim); }
+[data-theme="light"] .admin-page { background: #F4F4F0; }
+[data-theme="light"] .admin-sidebar-bottom { border-color: rgba(0,0,0,0.08); }
+[data-theme="light"] .admin-modal { background: #FFFFFF; border-color: rgba(0,0,0,0.1); }
+[data-theme="light"] .admin-input { background: #F4F4F0; border-color: rgba(0,0,0,0.1); color: #0A0A0A; }
+
+/* 라이트 모드 모바일 */
+@media (max-width: 768px) {
+  [data-theme="light"] .admin-sidebar { background: #FFFFFF; }
+}
