@@ -329,6 +329,10 @@
   overflow-y: auto;
 }
 .admin-modal-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #141414;
   padding: 20px 24px 16px;
   border-bottom: 1px solid rgba(255,255,255,0.07);
   display: flex;
@@ -345,9 +349,31 @@
   font-size: 16px;
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
 }
 .admin-modal-body { padding: 20px 24px; }
-.admin-modal-footer { padding: 16px 24px; border-top: 1px solid rgba(255,255,255,0.07); display: flex; gap: 8px; }
+.admin-modal-footer {
+  position: sticky;
+  bottom: 0;
+  background: #141414;
+  padding: 16px 24px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  display: flex;
+  gap: 8px;
+}
+
+/* 모달 모바일 */
+@media (max-width: 768px) {
+  .admin-modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .admin-modal {
+    border-radius: 20px 20px 0 0;
+    max-height: 90vh;
+    max-width: 100%;
+  }
+}
 
 /* ── SETTLE INPUT ── */
 .admin-input {
@@ -434,3 +460,6 @@
 @media (max-width: 768px) {
   [data-theme="light"] .admin-sidebar { background: #FFFFFF; }
 }
+
+[data-theme="light"] .admin-modal-header { background: #FFFFFF; }
+[data-theme="light"] .admin-modal-footer { background: #FFFFFF; }
