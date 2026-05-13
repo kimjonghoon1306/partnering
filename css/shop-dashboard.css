@@ -174,3 +174,10 @@
   background: rgba(139,26,47,0.06);
   border-color: rgba(139,26,47,0.2);
 }
+
+/* shop-dashboard 페이지 전환 */
+.admin-page { display: none; padding: 24px; flex: 1; }
+.admin-page.active { display: block; }
+@media (max-width: 768px) {
+  .admin-page { padding: 16px; }
+}
