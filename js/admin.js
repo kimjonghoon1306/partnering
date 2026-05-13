@@ -1,7 +1,15 @@
 // ── 관리자 인증 확인
-if (!sessionStorage.getItem('ptnr_admin')) {
-  window.location.href = 'admin-login.html';
-}
+(function() {
+  const flag  = sessionStorage.getItem('ptnr_admin');
+  const token = sessionStorage.getItem('ptnr_token');
+  const ts    = parseInt(sessionStorage.getItem('ptnr_ts') || '0');
+  const SESSION_TTL = 4 * 60 * 60 * 1000; // 4시간
+
+  if (!flag || !token || !ts || (Date.now() - ts > SESSION_TTL)) {
+    sessionStorage.clear();
+    window.location.href = 'admin-login.html';
+  }
+})();
 
 // ── 테마 토글
 function initTheme() {
