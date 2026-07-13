@@ -707,6 +707,23 @@
   </main>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/config.js"></script>
+<script src="../js/db.js"></script>
+<script>
+  // 세션 가드: 로그인 안 했으면 로그인 페이지로
+  (async function () {
+    if (!window.opClient) return;
+    const { data: { session } } = await window.opClient.auth.getSession();
+    if (!session) { window.location.replace('login.html'); return; }
+    window.__opSession = session;
+    await opEnsurePartner(session.user);
+  })();
+  async function opLogout() {
+    await window.opClient?.auth.signOut();
+    window.location.href = 'login.html';
+  }
+</script>
 <script src="../js/dashboard.js"></script>
 </body>
 </html>

@@ -61,7 +61,7 @@ function checkPwStrength(val) {
 // ── 회원가입 단계 이동
 let currentStep = 1;
 
-function nextStep(e, step) {
+async function nextStep(e, step) {
   e?.preventDefault();
   if (step === 2) {
     const pw = document.getElementById('password')?.value;
@@ -72,7 +72,10 @@ function nextStep(e, step) {
       return;
     }
     document.getElementById('pw-match-error')?.classList.remove('show');
+    goStep(2);
+    return;
   }
+  if (step === 3) { await handleSignup(e); return; }  // 마지막 단계 = 실제 가입
   goStep(step);
 }
 
@@ -180,12 +183,83 @@ document.querySelectorAll('.tag-select').forEach(group => {
   });
 });
 
-// ── 로그인 처리 (데모)
-function handleLogin(e) {
+// ── 회원가입 처리 (Supabase)
+async function handleSignup(e) {
+  const form = document.getElementById('form-2');
+  const btn = form?.querySelector('button[type="submit"]');
+  const setBtn = (t, dis) => { if (btn) { btn.disabled = dis; btn.textContent = t; } };
+  const showErr = (msg) => alert(msg);
+
+  const name = document.getElementById('name')?.value.trim();
+  const nickname = document.getElementById('nickname')?.value.trim();
+  const email = document.getElementById('email')?.value.trim();
+  const password = document.getElementById('password')?.value;
+  const channels = opSelectedTags('channel-tags');
+  const categories = opSelectedTags('category-tags');
+  const follower_scale = document.getElementById('followers')?.value || null;
+
+  if (!email || !password) { showErr('이메일과 비밀번호를 입력해주세요.'); return; }
+  if (!window.opClient) { showErr('연결 오류입니다. 새로고침 후 다시 시도해주세요.'); return; }
+
+  setBtn('가입 중...', true);
+  const info = { name, nickname, email, channels, categories, follower_scale };
+  const { data, error } = await window.opClient.auth.signUp({
+    email, password,
+    options: { data: { name, nickname, channels, categories, follower_scale, role: 'partner' } }
+  });
+
+  if (error) {
+    setBtn('다음 단계 →', false);
+    const m = /already registered/i.test(error.message)
+      ? '이미 가입된 이메일이에요. 로그인해주세요.'
+      : (/at least 6/i.test(error.message) ? '비밀번호는 6자 이상이어야 해요.' : '가입에 실패했어요: ' + error.message);
+    showErr(m);
+    return;
+  }
+
+  // 세션이 바로 있으면(이메일 확인 OFF) partners 즉시 생성
+  if (data.session && data.user) {
+    await opEnsurePartner(data.user, info);
+  }
+  // 세션 없으면(이메일 확인 ON) → 첫 로그인 때 opEnsurePartner가 생성
+
+  goStep(3);
+  // 이메일 확인이 필요한 경우 완료화면에 안내
+  if (!data.session) {
+    const sub = document.querySelector('#page-3 .auth-sub');
+    if (sub) sub.innerHTML = '가입 신청 완료! 📩<br><b>' + (email || '') +
+      '</b> 으로 보낸 <b>확인 메일</b>의 링크를 눌러야<br>로그인할 수 있어요.';
+    const goBtn = document.querySelector('#page-3 a.auth-submit');
+    if (goBtn) { goBtn.setAttribute('href', 'login.html'); goBtn.textContent = '로그인하러 가기 →'; }
+  }
+}
+
+// ── 로그인 처리 (Supabase)
+async function handleLogin(e) {
   e?.preventDefault();
   const btn = document.getElementById('submit-btn');
-  if (btn) { btn.disabled = true; btn.textContent = '로그인 중...'; }
-  setTimeout(() => {
-    window.location.href = 'dashboard.html';
-  }, 800);
+  const setBtn = (t, dis) => { if (btn) { btn.disabled = dis; btn.textContent = t; } };
+  const errBox = document.getElementById('login-error');
+  const showErr = (msg) => {
+    if (errBox) { errBox.textContent = msg; errBox.style.display = 'block'; } else alert(msg);
+  };
+  if (errBox) errBox.style.display = 'none';
+
+  const email = document.getElementById('email')?.value.trim();
+  const password = document.getElementById('password')?.value;
+  if (!email || !password) { showErr('이메일과 비밀번호를 입력해주세요.'); return; }
+  if (!window.opClient) { showErr('연결 오류입니다. 새로고침 후 다시 시도해주세요.'); return; }
+
+  setBtn('로그인 중...', true);
+  const { data, error } = await window.opClient.auth.signInWithPassword({ email, password });
+  if (error) {
+    setBtn('로그인', false);
+    const m = /Email not confirmed/i.test(error.message)
+      ? '이메일 확인이 필요해요. 받은 메일의 링크를 눌러주세요.'
+      : (/Invalid login/i.test(error.message) ? '이메일 또는 비밀번호가 올바르지 않아요.' : '로그인 실패: ' + error.message);
+    showErr(m);
+    return;
+  }
+  await opEnsurePartner(data.user);  // partners 없으면 metadata로 생성
+  window.location.href = 'dashboard.html';
 }
