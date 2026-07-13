@@ -300,7 +300,7 @@ function countUpEl(el, target, prefix, suffix, isFloat) {
 async function loadOverview() {
   if (!window.opClient) return;
   const [linkRes, convRes] = await Promise.all([
-    window.opClient.from('partner_links').select('clicks,conversions'),
+    window.opClient.from('partner_links').select('product_name,title,product_url,clicks,conversions,created_at').order('created_at', { ascending: false }),
     window.opClient.from('conversions').select('commission_amount,status')
   ]);
   const links = linkRes.data || [];
@@ -317,6 +317,18 @@ async function loadOverview() {
   document.querySelectorAll('#page-overview .summary-grid .s-change').forEach(el => {
     if (!hasData) { el.textContent = '아직 데이터 없음'; el.className = 's-change neutral'; }
   });
+  const tb = document.getElementById('overview-recent');
+  if (tb) {
+    if (!links.length) {
+      tb.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:36px;color:var(--text3);">아직 링크가 없어요. <b style="color:var(--lime);">내 링크</b>에서 상품 링크를 받아보세요!</td></tr>';
+    } else {
+      tb.innerHTML = links.slice(0, 5).map(function (l) {
+        let shop = '—'; try { shop = new URL(l.product_url).hostname; } catch (e) {}
+        const name = l.product_name || l.title || '온종일팜 상품';
+        return '<tr><td><div class="td-link">' + escHtml(name) + '</div></td><td><div class="td-url">' + escHtml(shop) + '</div></td><td class="td-num">' + (l.clicks || 0) + '</td><td class="td-num">' + (l.conversions || 0) + '</td><td class="td-earn">₩0</td><td><span class="status-pill active">● 활성</span></td></tr>';
+      }).join('');
+    }
+  }
 }
 
 // ── 수익현황 실집계
