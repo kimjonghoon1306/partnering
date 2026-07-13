@@ -74,7 +74,7 @@
     <form id="admin-login-form" onsubmit="handleAdminLogin(event)">
       <div style="margin-bottom:14px;">
         <label style="display:block;font-size:11px;font-weight:700;color:rgba(255,255,255,0.3);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:7px;">관리자 ID</label>
-        <input id="admin-id" type="text" placeholder="관리자 아이디" autocomplete="off"
+        <input id="admin-id" type="email" placeholder="관리자 이메일" autocomplete="off"
           style="width:100%;background:#1A1A1A;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:13px 16px;font-size:14px;color:#F5F5F5;font-family:var(--font);outline:none;box-sizing:border-box;transition:border-color 0.2s;"
           onfocus="this.style.borderColor='rgba(190,255,0,0.35)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
       </div>
@@ -107,6 +107,9 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/config.js"></script>
+<script src="../js/db.js"></script>
 <script>
 function togglePw() {
   const input = document.getElementById('admin-pw');
@@ -115,50 +118,32 @@ function togglePw() {
   btn.textContent = input.type === 'password' ? '👁' : '🙈';
 }
 
-// 간단한 해시 함수 (평문 비번 소스 노출 방지)
-async function hashStr(str) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
-}
-
-// 토큰 생성
-function makeToken() {
-  return Array.from(crypto.getRandomValues(new Uint8Array(16)))
-    .map(b => b.toString(16).padStart(2,'0')).join('');
-}
-
-// 저장된 해시 (s9653@naver.com / 123456 의 SHA-256) — 백엔드 연동 후 Supabase 관리자 인증으로 대체 예정
-const HASH_ID = 'cf999a1bc27087f87d84640a98bae1ccea873c3e85b3d5608738a58e98fba433';
-const HASH_PW = '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92';
-
+// Supabase 로그인 + is_admin() 확인
 async function handleAdminLogin(e) {
   e.preventDefault();
   const id = document.getElementById('admin-id').value.trim();
   const pw = document.getElementById('admin-pw').value;
   const btn = document.getElementById('login-btn');
   const err = document.getElementById('login-error');
+  btn.disabled = true; btn.textContent = '로그인 중...'; err.style.display = 'none';
 
-  btn.disabled = true;
-  btn.textContent = '로그인 중...';
-  err.style.display = 'none';
+  const fail = (msg) => {
+    err.textContent = msg; err.style.display = 'block';
+    const f = document.getElementById('admin-login-form');
+    f.classList.add('shake'); setTimeout(() => f.classList.remove('shake'), 400);
+    btn.disabled = false; btn.textContent = '로그인';
+  };
+  if (!window.opClient) return fail('연결 오류입니다. 새로고침 해주세요.');
 
-  const [hId, hPw] = await Promise.all([hashStr(id), hashStr(pw)]);
+  const { error } = await window.opClient.auth.signInWithPassword({ email: id, password: pw });
+  if (error) return fail('이메일 또는 비밀번호가 올바르지 않습니다.');
 
-  setTimeout(() => {
-    if (hId === HASH_ID && hPw === HASH_PW) {
-      const token = makeToken();
-      sessionStorage.setItem('ptnr_admin', '1');
-      sessionStorage.setItem('ptnr_token', token);
-      sessionStorage.setItem('ptnr_ts', Date.now().toString());
-      window.location.href = 'admin.html';
-    } else {
-      err.style.display = 'block';
-      document.getElementById('admin-login-form').classList.add('shake');
-      setTimeout(() => document.getElementById('admin-login-form').classList.remove('shake'), 400);
-      btn.disabled = false;
-      btn.textContent = '로그인';
-    }
-  }, 600);
+  const { data: isAdmin } = await window.opClient.rpc('is_admin');
+  if (!isAdmin) {
+    await window.opClient.auth.signOut();
+    return fail('관리자 권한이 없는 계정입니다.');
+  }
+  window.location.href = 'admin.html';
 }
 </script>
 </body>

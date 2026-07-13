@@ -1,14 +1,10 @@
-// ── 관리자 인증 확인
-(function() {
-  const flag  = sessionStorage.getItem('ptnr_admin');
-  const token = sessionStorage.getItem('ptnr_token');
-  const ts    = parseInt(sessionStorage.getItem('ptnr_ts') || '0');
-  const SESSION_TTL = 4 * 60 * 60 * 1000; // 4시간
-
-  if (!flag || !token || !ts || (Date.now() - ts > SESSION_TTL)) {
-    sessionStorage.clear();
-    window.location.href = 'admin-login.html';
-  }
+// ── 관리자 인증 확인 (Supabase 세션 + is_admin)
+(async function () {
+  if (!window.opClient) { window.location.href = 'admin-login.html'; return; }
+  const { data: { session } } = await window.opClient.auth.getSession();
+  if (!session) { window.location.replace('admin-login.html'); return; }
+  const { data: isAdmin } = await window.opClient.rpc('is_admin');
+  if (!isAdmin) { await window.opClient.auth.signOut(); window.location.replace('admin-login.html'); return; }
 })();
 
 // ── 테마 토글
@@ -71,8 +67,8 @@ adminHamburger?.addEventListener('click', openAdminSidebar);
 adminOverlay?.addEventListener('click', closeAdminSidebar);
 
 // ── 로그아웃
-function adminLogout() {
-  sessionStorage.removeItem('ptnr_admin');
+async function adminLogout() {
+  await window.opClient?.auth.signOut();
   window.location.href = 'admin-login.html';
 }
 
