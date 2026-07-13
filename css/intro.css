@@ -1,0 +1,218 @@
+/* ══════════ 온파트너 시네마틱 인트로 ══════════ */
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #060606;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  opacity: 1;
+  transition: opacity 0.7s ease;
+}
+.intro.hide {
+  opacity: 0;
+  pointer-events: none;
+}
+.intro.gone { display: none; }
+
+/* 배경 라임 글로우 + 은은한 격자 */
+.intro-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(600px circle at 50% 42%, rgba(190,255,0,0.16), transparent 60%),
+    radial-gradient(900px circle at 50% 120%, rgba(190,255,0,0.06), transparent 55%);
+  animation: introBgPulse 4s ease-in-out infinite;
+}
+@keyframes introBgPulse {
+  0%, 100% { opacity: 0.75; }
+  50%      { opacity: 1; }
+}
+.intro-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 46px 46px;
+  mask-image: radial-gradient(circle at 50% 45%, #000 30%, transparent 72%);
+  -webkit-mask-image: radial-gradient(circle at 50% 45%, #000 30%, transparent 72%);
+}
+
+/* 건너뛰기 */
+.intro-skip {
+  position: absolute;
+  top: 22px;
+  right: 22px;
+  z-index: 3;
+  padding: 11px 20px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.7);
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: transform 0.15s, background 0.2s, color 0.2s;
+}
+.intro-skip:hover {
+  background: rgba(190,255,0,0.12);
+  color: var(--lime, #BEFF00);
+  border-color: rgba(190,255,0,0.4);
+  transform: translateY(-1px);
+}
+.intro-skip:active { transform: scale(0.94); }
+
+/* 씬 공통 */
+.intro-scene {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 26px;
+  text-align: center;
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.98);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  padding: 24px;
+}
+.intro-scene.active {
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1);
+}
+
+.intro-line {
+  font-size: clamp(30px, 7vw, 58px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #F5F5F5;
+  line-height: 1.15;
+}
+.intro-line em {
+  font-style: normal;
+  color: var(--lime, #BEFF00);
+  text-shadow: 0 0 34px rgba(190,255,0,0.55);
+}
+
+/* SCENE 1 — 링크 칩 */
+.intro-linkchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 26px;
+  border-radius: 999px;
+  background: rgba(190,255,0,0.08);
+  border: 1.5px solid rgba(190,255,0,0.35);
+  box-shadow: 0 0 50px rgba(190,255,0,0.28);
+  animation: chipPop 0.7s cubic-bezier(.22,1.4,.36,1) both;
+}
+.intro-linkchip-ico { font-size: clamp(26px, 5vw, 34px); }
+.intro-linkchip-url {
+  font-size: clamp(18px, 4vw, 26px);
+  font-weight: 700;
+  color: var(--lime, #BEFF00);
+  letter-spacing: 0.01em;
+}
+@keyframes chipPop {
+  0%   { opacity: 0; transform: scale(0.4) rotate(-8deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+/* SCENE 2 — 코인 + 카운터 */
+.intro-coins {
+  display: flex;
+  gap: 14px;
+  font-size: clamp(30px, 6vw, 46px);
+}
+.intro-coins span {
+  animation: coinJump 0.9s ease-in-out infinite;
+}
+.intro-coins span:nth-child(1) { animation-delay: 0s; }
+.intro-coins span:nth-child(2) { animation-delay: 0.12s; }
+.intro-coins span:nth-child(3) { animation-delay: 0.24s; }
+.intro-coins span:nth-child(4) { animation-delay: 0.36s; }
+.intro-coins span:nth-child(5) { animation-delay: 0.48s; }
+@keyframes coinJump {
+  0%, 100% { transform: translateY(0); }
+  40%      { transform: translateY(-16px); }
+}
+.intro-earn {
+  font-size: clamp(40px, 9vw, 76px);
+  font-weight: 900;
+  color: var(--lime, #BEFF00);
+  text-shadow: 0 0 40px rgba(190,255,0,0.5);
+  letter-spacing: -0.02em;
+}
+
+/* SCENE 3 — 로고 */
+.intro-logo {
+  font-size: clamp(46px, 12vw, 104px);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+.intro-logo .on {
+  display: inline-block;
+  color: #060606;
+  background: var(--lime, #BEFF00);
+  border-radius: 18px;
+  padding: 0.04em 0.16em;
+  margin-right: 0.04em;
+  box-shadow: 0 0 44px rgba(190,255,0,0.55);
+  animation: logoOnDrop 0.7s cubic-bezier(.22,1.4,.36,1) both;
+}
+.intro-logo .rest {
+  color: #F5F5F5;
+  animation: logoRestSlide 0.6s ease 0.18s both;
+}
+@keyframes logoOnDrop {
+  0%   { opacity: 0; transform: translateY(-40px) scale(0.6) rotate(-10deg); }
+  100% { opacity: 1; transform: translateY(0) scale(1) rotate(0); }
+}
+@keyframes logoRestSlide {
+  0%   { opacity: 0; transform: translateX(24px); letter-spacing: 0.2em; }
+  100% { opacity: 1; transform: translateX(0); letter-spacing: -0.03em; }
+}
+.intro-tagline {
+  font-size: clamp(16px, 3.6vw, 24px);
+  font-weight: 600;
+  color: rgba(255,255,255,0.62);
+  animation: fadeUp 0.6s ease 0.5s both;
+}
+@keyframes fadeUp {
+  0%   { opacity: 0; transform: translateY(12px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.intro-dot-row {
+  display: flex;
+  gap: 9px;
+  margin-top: 4px;
+  animation: fadeUp 0.6s ease 0.8s both;
+}
+.intro-dot-row span {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: rgba(190,255,0,0.35);
+  animation: dotBlink 1.2s ease-in-out infinite;
+}
+.intro-dot-row span:nth-child(2) { animation-delay: 0.2s; }
+.intro-dot-row span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes dotBlink {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50%      { opacity: 1; transform: scale(1.35); background: var(--lime, #BEFF00); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intro-bg, .intro-coins span, .intro-dot-row span,
+  .intro-linkchip, .intro-logo .on, .intro-logo .rest,
+  .intro-tagline, .intro-dot-row { animation: none !important; }
+}

@@ -164,7 +164,7 @@ if (statsBar) statsObserver.observe(statsBar);
     const el = document.getElementById('url-text');
     const result = document.getElementById('promo-result');
     if (!el) return;
-    const text = 'gulbi.com/shop/product/123';
+    const text = 'app.yuanfnb.com/product/123';
     el.textContent = '';
     if (result) result.classList.remove('show');
     let i = 0;
