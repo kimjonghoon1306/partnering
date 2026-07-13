@@ -255,23 +255,29 @@
     <!-- ══════════ 페이지: 내 링크 ══════════ -->
     <div class="page" id="page-links">
 
-      <!-- 링크 생성 패널 -->
-      <div class="gen-panel">
-        <div class="gen-input-wrap">
-          <label>쇼핑몰 URL</label>
-          <input class="gen-input" id="gen-url-input" type="url" placeholder="https://app.yuanfnb.com/shop/product/123">
-        </div>
-        <div>
-          <label>&nbsp;</label>
-          <button class="btn-primary" id="gen-btn">🔗 링크 생성하기</button>
-        </div>
-        <div class="gen-result-wrap" style="display:none;" id="gen-result-url">
-          <label>내 파트너 링크</label>
-          <div class="gen-result" style="display:flex;">
-            <span>on.partner/r/abc123?ref=myid</span>
-            <span class="copy-btn-text">복사</span>
+      <!-- 온종일팜 상품 카탈로그 -->
+      <div class="catalog-panel">
+        <div class="catalog-head">
+          <div>
+            <div class="catalog-title">온종일팜 상품 <span id="catalog-count" style="color:var(--lime);"></span></div>
+            <div class="catalog-sub">홍보할 상품의 <b>🔗 링크 받기</b>를 누르면 내 파트너 링크가 바로 만들어져요</div>
           </div>
+          <input class="search-input" id="catalog-search" type="text" placeholder="상품 검색...">
         </div>
+        <div class="catalog-grid" id="catalog-grid">
+          <div class="catalog-empty">상품을 불러오는 중...</div>
+        </div>
+      </div>
+
+      <!-- 링크 받기 결과 토스트 -->
+      <div class="linktoast" id="linktoast" style="display:none;">
+        <span class="linktoast-ico">✨</span>
+        <div class="linktoast-body">
+          <div class="linktoast-label">내 파트너 링크가 생성됐어요!</div>
+          <div class="linktoast-url" id="linktoast-url">on.partner/r/xxxxx</div>
+        </div>
+        <button class="linktoast-copy" id="linktoast-copy">복사</button>
+        <button class="linktoast-x" id="linktoast-x">✕</button>
       </div>
 
       <!-- 링크 목록 -->

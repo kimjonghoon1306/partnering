@@ -32,7 +32,7 @@ function showPage(pageId) {
   const title = targetNav ? targetNav.querySelector('.nav-label')?.textContent : '';
   const topbarTitle = document.querySelector('.topbar-title');
   if (topbarTitle && title) topbarTitle.textContent = title;
-  if (pageId === 'links') loadLinks();
+  if (pageId === 'links') { loadCatalog(); loadLinks(); }
 }
 
 navItems.forEach(item => {
@@ -155,30 +155,79 @@ const genInputEl = document.getElementById('gen-url-input');
 const genResultEl = document.getElementById('gen-result-url');
 const genBtnEl = document.getElementById('gen-btn');
 
-genBtnEl?.addEventListener('click', async () => {
-  const url = genInputEl?.value?.trim();
-  if (!url) return;
-  if (!window.opClient) { alert('연결 오류입니다. 새로고침 후 다시 시도해주세요.'); return; }
-  const oldTxt = genBtnEl.textContent;
-  genBtnEl.disabled = true; genBtnEl.textContent = '생성 중...';
+// ── 온종일팜 상품 카탈로그 (링크 받기)
+let __catalog = [];
+async function loadCatalog() {
+  const grid = document.getElementById('catalog-grid');
+  if (!grid || !window.opClient) return;
+  const [prodRes, commRes] = await Promise.all([
+    window.opClient.from('products').select('id,name,retail_price,image_url,unit').eq('is_active', true).order('created_at', { ascending: false }),
+    window.opClient.from('product_commissions').select('product_id,commission_rate')
+  ]);
+  if (prodRes.error) { grid.innerHTML = '<div class="catalog-empty">상품을 불러오지 못했어요.</div>'; return; }
+  const rateMap = {};
+  (commRes.data || []).forEach(c => { rateMap[c.product_id] = Number(c.commission_rate); });
+  __catalog = (prodRes.data || []).map(p => Object.assign({}, p, { rate: (rateMap[p.id] != null ? rateMap[p.id] : 0.05) }));
+  const cnt = document.getElementById('catalog-count');
+  if (cnt) cnt.textContent = '(' + __catalog.length + ')';
+  renderCatalog(__catalog);
+}
+function renderCatalog(list) {
+  const grid = document.getElementById('catalog-grid');
+  if (!grid) return;
+  if (!list.length) { grid.innerHTML = '<div class="catalog-empty">상품이 없어요.</div>'; return; }
+  grid.innerHTML = list.map(function (p) {
+    const price = Number(p.retail_price) || 0;
+    const earn = Math.round(price * p.rate);
+    const img = (p.image_url && /^https?:\/\//.test(p.image_url) && p.image_url.length > 30) ? p.image_url : '';
+    return '<div class="catalog-card">' +
+      '<div class="catalog-img" style="' + (img ? "background-image:url('" + escHtml(img) + "')" : '') + '">' + (img ? '' : '🛒') + '</div>' +
+      '<div class="catalog-info">' +
+        '<div class="catalog-name">' + escHtml(p.name) + '</div>' +
+        '<div class="catalog-price">₩' + price.toLocaleString() + '<span>/' + escHtml(p.unit || '개') + '</span></div>' +
+        '<div class="catalog-earn">내 수익 <b>₩' + earn.toLocaleString() + '</b><span class="catalog-rate">' + Math.round(p.rate * 100) + '%</span></div>' +
+        '<button class="catalog-getlink btn-primary" data-id="' + escHtml(p.id) + '">🔗 링크 받기</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+document.getElementById('catalog-search')?.addEventListener('input', function () {
+  const q = this.value.toLowerCase();
+  renderCatalog(__catalog.filter(p => (p.name || '').toLowerCase().includes(q)));
+});
+document.getElementById('catalog-grid')?.addEventListener('click', async function (e) {
+  const btn = e.target.closest('.catalog-getlink');
+  if (!btn) return;
+  const p = __catalog.find(x => x.id === btn.dataset.id);
+  if (!p || !window.opClient) return;
+  const t = btn.textContent; btn.disabled = true; btn.textContent = '생성 중...';
   const { data: { user } } = await window.opClient.auth.getUser();
   if (!user) { window.location.href = 'login.html'; return; }
   const code = Math.random().toString(36).slice(2, 8);
-  let title = null;
-  try { const u = new URL(url); title = decodeURIComponent(u.pathname.split('/').filter(Boolean).pop() || '') || u.hostname; } catch (e) {}
   const { error } = await window.opClient.from('partner_links').insert({
-    partner_id: user.id, code, product_url: url, title
+    partner_id: user.id, code,
+    product_url: 'https://app.yuanfnb.com/shop/product/' + p.id,
+    product_id: p.id, product_name: p.name, product_image: p.image_url || null,
+    product_price: Number(p.retail_price) || 0, commission_rate: p.rate, title: p.name
   });
-  genBtnEl.disabled = false; genBtnEl.textContent = oldTxt;
+  btn.disabled = false; btn.textContent = t;
   if (error) { alert('링크 생성 실패: ' + error.message); return; }
-  const generated = `on.partner/r/${code}`;
-  if (genResultEl) {
-    const span = genResultEl.querySelector('.gen-result span');
-    if (span) span.textContent = generated;
-    genResultEl.style.display = 'block';
-  }
-  if (genInputEl) genInputEl.value = '';
+  showLinkToast('on.partner/r/' + code);
   loadLinks();
+});
+function showLinkToast(url) {
+  const t = document.getElementById('linktoast');
+  const u = document.getElementById('linktoast-url');
+  if (!t) return;
+  if (u) u.textContent = url;
+  t.style.display = 'flex';
+}
+document.getElementById('linktoast-copy')?.addEventListener('click', function () {
+  const url = document.getElementById('linktoast-url')?.textContent || '';
+  navigator.clipboard?.writeText(url).then(() => { this.textContent = '복사됨!'; setTimeout(() => this.textContent = '복사', 1500); }).catch(() => {});
+});
+document.getElementById('linktoast-x')?.addEventListener('click', function () {
+  const t = document.getElementById('linktoast'); if (t) t.style.display = 'none';
 });
 
 // ── 내 링크 목록 (실데이터)
