@@ -33,6 +33,8 @@ function showPage(pageId) {
   const topbarTitle = document.querySelector('.topbar-title');
   if (topbarTitle && title) topbarTitle.textContent = title;
   if (pageId === 'links') { loadCatalog(); loadLinks(); }
+  if (pageId === 'overview') loadOverview();
+  if (pageId === 'earnings') loadEarnings();
 }
 
 navItems.forEach(item => {
@@ -276,27 +278,69 @@ searchEl?.addEventListener('input', function() {
 
 // ── 초기화
 document.addEventListener('DOMContentLoaded', () => {
-  showPage('overview');
+  showPage('overview');   // → loadOverview() 실집계 호출
   updateChart('7d');
-
-  // 카운트업 애니메이션
-  document.querySelectorAll('.s-value[data-target]').forEach(el => {
-    const target = parseFloat(el.dataset.target);
-    const prefix = el.dataset.prefix || '';
-    const suffix = el.dataset.suffix || '';
-    const isFloat = el.dataset.float === 'true';
-    const start = performance.now();
-    const duration = 1200;
-    const update = (now) => {
-      const progress = Math.min((now - start) / duration, 1);
-      const ease = 1 - Math.pow(1 - progress, 3);
-      const val = ease * target;
-      el.textContent = prefix + (isFloat ? val.toFixed(1) : Math.floor(val).toLocaleString()) + suffix;
-      if (progress < 1) requestAnimationFrame(update);
-    };
-    requestAnimationFrame(update);
-  });
 });
+
+// 숫자 카운트업
+function countUpEl(el, target, prefix, suffix, isFloat) {
+  const start = performance.now();
+  const duration = 1000;
+  const update = (now) => {
+    const progress = Math.min((now - start) / duration, 1);
+    const ease = 1 - Math.pow(1 - progress, 3);
+    const val = ease * (target || 0);
+    el.textContent = (prefix || '') + (isFloat ? val.toFixed(1) : Math.floor(val).toLocaleString()) + (suffix || '');
+    if (progress < 1) requestAnimationFrame(update);
+  };
+  requestAnimationFrame(update);
+}
+
+// ── 오버뷰 실집계
+async function loadOverview() {
+  if (!window.opClient) return;
+  const [linkRes, convRes] = await Promise.all([
+    window.opClient.from('partner_links').select('clicks,conversions'),
+    window.opClient.from('conversions').select('commission_amount,status')
+  ]);
+  const links = linkRes.data || [];
+  const convs = convRes.data || [];
+  const totalClicks = links.reduce((s, l) => s + (l.clicks || 0), 0);
+  const totalConv = links.reduce((s, l) => s + (l.conversions || 0), 0);
+  const revenue = convs.filter(c => c.status !== 'canceled').reduce((s, c) => s + Number(c.commission_amount || 0), 0);
+  const rate = totalClicks ? (totalConv / totalClicks * 100) : 0;
+  const vals = [revenue, totalClicks, totalConv, rate];
+  document.querySelectorAll('#page-overview .summary-grid .s-value').forEach((el, i) => {
+    countUpEl(el, vals[i] || 0, el.dataset.prefix || '', el.dataset.suffix || '', el.dataset.float === 'true');
+  });
+  const hasData = totalClicks || revenue;
+  document.querySelectorAll('#page-overview .summary-grid .s-change').forEach(el => {
+    if (!hasData) { el.textContent = '아직 데이터 없음'; el.className = 's-change neutral'; }
+  });
+}
+
+// ── 수익현황 실집계
+async function loadEarnings() {
+  if (!window.opClient) return;
+  const { data } = await window.opClient.from('conversions').select('commission_amount,status,created_at');
+  const convs = data || [];
+  const now = new Date();
+  const curYM = now.getFullYear() * 12 + now.getMonth();
+  const ym = (d) => { const x = new Date(d); return x.getFullYear() * 12 + x.getMonth(); };
+  const sum = (arr) => arr.reduce((s, c) => s + Number(c.commission_amount || 0), 0);
+  const valid = convs.filter(c => c.status !== 'canceled');
+  const thisMonth = sum(valid.filter(c => ym(c.created_at) === curYM));
+  const lastMonth = sum(valid.filter(c => ym(c.created_at) === curYM - 1));
+  const total = sum(valid);
+  const pending = sum(convs.filter(c => c.status === 'pending' || c.status === 'confirmed'));
+  const vals = [thisMonth, lastMonth, total, pending];
+  document.querySelectorAll('#page-earnings .summary-grid .s-value').forEach((el, i) => {
+    countUpEl(el, vals[i] || 0, '₩', '', false);
+  });
+  document.querySelectorAll('#page-earnings .summary-grid .s-change').forEach(el => {
+    if (!total) { el.textContent = '아직 데이터 없음'; el.className = 's-change neutral'; }
+  });
+}
 
 // ── 알림 토글 스위치
 document.addEventListener('click', (e) => {
