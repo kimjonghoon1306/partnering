@@ -64,8 +64,7 @@ module.exports = async (req, res) => {
       return ok({ ok: true, commission: commission });
     }
     if (ins.status === 409) return ok({ ok: true, duplicate: true });
-    const detail = await ins.text().catch(() => '');
-    return ok({ ok: false, reason: 'insert', status: ins.status, detail: detail });
+    return ok({ ok: false, reason: 'insert', status: ins.status });
   } catch (e) {
     return ok({ ok: false, reason: 'error' });
   }
