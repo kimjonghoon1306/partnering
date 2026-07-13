@@ -164,14 +164,17 @@ let __catalog = [];
 async function loadCatalog() {
   const grid = document.getElementById('catalog-grid');
   if (!grid || !window.opClient) return;
-  const [prodRes, commRes] = await Promise.all([
+  const [prodRes, commRes, linkRes] = await Promise.all([
     window.opClient.from('products').select('id,name,retail_price,image_url,unit').eq('is_active', true).order('created_at', { ascending: false }),
-    window.opClient.from('product_commissions').select('product_id,commission_rate')
+    window.opClient.from('product_commissions').select('product_id,commission_rate'),
+    window.opClient.from('partner_links').select('code,product_id')
   ]);
   if (prodRes.error) { grid.innerHTML = '<div class="catalog-empty">상품을 불러오지 못했어요.</div>'; return; }
   const rateMap = {};
   (commRes.data || []).forEach(c => { rateMap[c.product_id] = Number(c.commission_rate); });
-  __catalog = (prodRes.data || []).map(p => Object.assign({}, p, { rate: (rateMap[p.id] != null ? rateMap[p.id] : 0.05) }));
+  const myCodeMap = {};
+  (linkRes.data || []).forEach(l => { if (l.product_id) myCodeMap[l.product_id] = l.code; });
+  __catalog = (prodRes.data || []).map(p => Object.assign({}, p, { rate: (rateMap[p.id] != null ? rateMap[p.id] : 0.05), myCode: myCodeMap[p.id] || null }));
   const cnt = document.getElementById('catalog-count');
   if (cnt) cnt.textContent = '(' + __catalog.length + ')';
   renderCatalog(__catalog);
@@ -190,7 +193,10 @@ function renderCatalog(list) {
         '<div class="catalog-name">' + escHtml(p.name) + '</div>' +
         '<div class="catalog-price">₩' + price.toLocaleString() + '<span>/' + escHtml(p.unit || '개') + '</span></div>' +
         '<div class="catalog-earn">내 수익 <b>₩' + earn.toLocaleString() + '</b><span class="catalog-rate">' + Math.round(p.rate * 100) + '%</span></div>' +
-        '<button class="catalog-getlink btn-primary" data-id="' + escHtml(p.id) + '">🔗 링크 받기</button>' +
+        (p.myCode
+          ? '<div class="catalog-mylink"><span title="on.partner/r/' + p.myCode + '">🔗 on.partner/r/' + escHtml(p.myCode) + '</span><button class="catalog-copy" data-code="' + escHtml(p.myCode) + '">복사</button></div>' +
+            '<button class="catalog-regen" data-id="' + escHtml(p.id) + '">🔄 재발급</button>'
+          : '<button class="catalog-getlink btn-primary" data-id="' + escHtml(p.id) + '">🔗 링크 받기</button>') +
       '</div>' +
     '</div>';
   }).join('');
@@ -200,23 +206,46 @@ document.getElementById('catalog-search')?.addEventListener('input', function ()
   renderCatalog(__catalog.filter(p => (p.name || '').toLowerCase().includes(q)));
 });
 document.getElementById('catalog-grid')?.addEventListener('click', async function (e) {
-  const btn = e.target.closest('.catalog-getlink');
+  // 복사
+  const copyBtn = e.target.closest('.catalog-copy');
+  if (copyBtn) {
+    const url = 'on.partner/r/' + copyBtn.dataset.code;
+    navigator.clipboard?.writeText(url).then(function () {
+      const o = copyBtn.textContent; copyBtn.textContent = '복사됨!';
+      setTimeout(function () { copyBtn.textContent = o; }, 1200);
+    }).catch(function () {});
+    return;
+  }
+  // 링크 받기(신규) 또는 재발급
+  const getBtn = e.target.closest('.catalog-getlink');
+  const regenBtn = e.target.closest('.catalog-regen');
+  const btn = getBtn || regenBtn;
   if (!btn) return;
   const p = __catalog.find(x => x.id === btn.dataset.id);
   if (!p || !window.opClient) return;
-  const t = btn.textContent; btn.disabled = true; btn.textContent = '생성 중...';
+  if (regenBtn && !confirm('재발급하면 기존 링크는 더 이상 작동하지 않아요.\n새 링크로 바꿀까요?')) return;
+
+  const t = btn.textContent; btn.disabled = true; btn.textContent = regenBtn ? '재발급 중...' : '생성 중...';
   const { data: { user } } = await window.opClient.auth.getUser();
   if (!user) { window.location.href = 'login.html'; return; }
   const code = Math.random().toString(36).slice(2, 8);
-  const { error } = await window.opClient.from('partner_links').insert({
-    partner_id: user.id, code,
-    product_url: 'https://app.yuanfnb.com/shop/product/' + p.id,
-    product_id: p.id, product_name: p.name, product_image: p.image_url || null,
-    product_price: Number(p.retail_price) || 0, commission_rate: p.rate, title: p.name
-  });
+  let error;
+  if (regenBtn) {
+    const r = await window.opClient.from('partner_links').update({ code: code }).eq('partner_id', user.id).eq('product_id', p.id);
+    error = r.error;
+  } else {
+    const r = await window.opClient.from('partner_links').insert({
+      partner_id: user.id, code: code,
+      product_url: 'https://app.yuanfnb.com/shop/product/' + p.id,
+      product_id: p.id, product_name: p.name, product_image: p.image_url || null,
+      product_price: Number(p.retail_price) || 0, commission_rate: p.rate, title: p.name
+    });
+    error = r.error;
+  }
   btn.disabled = false; btn.textContent = t;
-  if (error) { alert('링크 생성 실패: ' + error.message); return; }
+  if (error) { alert('링크 처리 실패: ' + error.message); return; }
   showLinkToast('on.partner/r/' + code);
+  loadCatalog();
   loadLinks();
 });
 function showLinkToast(url) {

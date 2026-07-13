@@ -589,3 +589,12 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 .linktoast-copy { background:var(--lime); color:var(--dark); border:none; border-radius:var(--radius-sm); padding:9px 16px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap; font-family:var(--font); }
 .linktoast-copy:active { transform:scale(.94); }
 .linktoast-x { background:none; border:none; color:var(--text3); font-size:15px; cursor:pointer; padding:4px; }
+
+/* 카탈로그: 내가 받은 링크 표시 + 재발급 */
+.catalog-mylink { display:flex; align-items:center; gap:6px; background:var(--dark4); border:1px solid var(--lime-border); border-radius:var(--radius-sm); padding:8px 10px; font-size:12px; }
+.catalog-mylink span { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--lime); font-weight:700; }
+.catalog-copy { background:var(--lime); color:var(--dark); border:none; border-radius:6px; padding:5px 10px; font-size:11px; font-weight:700; cursor:pointer; font-family:var(--font); white-space:nowrap; }
+.catalog-copy:active { transform:scale(.94); }
+.catalog-regen { width:100%; background:transparent; border:1px solid var(--border); color:var(--text2); border-radius:var(--radius-sm); padding:9px; font-size:13px; font-weight:600; cursor:pointer; font-family:var(--font); transition:all .15s; margin-top:2px; }
+.catalog-regen:hover { border-color:var(--lime-border); color:var(--lime); }
+.catalog-regen:active { transform:scale(.97); }
