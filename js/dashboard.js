@@ -32,6 +32,7 @@ function showPage(pageId) {
   const title = targetNav ? targetNav.querySelector('.nav-label')?.textContent : '';
   const topbarTitle = document.querySelector('.topbar-title');
   if (topbarTitle && title) topbarTitle.textContent = title;
+  if (pageId === 'links') loadLinks();
 }
 
 navItems.forEach(item => {
@@ -154,18 +155,65 @@ const genInputEl = document.getElementById('gen-url-input');
 const genResultEl = document.getElementById('gen-result-url');
 const genBtnEl = document.getElementById('gen-btn');
 
-genBtnEl?.addEventListener('click', () => {
+genBtnEl?.addEventListener('click', async () => {
   const url = genInputEl?.value?.trim();
   if (!url) return;
+  if (!window.opClient) { alert('연결 오류입니다. 새로고침 후 다시 시도해주세요.'); return; }
+  const oldTxt = genBtnEl.textContent;
+  genBtnEl.disabled = true; genBtnEl.textContent = '생성 중...';
+  const { data: { user } } = await window.opClient.auth.getUser();
+  if (!user) { window.location.href = 'login.html'; return; }
   const code = Math.random().toString(36).slice(2, 8);
-  const domain = url.split('/')[2] || 'shop';
-  const generated = `on.partner/r/${code}?ref=myid`;
+  let title = null;
+  try { const u = new URL(url); title = decodeURIComponent(u.pathname.split('/').filter(Boolean).pop() || '') || u.hostname; } catch (e) {}
+  const { error } = await window.opClient.from('partner_links').insert({
+    partner_id: user.id, code, product_url: url, title
+  });
+  genBtnEl.disabled = false; genBtnEl.textContent = oldTxt;
+  if (error) { alert('링크 생성 실패: ' + error.message); return; }
+  const generated = `on.partner/r/${code}`;
   if (genResultEl) {
-    const span = genResultEl.querySelector('span');
+    const span = genResultEl.querySelector('.gen-result span');
     if (span) span.textContent = generated;
-    genResultEl.style.display = 'flex';
+    genResultEl.style.display = 'block';
   }
+  if (genInputEl) genInputEl.value = '';
+  loadLinks();
 });
+
+// ── 내 링크 목록 (실데이터)
+async function loadLinks() {
+  if (!window.opClient) return;
+  const tbody = document.querySelector('#links-table tbody');
+  const titleEl = document.querySelector('#page-links .table-title');
+  const { data, error } = await window.opClient.from('partner_links')
+    .select('code,product_url,title,clicks,conversions,created_at')
+    .order('created_at', { ascending: false });
+  if (error) { console.warn('[온파트너] 링크 조회 오류:', error.message); return; }
+  if (titleEl) titleEl.textContent = '전체 링크 (' + data.length + ')';
+  if (!tbody) return;
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:44px;color:var(--text3);font-size:14px;line-height:1.6;">아직 만든 링크가 없어요.<br>위에서 온종일팜 상품 URL로 첫 링크를 만들어보세요! 🔗</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map(function (l) {
+    let shop = '—'; try { shop = new URL(l.product_url).hostname; } catch (e) {}
+    const name = l.title || '온종일팜 상품';
+    const purl = 'on.partner/r/' + l.code;
+    const date = (l.created_at || '').slice(0, 10).replace(/-/g, '.');
+    return '<tr>' +
+      '<td><div class="td-link">' + escHtml(name) + '</div></td>' +
+      '<td><div class="td-url" title="' + purl + '">' + purl + '</div></td>' +
+      '<td><div class="td-url">' + escHtml(shop) + '</div></td>' +
+      '<td class="td-num">' + (l.clicks || 0) + '</td>' +
+      '<td class="td-num">' + (l.conversions || 0) + '</td>' +
+      '<td class="td-earn">₩0</td>' +
+      '<td style="font-size:12px;color:var(--text3)">' + date + '</td>' +
+      '<td><span class="status-pill active">● 활성</span></td>' +
+      '</tr>';
+  }).join('');
+}
+function escHtml(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 
 // ── 검색 필터
 const searchEl = document.getElementById('links-search');
