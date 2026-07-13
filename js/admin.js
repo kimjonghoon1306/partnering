@@ -41,6 +41,9 @@ function showAdminPage(pageId) {
   const title = nav?.querySelector('.admin-nav-label')?.textContent || '';
   const topbarTitle = document.querySelector('.admin-topbar-title');
   if (topbarTitle && title) topbarTitle.textContent = title;
+  if (pageId === 'commissions') loadCommissions();
+  if (pageId === 'partners') loadAdminPartners();
+  if (pageId === 'overview') loadAdminOverview();
 }
 
 adminNavItems.forEach(item => {
@@ -204,3 +207,108 @@ document.addEventListener('DOMContentLoaded', () => {
   showAdminPage('overview');
   drawAdminChart();
 });
+
+// ══════════ 실데이터 연동 ══════════
+function admEsc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+
+// ── 상품 마진 설정
+let __admProducts = [];
+async function loadCommissions() {
+  const box = document.getElementById('comm-list');
+  if (!box || !window.opClient) return;
+  const [pRes, cRes] = await Promise.all([
+    window.opClient.from('products').select('id,name,retail_price,image_url,is_active').order('created_at', { ascending: false }),
+    window.opClient.from('product_commissions').select('product_id,commission_rate')
+  ]);
+  if (pRes.error) { box.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3);">상품을 불러오지 못했어요: ' + admEsc(pRes.error.message) + '</div>'; return; }
+  const rateMap = {};
+  (cRes.data || []).forEach(c => { rateMap[c.product_id] = Math.round(Number(c.commission_rate) * 100); });
+  __admProducts = (pRes.data || []).map(p => Object.assign({}, p, { rate: (rateMap[p.id] != null ? rateMap[p.id] : 5) }));
+  renderCommissions(__admProducts);
+}
+function renderCommissions(list) {
+  const box = document.getElementById('comm-list');
+  if (!box) return;
+  if (!list.length) { box.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3);">상품이 없어요.</div>'; return; }
+  box.innerHTML = list.map(p => {
+    const price = Number(p.retail_price) || 0;
+    const img = (p.image_url && /^https?:\/\//.test(p.image_url) && p.image_url.length > 30) ? p.image_url : '';
+    const earn = Math.round(price * p.rate / 100);
+    return '<div class="comm-row" data-id="' + admEsc(p.id) + '">' +
+      '<div class="comm-thumb" style="' + (img ? "background-image:url('" + admEsc(img) + "')" : '') + '">' + (img ? '' : '🛒') + '</div>' +
+      '<div class="comm-info"><div class="comm-name">' + admEsc(p.name) + (p.is_active ? '' : ' <span style="color:var(--text3);font-size:11px;">(비활성)</span>') + '</div>' +
+        '<div class="comm-price">판매가 ₩' + price.toLocaleString() + '</div></div>' +
+      '<div class="comm-ctrl">' +
+        '<input type="range" min="0" max="30" value="' + p.rate + '" class="comm-range" oninput="onCommRange(this)">' +
+        '<div class="comm-rate-box"><b class="comm-rate-val">' + p.rate + '</b>%</div>' +
+        '<div class="comm-earn">수수료 ₩<span class="comm-earn-val">' + earn.toLocaleString() + '</span></div>' +
+        '<button class="comm-save" onclick="saveCommission(this,\'' + admEsc(p.id) + '\')">저장</button>' +
+      '</div></div>';
+  }).join('');
+}
+function onCommRange(el) {
+  const row = el.closest('.comm-row');
+  const rate = Number(el.value);
+  row.querySelector('.comm-rate-val').textContent = rate;
+  const p = __admProducts.find(x => x.id === row.dataset.id);
+  const price = p ? (Number(p.retail_price) || 0) : 0;
+  row.querySelector('.comm-earn-val').textContent = Math.round(price * rate / 100).toLocaleString();
+  row.querySelector('.comm-save').classList.add('dirty');
+}
+async function saveCommission(btn, pid) {
+  if (!window.opClient) return;
+  const row = btn.closest('.comm-row');
+  const rate = Number(row.querySelector('.comm-range').value) / 100;
+  const t = btn.textContent; btn.disabled = true; btn.textContent = '저장 중...';
+  const { data: { user } } = await window.opClient.auth.getUser();
+  const { error } = await window.opClient.from('product_commissions')
+    .upsert({ product_id: pid, commission_rate: rate, updated_by: user?.id, updated_at: new Date().toISOString() }, { onConflict: 'product_id' });
+  btn.disabled = false;
+  if (error) { btn.textContent = t; alert('저장 실패: ' + error.message); return; }
+  btn.textContent = '✓ 저장됨'; btn.classList.remove('dirty');
+  const p = __admProducts.find(x => x.id === pid); if (p) p.rate = Number(row.querySelector('.comm-range').value);
+  setTimeout(() => { btn.textContent = '저장'; }, 1500);
+}
+document.getElementById('comm-search')?.addEventListener('input', function () {
+  const q = this.value.toLowerCase();
+  renderCommissions(__admProducts.filter(p => (p.name || '').toLowerCase().includes(q)));
+});
+
+// ── 파트너 목록
+async function loadAdminPartners() {
+  const tb = document.querySelector('#ap-partners table tbody');
+  const titleEl = document.querySelector('#ap-partners .admin-table-title');
+  if (!window.opClient) return;
+  const { data, error } = await window.opClient.from('partners').select('name,nickname,email,channels,status,created_at').order('created_at', { ascending: false });
+  if (error) { if (tb) tb.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text3);">' + admEsc(error.message) + '</td></tr>'; return; }
+  if (titleEl) titleEl.textContent = '파트너 목록 (' + data.length + ')';
+  if (!tb) return;
+  if (!data.length) { tb.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:48px;color:var(--text3);">아직 가입한 파트너가 없어요.</td></tr>'; return; }
+  tb.innerHTML = data.map(p => '<tr>' +
+    '<td><b>' + admEsc(p.name || '-') + '</b>' + (p.nickname ? ' <span style="color:var(--text3);font-size:12px;">@' + admEsc(p.nickname) + '</span>' : '') + '</td>' +
+    '<td style="color:var(--text2);font-size:13px;">' + admEsc(p.email || '') + '</td>' +
+    '<td style="font-size:12px;color:var(--text3);">' + admEsc((p.channels || []).join(', ')) + '</td>' +
+    '<td>' + (p.status === 'suspended' ? '<span class="status-pill paused">정지</span>' : '<span class="status-pill active">● 활성</span>') + '</td>' +
+    '<td style="font-size:12px;color:var(--text3);">' + admEsc(String(p.created_at || '').slice(0, 10)) + '</td>' +
+    '</tr>').join('');
+}
+
+// ── 관리자 오버뷰 실집계
+async function loadAdminOverview() {
+  if (!window.opClient) return;
+  const [pRes, lRes, cRes] = await Promise.all([
+    window.opClient.from('partners').select('id', { count: 'exact', head: true }),
+    window.opClient.from('partner_links').select('id', { count: 'exact', head: true }),
+    window.opClient.from('conversions').select('commission_amount,status')
+  ]);
+  const convs = cRes.data || [];
+  const revenue = convs.filter(c => c.status !== 'canceled').reduce((s, c) => s + Number(c.commission_amount || 0), 0);
+  const cards = document.querySelectorAll('#ap-overview .admin-card-value');
+  if (cards[0]) cards[0].textContent = (pRes.count || 0).toLocaleString();
+  if (cards[1]) cards[1].textContent = (lRes.count || 0).toLocaleString();
+  if (cards[2]) cards[2].textContent = '₩' + Math.round(convs.reduce((s, c) => s + Number(c.commission_amount || 0), 0)).toLocaleString();
+  if (cards[3]) cards[3].textContent = '₩' + Math.round(revenue).toLocaleString();
+}
+
+// 초기 진입 시 오버뷰 로드
+document.addEventListener('DOMContentLoaded', () => { setTimeout(loadAdminOverview, 300); });

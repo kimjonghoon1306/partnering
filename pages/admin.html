@@ -21,9 +21,11 @@
       <div class="admin-nav-label">대시보드</div>
       <a class="admin-nav-item" data-page="overview"><span class="admin-nav-icon">📊</span><span class="admin-nav-label">오버뷰</span></a>
 
+      <div class="admin-nav-label" style="margin-top:8px;">상품</div>
+      <a class="admin-nav-item" data-page="commissions"><span class="admin-nav-icon">🏷️</span><span class="admin-nav-label">상품 마진 설정</span></a>
+
       <div class="admin-nav-label" style="margin-top:8px;">파트너 관리</div>
       <a class="admin-nav-item" data-page="partners"><span class="admin-nav-icon">👥</span><span class="admin-nav-label">파트너 목록</span></a>
-      <a class="admin-nav-item" data-page="partner-apply"><span class="admin-nav-icon">📋</span><span class="admin-nav-label">가입 승인</span><span class="admin-nav-badge" id="badge-partner">0</span></a>
 
       <div class="admin-nav-label" style="margin-top:8px;">정산</div>
       <a class="admin-nav-item" data-page="settle"><span class="admin-nav-icon">💸</span><span class="admin-nav-label">정산 처리</span></a>
@@ -72,6 +74,22 @@
             <div style="font-size:32px;margin-bottom:10px;">💳</div>
             정산 대기 내역이 없습니다
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 상품 마진 설정 -->
+    <div class="admin-page" id="ap-commissions">
+      <div class="admin-table-card">
+        <div class="admin-table-header">
+          <div>
+            <div class="admin-table-title">🏷️ 상품별 마진(수수료율) 설정</div>
+            <div style="font-size:12px;color:var(--text2);margin-top:4px;">파트너가 상품을 팔면 받는 수수료율이에요. 슬라이더로 조절 후 저장하세요. (미설정 시 기본 5%)</div>
+          </div>
+          <input class="admin-search" id="comm-search" placeholder="상품 검색...">
+        </div>
+        <div id="comm-list" style="display:flex;flex-direction:column;gap:12px;padding:6px 2px;">
+          <div style="padding:48px;text-align:center;color:var(--text3);">불러오는 중...</div>
         </div>
       </div>
     </div>
