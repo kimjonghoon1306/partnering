@@ -409,23 +409,23 @@
         <div class="settle-summary">
           <div>
             <div style="font-size:12px;color:var(--text2);margin-bottom:6px;">다음 정산 예정액</div>
-            <div class="settle-amount">₩384,200</div>
+            <div class="settle-amount" id="settle-amount">₩0</div>
           </div>
           <div class="settle-date-row">
             <div class="settle-date-icon">📅</div>
             <div class="settle-date-info">
-              <strong>2026년 7월 1일</strong>
+              <strong id="settle-nextdate">-</strong>
               <span>정산 예정일</span>
             </div>
           </div>
           <div class="settle-date-row">
             <div class="settle-date-icon">🏦</div>
             <div class="settle-date-info">
-              <strong>국민은행 ***-**-1234</strong>
+              <strong id="settle-account">미등록</strong>
               <span>정산 계좌</span>
             </div>
           </div>
-          <button class="btn-primary" style="width:100%;justify-content:center;">계좌 변경</button>
+          <button class="btn-primary" style="width:100%;justify-content:center;" onclick="showPage('settings')">계좌 등록/변경</button>
         </div>
 
         <div class="table-card">
@@ -445,43 +445,8 @@
                   <th>정산일</th>
                 </tr>
               </thead>
-              <tbody>
-                <tr>
-                  <td style="font-size:12px;">2026.06.01 ~ 06.30</td>
-                  <td class="td-num">₩4,802,500</td>
-                  <td style="font-size:12px;color:var(--text2);">8%</td>
-                  <td style="color:#ff6b6b;font-size:12px;">-₩384,200</td>
-                  <td class="td-earn">₩384,200</td>
-                  <td><span class="status-pill" style="background:rgba(245,158,11,0.1);color:#fbbf24;border-color:rgba(245,158,11,0.25);">⏳ 예정</span></td>
-                  <td style="font-size:12px;color:var(--text3);">2026.07.01</td>
-                </tr>
-                <tr>
-                  <td style="font-size:12px;">2026.05.01 ~ 05.31</td>
-                  <td class="td-num">₩3,900,000</td>
-                  <td style="font-size:12px;color:var(--text2);">8%</td>
-                  <td style="color:#ff6b6b;font-size:12px;">-₩312,000</td>
-                  <td class="td-earn">₩312,000</td>
-                  <td><span class="status-pill active">✓ 완료</span></td>
-                  <td style="font-size:12px;color:var(--text3);">2026.06.01</td>
-                </tr>
-                <tr>
-                  <td style="font-size:12px;">2026.04.01 ~ 04.30</td>
-                  <td class="td-num">₩3,375,000</td>
-                  <td style="font-size:12px;color:var(--text2);">8%</td>
-                  <td style="color:#ff6b6b;font-size:12px;">-₩270,000</td>
-                  <td class="td-earn">₩270,000</td>
-                  <td><span class="status-pill active">✓ 완료</span></td>
-                  <td style="font-size:12px;color:var(--text3);">2026.05.01</td>
-                </tr>
-                <tr>
-                  <td style="font-size:12px;">2026.03.01 ~ 03.31</td>
-                  <td class="td-num">₩2,850,000</td>
-                  <td style="font-size:12px;color:var(--text2);">8%</td>
-                  <td style="color:#ff6b6b;font-size:12px;">-₩228,000</td>
-                  <td class="td-earn">₩228,000</td>
-                  <td><span class="status-pill active">✓ 완료</span></td>
-                  <td style="font-size:12px;color:var(--text3);">2026.04.01</td>
-                </tr>
+              <tbody id="settle-history">
+                <tr><td colspan="7" style="text-align:center;padding:36px;color:var(--text3);">불러오는 중...</td></tr>
               </tbody>
             </table>
           </div>
@@ -563,17 +528,17 @@
           <div style="display:flex;flex-direction:column;gap:12px;">
             <div style="display:flex;justify-content:center;margin-bottom:4px;">
               <div style="position:relative;display:inline-block;">
-                <div style="width:64px;height:64px;border-radius:50%;background:rgba(190,255,0,0.15);border:2px solid var(--lime-border);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:900;color:var(--lime);">김</div>
+                <div id="set-avatar" style="width:64px;height:64px;border-radius:50%;background:rgba(190,255,0,0.15);border:2px solid var(--lime-border);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:900;color:var(--lime);">P</div>
                 <div style="position:absolute;bottom:0;right:0;width:20px;height:20px;background:var(--lime);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;">✏️</div>
               </div>
             </div>
             <div>
               <label style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;display:block;margin-bottom:5px;">이름</label>
-              <input class="gen-input" type="text" value="김지현" style="width:100%;">
+              <input class="gen-input" id="set-name" type="text" value="" style="width:100%;">
             </div>
             <div>
               <label style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;display:block;margin-bottom:5px;">이메일</label>
-              <input class="gen-input" type="email" value="kim@example.com" style="width:100%;">
+              <input class="gen-input" id="set-email" type="email" value="" readonly style="width:100%;opacity:0.7;">
             </div>
             <div>
               <label style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;display:block;margin-bottom:5px;">활동 채널</label>
@@ -588,7 +553,7 @@
                 <option>건강·운동</option>
               </select>
             </div>
-            <button class="btn-primary" style="width:100%;justify-content:center;">저장하기</button>
+            <button class="btn-primary" style="width:100%;justify-content:center;" onclick="saveProfile(this)">저장하기</button>
           </div>
         </div>
 
@@ -599,28 +564,28 @@
             <!-- 현재 계좌 표시 -->
             <div style="background:rgba(190,255,0,0.06);border:1px solid var(--lime-border);border-radius:var(--radius);padding:14px 16px;">
               <div style="font-size:11px;color:var(--text2);margin-bottom:4px;">현재 등록 계좌</div>
-              <div style="font-size:15px;font-weight:700;">국민은행 ***-**-1234</div>
-              <div style="font-size:12px;color:var(--text2);margin-top:2px;">예금주: 김지현</div>
+              <div id="set-cur-account" style="font-size:15px;font-weight:700;">미등록</div>
+              <div id="set-cur-holder" style="font-size:12px;color:var(--text2);margin-top:2px;"></div>
             </div>
             <div>
               <label style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;display:block;margin-bottom:5px;">은행</label>
-              <select class="gen-input" style="width:100%;">
+              <select class="gen-input" id="set-bank" style="width:100%;">
                 <option>국민은행</option><option>신한은행</option><option>우리은행</option>
-                <option>하나은행</option><option>카카오뱅크</option><option>토스뱅크</option>
+                <option>하나은행</option><option>농협</option><option>기업은행</option><option>카카오뱅크</option><option>토스뱅크</option>
               </select>
             </div>
             <div>
               <label style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;display:block;margin-bottom:5px;">계좌번호</label>
-              <input class="gen-input" type="text" placeholder="계좌번호 입력" style="width:100%;">
+              <input class="gen-input" id="set-account" type="text" placeholder="계좌번호 입력 (- 없이)" style="width:100%;">
             </div>
             <div>
               <label style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;display:block;margin-bottom:5px;">예금주</label>
-              <input class="gen-input" type="text" value="김지현" style="width:100%;">
+              <input class="gen-input" id="set-holder" type="text" placeholder="예금주명" value="" style="width:100%;">
             </div>
             <div style="font-size:12px;color:var(--text2);background:var(--dark4);border-radius:var(--radius-sm);padding:10px 12px;line-height:1.6;">
               ⚠️ 계좌 변경 시 본인인증이 필요합니다. 다음 정산일 3일 전까지 변경 가능합니다.
             </div>
-            <button class="btn-primary" style="width:100%;justify-content:center;">계좌 변경하기</button>
+            <button class="btn-primary" style="width:100%;justify-content:center;" onclick="saveBank(this)">계좌 저장하기</button>
           </div>
         </div>
 

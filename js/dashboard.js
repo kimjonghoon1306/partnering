@@ -35,6 +35,8 @@ function showPage(pageId) {
   if (pageId === 'links') { loadCatalog(); loadLinks(); }
   if (pageId === 'overview') loadOverview();
   if (pageId === 'earnings') loadEarnings();
+  if (pageId === 'settlement') loadSettlement();
+  if (pageId === 'settings') loadSettings();
 }
 
 navItems.forEach(item => {
@@ -352,6 +354,92 @@ async function loadEarnings() {
   document.querySelectorAll('#page-earnings .summary-grid .s-change').forEach(el => {
     if (!total) { el.textContent = '아직 데이터 없음'; el.className = 's-change neutral'; }
   });
+}
+
+// ── 정산 실집계
+function maskAccount(a) { a = String(a || ''); return a.length > 4 ? '***-**-' + a.slice(-4) : a; }
+async function loadSettlement() {
+  if (!window.opClient) return;
+  const [convRes, pRes, sRes] = await Promise.all([
+    window.opClient.from('conversions').select('commission_amount,status'),
+    window.opClient.from('partners').select('bank_name,bank_account,bank_holder').maybeSingle(),
+    window.opClient.from('settlements').select('period,total_amount,status,paid_at').order('period', { ascending: false })
+  ]);
+  const convs = convRes.data || [];
+  const pending = convs.filter(c => c.status === 'pending' || c.status === 'confirmed').reduce((s, c) => s + Number(c.commission_amount || 0), 0);
+  const amtEl = document.getElementById('settle-amount');
+  if (amtEl) amtEl.textContent = '₩' + Math.round(pending).toLocaleString();
+  const now = new Date();
+  const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const dEl = document.getElementById('settle-nextdate');
+  if (dEl) dEl.textContent = next.getFullYear() + '년 ' + (next.getMonth() + 1) + '월 1일';
+  const p = pRes.data;
+  const acEl = document.getElementById('settle-account');
+  if (acEl) acEl.textContent = (p && p.bank_name && p.bank_account) ? (p.bank_name + ' ' + maskAccount(p.bank_account)) : '미등록 (설정에서 등록)';
+  const tb = document.getElementById('settle-history');
+  const settles = sRes.data || [];
+  if (tb) {
+    if (!settles.length) {
+      tb.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:36px;color:var(--text3);">아직 정산 내역이 없어요. 판매가 쌓이면 매달 자동 정산돼요.</td></tr>';
+    } else {
+      tb.innerHTML = settles.map(function (s) {
+        const done = s.status === 'paid';
+        return '<tr><td style="font-size:12px;">' + escHtml(s.period || '') + '</td>' +
+          '<td class="td-num">-</td><td style="font-size:12px;color:var(--text2);">-</td><td style="font-size:12px;">-</td>' +
+          '<td class="td-earn">₩' + Math.round(Number(s.total_amount || 0)).toLocaleString() + '</td>' +
+          '<td>' + (done ? '<span class="status-pill active">✓ 완료</span>' : '<span class="status-pill" style="background:rgba(245,158,11,0.1);color:#fbbf24;border-color:rgba(245,158,11,0.25);">⏳ 예정</span>') + '</td>' +
+          '<td style="font-size:12px;color:var(--text3);">' + (s.paid_at ? String(s.paid_at).slice(0, 10).replace(/-/g, '.') : '-') + '</td></tr>';
+      }).join('');
+    }
+  }
+}
+
+// ── 설정 (프로필·정산계좌)
+async function loadSettings() {
+  if (!window.opClient) return;
+  const { data: p } = await window.opClient.from('partners').select('*').maybeSingle();
+  if (!p) return;
+  const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+  setVal('set-name', p.name);
+  setVal('set-email', p.email);
+  setVal('set-account', p.bank_account);
+  setVal('set-holder', p.bank_holder);
+  const bankEl = document.getElementById('set-bank');
+  if (bankEl && p.bank_name) bankEl.value = p.bank_name;
+  const av = document.getElementById('set-avatar');
+  if (av && p.name) av.textContent = p.name.slice(0, 1);
+  const cur = document.getElementById('set-cur-account');
+  const curH = document.getElementById('set-cur-holder');
+  if (cur) cur.textContent = (p.bank_name && p.bank_account) ? (p.bank_name + ' ' + maskAccount(p.bank_account)) : '미등록';
+  if (curH) curH.textContent = p.bank_holder ? ('예금주: ' + p.bank_holder) : '';
+}
+async function saveProfile(btn) {
+  if (!window.opClient) return;
+  const name = document.getElementById('set-name')?.value.trim();
+  if (!name) { alert('이름을 입력해주세요.'); return; }
+  const { data: { user } } = await window.opClient.auth.getUser();
+  if (!user) { window.location.href = 'login.html'; return; }
+  const t = btn.textContent; btn.disabled = true; btn.textContent = '저장 중...';
+  const { error } = await window.opClient.from('partners').update({ name }).eq('id', user.id);
+  btn.disabled = false; btn.textContent = t;
+  if (error) { alert('저장 실패: ' + error.message); return; }
+  const av = document.getElementById('set-avatar'); if (av) av.textContent = name.slice(0, 1);
+  alert('프로필이 저장됐어요!');
+}
+async function saveBank(btn) {
+  if (!window.opClient) return;
+  const bank_name = document.getElementById('set-bank')?.value;
+  const bank_account = document.getElementById('set-account')?.value.trim();
+  const bank_holder = document.getElementById('set-holder')?.value.trim();
+  if (!bank_account || !bank_holder) { alert('계좌번호와 예금주를 입력해주세요.'); return; }
+  const { data: { user } } = await window.opClient.auth.getUser();
+  if (!user) { window.location.href = 'login.html'; return; }
+  const t = btn.textContent; btn.disabled = true; btn.textContent = '저장 중...';
+  const { error } = await window.opClient.from('partners').update({ bank_name, bank_account, bank_holder }).eq('id', user.id);
+  btn.disabled = false; btn.textContent = t;
+  if (error) { alert('저장 실패: ' + error.message); return; }
+  alert('정산 계좌가 등록됐어요!');
+  loadSettings();
 }
 
 // ── 알림 토글 스위치
