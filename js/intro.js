@@ -1,27 +1,23 @@
-// ══════════ 온파트너 인트로 (세션당 1회) ══════════
+// ══════════ 온파트너 인트로 (세션당 1회 자동 + 언제든 다시보기) ══════════
 (function () {
   const intro = document.getElementById('intro');
   if (!intro) return;
 
   const SEEN_KEY = 'onpartner_intro_seen';
-
-  // 이미 이번 세션에 봤으면 즉시 제거
-  if (sessionStorage.getItem(SEEN_KEY)) {
-    intro.classList.add('gone');
-    return;
-  }
-
-  // 인트로 도는 동안 배경 스크롤 잠금
-  document.body.style.overflow = 'hidden';
+  const SCENE_MS = 2300;          // 씬당 노출 시간 (넉넉하게)
 
   const scenes = Array.from(intro.querySelectorAll('.intro-scene'));
   const skipBtn = document.getElementById('intro-skip');
   const earnEl = document.getElementById('intro-earn');
 
-  const SCENE_MS = 1800;          // 씬당 노출 시간
-  let idx = -1;
   let timers = [];
+  let idx = -1;
   let done = false;
+
+  function clearTimers() {
+    timers.forEach(t => { clearTimeout(t); clearInterval(t); });
+    timers = [];
+  }
 
   function showScene(n) {
     scenes.forEach((s, i) => s.classList.toggle('active', i === n));
@@ -33,8 +29,9 @@
     if (!earnEl) return;
     const target = 38500;
     let v = 0;
+    earnEl.textContent = '+₩0';
     const t = setInterval(() => {
-      v = Math.min(v + 1900, target);
+      v = Math.min(v + 1500, target);
       earnEl.textContent = '+₩' + v.toLocaleString();
       if (v >= target) clearInterval(t);
     }, 45);
@@ -51,15 +48,36 @@
   function finish() {
     if (done) return;
     done = true;
-    timers.forEach(clearTimeout);
-    timers.forEach(clearInterval);
+    clearTimers();
     sessionStorage.setItem(SEEN_KEY, '1');
     document.body.style.overflow = '';
     intro.classList.add('hide');
-    setTimeout(() => intro.classList.add('gone'), 750);
+    timers.push(setTimeout(() => intro.classList.add('gone'), 750));
+  }
+
+  // 재생(자동 최초 + 다시보기 공용)
+  function play() {
+    clearTimers();
+    done = false;
+    idx = -1;
+    scenes.forEach(s => s.classList.remove('active'));
+    intro.classList.remove('gone', 'hide');
+    document.body.style.overflow = 'hidden';
+    // 리플로우 강제 후 시작 (다시보기 시 트랜지션 재적용)
+    void intro.offsetWidth;
+    requestAnimationFrame(next);
   }
 
   skipBtn?.addEventListener('click', finish);
-  // 시작
-  requestAnimationFrame(next);
+
+  // 전역 노출 → 다시보기 버튼에서 호출
+  window.OnPartnerIntro = { play };
+
+  // 최초 세션이면 자동 재생, 아니면 숨김
+  if (sessionStorage.getItem(SEEN_KEY)) {
+    intro.classList.add('gone');
+  } else {
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(next);
+  }
 })();
