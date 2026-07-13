@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>관리자 패널 — 파트너링</title>
+<title>관리자 패널 — 온파트너</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="../css/variables.css">
@@ -15,7 +15,7 @@
 
   <aside class="admin-sidebar">
     <div class="admin-sidebar-header">
-      <div class="admin-logo">파트너<span>링</span><span class="admin-badge">ADMIN</span></div>
+      <div class="admin-logo"><span>온</span>파트너<span class="admin-badge">ADMIN</span></div>
     </div>
     <nav class="admin-nav">
       <div class="admin-nav-label">대시보드</div>
@@ -24,10 +24,6 @@
       <div class="admin-nav-label" style="margin-top:8px;">파트너 관리</div>
       <a class="admin-nav-item" data-page="partners"><span class="admin-nav-icon">👥</span><span class="admin-nav-label">파트너 목록</span></a>
       <a class="admin-nav-item" data-page="partner-apply"><span class="admin-nav-icon">📋</span><span class="admin-nav-label">가입 승인</span><span class="admin-nav-badge" id="badge-partner">0</span></a>
-
-      <div class="admin-nav-label" style="margin-top:8px;">쇼핑몰 관리</div>
-      <a class="admin-nav-item" data-page="shops"><span class="admin-nav-icon">🛒</span><span class="admin-nav-label">쇼핑몰 목록</span></a>
-      <a class="admin-nav-item" data-page="shop-apply"><span class="admin-nav-icon">📝</span><span class="admin-nav-label">입점 신청</span><span class="admin-nav-badge" id="badge-shop">0</span></a>
 
       <div class="admin-nav-label" style="margin-top:8px;">정산</div>
       <a class="admin-nav-item" data-page="settle"><span class="admin-nav-icon">💸</span><span class="admin-nav-label">정산 처리</span></a>
@@ -58,7 +54,7 @@
     <div class="admin-page" id="ap-overview">
       <div class="admin-summary">
         <div class="admin-card"><div class="admin-card-accent" style="background:var(--lime);"></div><div class="admin-card-icon">👥</div><div class="admin-card-label">전체 파트너</div><div class="admin-card-value" style="color:var(--lime);">0</div><div class="admin-card-change neutral">아직 가입자 없음</div></div>
-        <div class="admin-card"><div class="admin-card-accent" style="background:var(--orange);"></div><div class="admin-card-icon">🛒</div><div class="admin-card-label">연동 쇼핑몰</div><div class="admin-card-value" style="color:var(--orange);">0</div><div class="admin-card-change neutral">아직 입점 없음</div></div>
+        <div class="admin-card"><div class="admin-card-accent" style="background:var(--orange);"></div><div class="admin-card-icon">🔗</div><div class="admin-card-label">발급된 링크</div><div class="admin-card-value" style="color:var(--orange);">0</div><div class="admin-card-change neutral">아직 링크 없음</div></div>
         <div class="admin-card"><div class="admin-card-accent" style="background:var(--purple);"></div><div class="admin-card-icon">💰</div><div class="admin-card-label">이번 달 총 거래액</div><div class="admin-card-value" style="color:var(--purple);">₩0</div><div class="admin-card-change neutral">-</div></div>
         <div class="admin-card"><div class="admin-card-accent" style="background:var(--blue);"></div><div class="admin-card-icon">📈</div><div class="admin-card-label">플랫폼 수익</div><div class="admin-card-value" style="color:var(--blue);">₩0</div><div class="admin-card-change neutral">-</div></div>
       </div>
@@ -113,43 +109,6 @@
           <div style="font-size:40px;margin-bottom:12px;">📋</div>
           <div style="font-weight:700;margin-bottom:6px;">대기 중인 가입 신청이 없습니다</div>
           <div style="font-size:12px;">파트너가 가입 신청하면 여기에 표시됩니다</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 쇼핑몰 목록 -->
-    <div class="admin-page" id="ap-shops">
-      <div class="admin-table-card">
-        <div class="admin-table-header">
-          <div class="admin-table-title">쇼핑몰 목록</div>
-          <div class="admin-table-actions">
-            <input class="admin-search" placeholder="쇼핑몰명 검색...">
-          </div>
-        </div>
-        <div style="padding:60px 20px;text-align:center;color:rgba(255,255,255,0.25);font-size:13px;">
-          <div style="font-size:40px;margin-bottom:12px;">🛒</div>
-          <div style="font-weight:700;margin-bottom:6px;">입점된 쇼핑몰이 없습니다</div>
-          <div style="font-size:12px;">쇼핑몰 입점 신청을 승인하면 여기에 표시됩니다</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 쇼핑몰 입점 신청 -->
-    <div class="admin-page" id="ap-shop-apply">
-      <div class="admin-table-card">
-        <div class="admin-table-header">
-          <div class="admin-table-title">쇼핑몰 입점 신청</div>
-          <div class="admin-table-actions">
-            <button class="admin-filter-btn active">대기중 (<span id="shop-apply-count">0</span>)</button>
-            <button class="admin-filter-btn">처리완료</button>
-          </div>
-        </div>
-        <div id="shop-apply-list">
-          <div style="padding:60px 20px;text-align:center;color:rgba(255,255,255,0.25);font-size:13px;">
-            <div style="font-size:40px;margin-bottom:12px;">📝</div>
-            <div style="font-weight:700;margin-bottom:6px;">대기 중인 입점 신청이 없습니다</div>
-            <div style="font-size:12px;">쇼핑몰이 입점 신청하면 여기에 표시됩니다</div>
-          </div>
         </div>
       </div>
     </div>

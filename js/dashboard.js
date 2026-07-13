@@ -159,7 +159,7 @@ genBtnEl?.addEventListener('click', () => {
   if (!url) return;
   const code = Math.random().toString(36).slice(2, 8);
   const domain = url.split('/')[2] || 'shop';
-  const generated = `ptnr.ing/r/${code}?ref=myid`;
+  const generated = `on.partner/r/${code}?ref=myid`;
   if (genResultEl) {
     const span = genResultEl.querySelector('span');
     if (span) span.textContent = generated;

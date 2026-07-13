@@ -1,6 +1,6 @@
 /**
  * partnering tracker.js v1.0.0
- * 파트너링 제휴마케팅 추적 스크립트
+ * 온파트너 제휴마케팅 추적 스크립트
  *
  * [사용법 1] 스크립트 태그 삽입 (모든 페이지 <head> 또는 <body> 끝)
  *   <script src="https://partnering.com/tracker.js?shop=SHOP_ID"></script>
@@ -21,7 +21,7 @@
    * 설정
    * ─────────────────────────────────────────── */
   var CONFIG = {
-    SERVER:      'https://api.partnering.com/v1',  // 파트너링 API 서버
+    SERVER:      'https://api.partnering.com/v1',  // 온파트너 API 서버
     COOKIE_KEY:  'ptnr_ref',                        // 파트너 ref 쿠키명
     COOKIE_DAYS: 30,                                // 쿠키 유지 기간 (일)
     PARAM:       'ref',                             // URL 파라미터명
