@@ -1098,21 +1098,30 @@ let __campCategories = [];
 let __campSelectedProducts = new Set();
 let __campProductRates = {};
 let __campProductCounts = {};
+let __campProductSummaries = {};
 async function loadCampaigns() {
   if (!window.opClient) return;
   const box = document.getElementById('campaign-list');
   const [campRes, catRes, cpRes] = await Promise.all([
     window.opClient.from('campaigns').select('*').order('starts_at', { ascending: false }),
     window.opClient.from('categories').select('id,name,sort_order').order('sort_order', { ascending: true }),
-    window.opClient.from('campaign_products').select('campaign_id,product_id')
+    window.opClient.from('campaign_products').select('campaign_id,product_id,bonus_rate,products(name)')
   ]);
   if (campRes.error) { if (box) box.innerHTML = '<div class="adm-empty"><div class="ico">⚠️</div><b>캠페인을 불러오지 못했어요</b>' + admEsc(campRes.error.message) + '</div>'; return; }
   __campaigns = campRes.data || [];
   if (!catRes.error) __campCategories = catRes.data || [];
   __campProductCounts = {};
+  __campProductSummaries = {};
   if (!cpRes.error) {
     (cpRes.data || []).forEach(r => {
-      __campProductCounts[String(r.campaign_id)] = (__campProductCounts[String(r.campaign_id)] || 0) + 1;
+      const campaignId = String(r.campaign_id);
+      __campProductCounts[campaignId] = (__campProductCounts[campaignId] || 0) + 1;
+      const productName = r.products && !Array.isArray(r.products) ? r.products.name : '';
+      if (!__campProductSummaries[campaignId]) __campProductSummaries[campaignId] = [];
+      __campProductSummaries[campaignId].push({
+        name: productName || r.product_id,
+        rate: r.bonus_rate
+      });
     });
   }
   renderCampaigns();
@@ -1228,7 +1237,17 @@ function renderCampaigns() {
       : st === 'ended' ? '<span class="camp-status ended">종료</span>'
       : '<span class="camp-status live">진행중</span>';
     const categoryName = categoryMap[String(c.target_value || '')] || c.target_value || '카테고리';
-    const tgt = c.target_type === 'category' ? ('카테고리: ' + admEsc(categoryName)) : c.target_type === 'product' ? ('상품 ' + Number(__campProductCounts[String(c.id)] || 0).toLocaleString() + '개 · 상품별 수수료') : '전체 상품';
+    const campaignId = String(c.id);
+    const productCount = Number(__campProductCounts[campaignId] || 0);
+    const productSummaryList = (__campProductSummaries[campaignId] || []).map(r => admEsc(r.name) + ' +' + fmtRate(r.rate) + '%');
+    const productSummary = productSummaryList.length
+      ? '<details class="camp-product-summary"><summary>상품 ' + productCount.toLocaleString() + '개 (개별 수수료)</summary><div>' + productSummaryList.join(', ') + '</div></details>'
+      : '<span class="camp-target-strong">상품 ' + productCount.toLocaleString() + '개 (개별 수수료)</span>';
+    const tgt = c.target_type === 'category'
+      ? '<span class="camp-target-strong">카테고리: ' + admEsc(categoryName) + ' +' + fmtRate(c.bonus_rate) + '%</span>'
+      : c.target_type === 'product'
+        ? productSummary
+        : '<span class="camp-target-strong">전체 상품 +' + fmtRate(c.bonus_rate) + '%</span>';
     return '<div class="campaign-card' + (c.is_active ? '' : ' inactive') + '">' +
       '<div class="camp-head"><span class="camp-emoji">' + admEsc(c.emoji || '🎁') + '</span><span class="camp-bonus-badge">+' + fmtRate(c.bonus_rate) + '%</span></div>' +
       '<div class="camp-title">' + admEsc(c.title) + '</div>' +
@@ -1245,6 +1264,14 @@ function onCampTargetChange() {
   const t = document.getElementById('cm-target-type').value;
   document.getElementById('cm-target-value-wrap').style.display = t === 'category' ? '' : 'none';
   document.getElementById('cm-product-wrap').style.display = t === 'product' ? '' : 'none';
+  const help = document.getElementById('cm-target-help');
+  if (help) {
+    help.textContent = t === 'category'
+      ? '선택한 카테고리의 모든 상품에 추가 수수료가 적용됩니다.'
+      : t === 'product'
+        ? '선택한 상품에만 적용됩니다. 상품별로 다른 추가율을 정할 수 있어요.'
+        : '모든 온종일팜 상품에 추가 수수료가 적용됩니다.';
+  }
   if (t === 'product') renderCampaignProductPicker();
 }
 async function openCampaignModal(id) {

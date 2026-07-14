@@ -362,14 +362,46 @@ let __catalogCategories = [];
 let __catalogCategory = 'all';
 let __catalogVisible = 12;
 const CATALOG_PAGE_SIZE = 12;
+function clampCatalogRate(v, fallback, max) {
+  const n = Number(v);
+  if (!Number.isFinite(n) || n < 0) return fallback;
+  return Math.min(n, max);
+}
+function getCatalogCampaignBonus(product, campaigns, productCampaignRates) {
+  let bonusRate = 0;
+  (campaigns || []).forEach(function (c) {
+    const targetType = c.target_type || 'all';
+    const targetValue = c.target_value == null ? '' : String(c.target_value);
+    const campaignId = String(c.id || '');
+    const productCampaignKey = campaignId + ':' + String(product.id);
+    const hasProductRate = Object.prototype.hasOwnProperty.call(productCampaignRates, productCampaignKey);
+    const productCategory = product.category_id == null ? '' : String(product.category_id);
+    const matches = targetType === 'all' ||
+      (targetType === 'product' && campaignId && hasProductRate) ||
+      (targetType === 'category' && productCategory && (targetValue === productCategory || targetValue === String(product.categoryName || '')));
+    if (matches) {
+      const productBonus = targetType === 'product' ? productCampaignRates[productCampaignKey] : null;
+      const rawBonus = productBonus == null ? c.bonus_rate : productBonus;
+      bonusRate = Math.max(bonusRate, clampCatalogRate(rawBonus, 0, 0.30));
+    }
+  });
+  return bonusRate;
+}
 async function loadCatalog() {
   const grid = document.getElementById('catalog-grid');
   if (!grid || !window.opClient) return;
-  const [prodRes, commRes, linkRes, catRes] = await Promise.all([
+  const today = new Date().toISOString().slice(0, 10);
+  const [prodRes, commRes, linkRes, catRes, campRes, cpRes] = await Promise.all([
     window.opClient.from('products').select('id,name,retail_price,image_url,unit,category_id').eq('is_active', true).order('created_at', { ascending: false }),
     window.opClient.from('product_commissions').select('product_id,commission_rate'),
     window.opClient.from('partner_links').select('code,product_id'),
-    window.opClient.from('categories').select('id,name,sort_order').order('sort_order', { ascending: true })
+    window.opClient.from('categories').select('id,name,sort_order').order('sort_order', { ascending: true }),
+    window.opClient.from('campaigns')
+      .select('id,bonus_rate,target_type,target_value')
+      .eq('is_active', true)
+      .lte('starts_at', today)
+      .gte('ends_at', today),
+    window.opClient.from('campaign_products').select('campaign_id,product_id,bonus_rate')
   ]);
   if (prodRes.error) { grid.innerHTML = '<div class="catalog-empty">상품을 불러오지 못했어요.</div>'; return; }
   const rateMap = {};
@@ -379,11 +411,23 @@ async function loadCatalog() {
   const categoryMap = {};
   __catalogCategories = catRes.error ? [] : (catRes.data || []);
   __catalogCategories.forEach(c => { categoryMap[String(c.id)] = c.name; });
-  __catalog = (prodRes.data || []).map(p => Object.assign({}, p, {
-    rate: (rateMap[p.id] != null ? rateMap[p.id] : 0.05),
-    myCode: myCodeMap[p.id] || null,
-    categoryName: categoryMap[String(p.category_id)] || ''
-  }));
+  const campaigns = campRes.error ? [] : (campRes.data || []);
+  const productCampaignRates = {};
+  if (!cpRes.error) {
+    (cpRes.data || []).forEach(r => {
+      productCampaignRates[String(r.campaign_id) + ':' + String(r.product_id)] = r.bonus_rate;
+    });
+  }
+  __catalog = (prodRes.data || []).map(p => {
+    const product = Object.assign({}, p, {
+      baseRate: clampCatalogRate(rateMap[p.id] != null ? rateMap[p.id] : 0.05, 0.05, 0.30),
+      myCode: myCodeMap[p.id] || null,
+      categoryName: categoryMap[String(p.category_id)] || ''
+    });
+    product.campaignBonusRate = getCatalogCampaignBonus(product, campaigns, productCampaignRates);
+    product.rate = Math.min(product.baseRate + product.campaignBonusRate, 0.60);
+    return product;
+  });
   renderCatalogFilters();
   renderCatalog();
 }
@@ -422,14 +466,21 @@ function renderCatalog() {
   grid.innerHTML = visibleList.map(function (p) {
     const price = Number(p.retail_price) || 0;
     const earn = Math.round(price * p.rate);
+    const basePct = Math.round((Number(p.baseRate) || 0) * 1000) / 10;
+    const ratePct = Math.round((Number(p.rate) || 0) * 1000) / 10;
+    const bonusPct = Math.round((Number(p.campaignBonusRate) || 0) * 1000) / 10;
+    const hasCampaignBonus = bonusPct > 0;
     const img = (p.image_url && /^https?:\/\//.test(p.image_url) && p.image_url.length > 30) ? p.image_url : '';
     return '<div class="catalog-card">' +
       '<div class="catalog-img" style="' + (img ? "background-image:url('" + escHtml(img) + "')" : '') + '">' + (img ? '' : '🛒') + '</div>' +
       '<div class="catalog-info">' +
         '<div class="catalog-name">' + escHtml(p.name) + '</div>' +
         (p.categoryName ? '<div class="catalog-category">' + escHtml(p.categoryName) + '</div>' : '') +
+        (hasCampaignBonus ? '<div class="catalog-campaign-badge">🎁 캠페인 +' + escHtml(String(bonusPct).replace(/\.0$/, '')) + '%</div>' : '') +
         '<div class="catalog-price">₩' + price.toLocaleString() + '<span>/' + escHtml(p.unit || '개') + '</span></div>' +
-        '<div class="catalog-earn">내 수익 <b>₩' + earn.toLocaleString() + '</b><span class="catalog-rate">' + Math.round(p.rate * 100) + '%</span></div>' +
+        '<div class="catalog-earn">' + (hasCampaignBonus ? '내 예상 수익' : '내 수익') + ' <b>₩' + earn.toLocaleString() + '</b><span class="catalog-rate' + (hasCampaignBonus ? ' boosted' : '') + '">' +
+          (hasCampaignBonus ? escHtml(String(basePct).replace(/\.0$/, '')) + '% → ' + escHtml(String(ratePct).replace(/\.0$/, '')) + '% <em>▲+' + escHtml(String(bonusPct).replace(/\.0$/, '')) + '%</em>' : escHtml(String(ratePct).replace(/\.0$/, '')) + '%') +
+        '</span></div>' +
         (p.myCode
           ? '<div class="catalog-mylink"><span title="partner.yuanfnb.com/r/' + p.myCode + '">🔗 partner.yuanfnb.com/r/' + escHtml(p.myCode) + '</span><button class="catalog-copy" data-code="' + escHtml(p.myCode) + '">복사</button></div>' +
             '<button class="catalog-regen" data-id="' + escHtml(p.id) + '"' + (suspended ? ' disabled title="정지된 계정" style="opacity:.45;cursor:not-allowed;"' : '') + '>🔄 재발급</button>'

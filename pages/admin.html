@@ -485,6 +485,7 @@
         <div style="flex:1;"><label class="admin-label">캠페인 제목</label><input class="admin-input" id="cm-title-input" placeholder="예: 설 명절 선물세트 캠페인"></div>
       </div>
       <div style="margin-bottom:14px;"><label class="admin-label">설명 (파트너에게 노출)</label><input class="admin-input" id="cm-desc" placeholder="예: 기간 내 선물세트 판매 시 수수료 +3%"></div>
+      <div class="campaign-guide-box">캠페인 추가 수수료는 <b>기존 상품 마진에 더해집니다.</b><br>예) 상품 마진 5% + 캠페인 3% = 파트너 수수료 8%.</div>
       <div style="display:flex;gap:10px;margin-bottom:14px;">
         <div style="flex:1;"><label class="admin-label">대상</label>
           <select class="admin-input" id="cm-target-type" onchange="onCampTargetChange()">
@@ -492,6 +493,7 @@
             <option value="category">특정 카테고리</option>
             <option value="product">특정 상품 선택</option>
           </select>
+          <div class="campaign-target-help" id="cm-target-help"></div>
         </div>
         <div style="flex:1;display:none;" id="cm-target-value-wrap"><label class="admin-label">카테고리</label><select class="admin-input" id="cm-target-value"></select></div>
       </div>
@@ -506,7 +508,7 @@
         <input class="admin-input" id="cm-product-search" placeholder="상품명 검색..." oninput="renderCampaignProductPicker()">
         <div class="campaign-product-list" id="cm-product-list"></div>
       </div>
-      <div style="margin-bottom:14px;"><label class="admin-label">기본 추가 수수료율 (%) <span style="color:var(--text3);font-weight:600;">상품별 미입력 시 적용</span></label><input class="admin-input" id="cm-bonus" type="number" min="0" max="30" step="0.5" value="3"></div>
+      <div style="margin-bottom:14px;"><label class="admin-label">기본 추가 수수료율 (%) <span style="color:var(--text3);font-weight:600;">상품별로 따로 정하지 않은 상품에 공통 적용</span></label><input class="admin-input" id="cm-bonus" type="number" min="0" max="30" step="0.5" value="3"></div>
       <div style="display:flex;gap:10px;margin-bottom:16px;">
         <div style="flex:1;"><label class="admin-label">시작일</label><input class="admin-input" id="cm-start" type="date"></div>
         <div style="flex:1;"><label class="admin-label">종료일</label><input class="admin-input" id="cm-end" type="date"></div>
