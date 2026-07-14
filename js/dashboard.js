@@ -212,7 +212,10 @@ function renderAds() {
         (ad.tag ? '<div class="partner-ad-tag">' + escHtml(ad.tag) + '</div>' : '') +
         '<h2>' + escHtml(ad.title || '온종일팜 추천 상품') + '</h2>' +
         (ad.subtitle ? '<p>' + escHtml(ad.subtitle) + '</p>' : '') +
-        (href ? '<a class="partner-ad-cta" href="' + escHtml(href) + '" target="_blank" rel="noopener noreferrer">' + escHtml(cta) + ' →</a>' : '') +
+        '<div class="partner-ad-actions">' +
+          (href ? '<a class="partner-ad-cta" href="' + escHtml(href) + '" target="_blank" rel="noopener noreferrer">' + escHtml(cta) + ' →</a>' : '') +
+          (ad.product_id ? '<button type="button" class="partner-ad-cta ghost" onclick="goGetLinkFromAd(\'' + escHtml(ad.product_id) + '\')">🔗 링크 받기</button>' : '') +
+        '</div>' +
       '</div>' +
     '</article>';
   }).join('');
@@ -224,6 +227,13 @@ function renderAds() {
     __adTimer = setInterval(function () { goAdSlide((__adIndex + 1) % __adSlides.length); }, 4000);
   }
 }
+
+// 광고 "링크 받기" → 내 링크 페이지로 이동 + 해당 상품으로 스크롤/강조
+function goGetLinkFromAd(productId) {
+  __adTargetProductId = String(productId || '');
+  showPage('links');
+}
+let __adTargetProductId = '';
 
 function goAdSlide(index) {
   if (!__adSlides.length) return;
@@ -471,7 +481,7 @@ function renderCatalog() {
     const bonusPct = Math.round((Number(p.campaignBonusRate) || 0) * 1000) / 10;
     const hasCampaignBonus = bonusPct > 0;
     const img = (p.image_url && /^https?:\/\//.test(p.image_url) && p.image_url.length > 30) ? p.image_url : '';
-    return '<div class="catalog-card">' +
+    return '<div class="catalog-card" data-pid="' + escHtml(p.id) + '">' +
       '<div class="catalog-img" style="' + (img ? "background-image:url('" + escHtml(img) + "')" : '') + '">' + (img ? '' : '🛒') + '</div>' +
       '<div class="catalog-info">' +
         '<div class="catalog-name">' + escHtml(p.name) + '</div>' +
@@ -490,6 +500,19 @@ function renderCatalog() {
   }).join('');
   updateCatalogMore(list.length);
   setActionButtonsForStatus();
+  // 광고 "링크 받기"로 넘어온 경우 → 해당 상품 카드로 스크롤+강조
+  if (__adTargetProductId) {
+    const pid = __adTargetProductId;
+    __adTargetProductId = '';
+    setTimeout(function () {
+      const card = grid.querySelector('.catalog-card[data-pid="' + (window.CSS && CSS.escape ? CSS.escape(pid) : pid) + '"]');
+      if (card) {
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        card.classList.add('catalog-card-highlight');
+        setTimeout(function () { card.classList.remove('catalog-card-highlight'); }, 2600);
+      }
+    }, 120);
+  }
 }
 function updateCatalogMore(total) {
   const btn = document.getElementById('catalog-more');

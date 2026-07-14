@@ -324,8 +324,13 @@
   line-height: 1.55;
   font-weight: 600;
 }
-.partner-ad-cta {
+.partner-ad-actions {
   margin-top: 18px;
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+.partner-ad-cta {
   min-height: 38px;
   padding: 10px 16px;
   border-radius: var(--radius-sm);
@@ -334,11 +339,36 @@
   text-decoration: none;
   font-size: 13px;
   font-weight: 900;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  cursor: pointer;
+  border: none;
+  font-family: var(--font);
+  display: inline-flex;
+  align-items: center;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s;
 }
 .partner-ad-cta:hover {
   transform: translateY(-1px);
   box-shadow: var(--shadow-lime);
+}
+.partner-ad-cta.ghost {
+  background: rgba(255,255,255,0.14);
+  color: #fff;
+  border: 1.5px solid rgba(255,255,255,0.5);
+  backdrop-filter: blur(4px);
+}
+.partner-ad-cta.ghost:hover {
+  background: #fff;
+  color: #0A0A0A;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.28);
+}
+/* 광고에서 넘어온 상품 카드 강조 */
+.catalog-card-highlight {
+  animation: catalogPulse 2.6s ease;
+  border-color: var(--lime) !important;
+}
+@keyframes catalogPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(190,255,0,0); }
+  15%, 55% { box-shadow: 0 0 0 4px var(--lime-glow), 0 12px 30px var(--lime-glow); }
 }
 .partner-ad-dots {
   position: absolute;
