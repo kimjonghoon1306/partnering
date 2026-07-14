@@ -1442,8 +1442,28 @@ function bindAdPreviewEvents() {
   ['ad-image-url','ad-tag','ad-title-input','ad-subtitle','ad-cta'].forEach(id => {
     document.getElementById(id)?.addEventListener('input', renderAdPreview);
   });
+  // 연결 상품 선택 시 → 상품 이미지·제목 자동 채움
+  document.getElementById('ad-product')?.addEventListener('change', onAdProductChange);
 }
 bindAdPreviewEvents();
+// 연결 상품 선택 시 이미지/제목 자동 채우기
+function onAdProductChange() {
+  const pid = document.getElementById('ad-product')?.value;
+  if (!pid) return;
+  const p = (__campProducts || []).find(x => String(x.id) === String(pid));
+  if (!p) return;
+  const imgEl = document.getElementById('ad-image-url');
+  const titleEl = document.getElementById('ad-title-input');
+  // 이미지 칸이 비어있으면 상품 이미지 자동 입력 (기존 입력값은 존중)
+  if (imgEl && !imgEl.value.trim() && p.image_url && /^https?:\/\//.test(p.image_url)) {
+    imgEl.value = p.image_url;
+  }
+  // 제목이 비어있으면 상품명 자동 입력
+  if (titleEl && !titleEl.value.trim() && p.name) {
+    titleEl.value = p.name;
+  }
+  renderAdPreview();
+}
 async function openAdModal(id) {
   await ensureAdProducts();
   const ad = id ? __partnerAds.find(x => x.id === id) : null;
@@ -1484,13 +1504,21 @@ function renderAdPreview() {
 async function saveAd(btn) {
   if (!window.opClient) return;
   const id = document.getElementById('ad-id').value;
-  const imageUrl = document.getElementById('ad-image-url').value.trim();
-  const title = document.getElementById('ad-title-input').value.trim();
   const productId = document.getElementById('ad-product').value || null;
+  // 이미지 비었으면 선택한 연결 상품 이미지로 자동 채움
+  let imageUrl = document.getElementById('ad-image-url').value.trim();
+  if (!imageUrl && productId) {
+    const p = (__campProducts || []).find(x => String(x.id) === String(productId));
+    if (p && p.image_url && /^https?:\/\//.test(p.image_url)) {
+      imageUrl = p.image_url;
+      const imgEl = document.getElementById('ad-image-url'); if (imgEl) imgEl.value = imageUrl;
+    }
+  }
+  const title = document.getElementById('ad-title-input').value.trim();
   const linkUrl = document.getElementById('ad-link-url').value.trim() || null;
   const startsAt = fromDatetimeLocal(document.getElementById('ad-start').value);
   const endsAt = fromDatetimeLocal(document.getElementById('ad-end').value);
-  if (!imageUrl) { showToast('이미지 URL을 입력하세요'); return; }
+  if (!imageUrl) { showToast('이미지 URL을 입력하거나, 이미지가 있는 상품을 선택하세요'); return; }
   if (!isHttpUrl(imageUrl)) { showToast('이미지 URL은 http(s) 주소만 사용할 수 있어요'); return; }
   if (!title) { showToast('제목을 입력하세요'); return; }
   if (!productId && !linkUrl) { showToast('연결 상품 또는 링크 URL을 입력하세요'); return; }
