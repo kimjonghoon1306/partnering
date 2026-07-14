@@ -38,6 +38,9 @@
       <a class="admin-nav-item" data-page="review"><span class="admin-nav-icon">✅</span><span class="admin-nav-label">전환 검수</span><span class="admin-nav-badge" id="nav-review-badge" style="display:none;">0</span></a>
       <a class="admin-nav-item" data-page="settle"><span class="admin-nav-icon">💸</span><span class="admin-nav-label">정산 처리</span></a>
       <a class="admin-nav-item" data-page="settle-history"><span class="admin-nav-icon">🏦</span><span class="admin-nav-label">정산 내역</span></a>
+
+      <div class="admin-nav-label" style="margin-top:8px;">리스크 관리</div>
+      <a class="admin-nav-item" data-page="fraud"><span class="admin-nav-icon">🚨</span><span class="admin-nav-label">부정 클릭 탐지</span><span class="admin-nav-badge" id="nav-fraud-badge" style="display:none;">0</span></a>
     </nav>
     <div class="admin-sidebar-bottom">
       <a class="admin-nav-item" href="../index.html"><span class="admin-nav-icon">🏠</span><span class="admin-nav-label">메인으로</span></a>
@@ -235,6 +238,30 @@
           <table class="admin-table" id="settle-history-table">
             <thead><tr><th>기간</th><th>파트너</th><th>정산액</th><th>상태</th><th>지급일</th></tr></thead>
             <tbody><tr><td colspan="5"><div class="adm-empty"><div class="ico">🏦</div><b>불러오는 중...</b></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 부정 클릭 탐지 -->
+    <div class="admin-page" id="ap-fraud">
+      <div class="admin-summary" style="grid-template-columns:repeat(3,1fr);">
+        <div class="admin-card" style="--card-glow:rgba(79,195,247,0.12);"><div class="admin-card-accent" style="background:var(--blue);"></div><div class="admin-card-icon">👆</div><div class="admin-card-label">총 클릭 (최근 30일)</div><div class="admin-card-value" style="color:var(--blue);" id="fr-total">0</div><div class="admin-card-change neutral">전체 파트너</div></div>
+        <div class="admin-card" style="--card-glow:rgba(255,77,106,0.12);"><div class="admin-card-accent" style="background:#FF4D6A;"></div><div class="admin-card-icon">🚨</div><div class="admin-card-label">의심 클릭</div><div class="admin-card-value" style="color:#FF4D6A;" id="fr-suspect">0</div><div class="admin-card-change neutral">반복 IP·비정상 패턴</div></div>
+        <div class="admin-card" style="--card-glow:rgba(255,214,10,0.12);"><div class="admin-card-accent" style="background:var(--yellow);"></div><div class="admin-card-icon">⚠️</div><div class="admin-card-label">주의 파트너</div><div class="admin-card-value" style="color:var(--yellow);" id="fr-flagged">0</div><div class="admin-card-change neutral">위험 신호 감지</div></div>
+      </div>
+      <div class="admin-table-card">
+        <div class="admin-table-header">
+          <div>
+            <div class="admin-table-title">🚨 파트너별 클릭 위험 분석</div>
+            <div style="font-size:12px;color:var(--text2);margin-top:4px;">같은 IP 반복 클릭, 비정상 전환율 등을 분석해요. <b>위험</b> 파트너는 전환 검수를 꼼꼼히 하거나 정지를 검토하세요.</div>
+          </div>
+          <button class="comm-save" onclick="loadFraud()">↻ 새로고침</button>
+        </div>
+        <div class="admin-table-wrap">
+          <table class="admin-table" id="fraud-table">
+            <thead><tr><th>파트너</th><th>총 클릭</th><th>고유 IP</th><th>최다 반복 IP</th><th>전환</th><th>전환율</th><th>위험도</th></tr></thead>
+            <tbody><tr><td colspan="7"><div class="adm-empty"><div class="ico">🚨</div><b>불러오는 중...</b></div></td></tr></tbody>
           </table>
         </div>
       </div>

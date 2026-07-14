@@ -47,6 +47,7 @@ function showAdminPage(pageId) {
   if (pageId === 'review') loadReview();
   if (pageId === 'settle') loadSettle();
   if (pageId === 'settle-history') loadSettleHistory();
+  if (pageId === 'fraud') loadFraud();
 }
 
 adminNavItems.forEach(item => {
@@ -511,6 +512,66 @@ document.getElementById('settle-hist-search')?.addEventListener('input', functio
 });
 
 function setTxt(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
+
+// ══════════ 부정 클릭 탐지 ══════════
+async function loadFraud() {
+  if (!window.opClient) return;
+  const tb = document.querySelector('#fraud-table tbody');
+  const since = new Date(Date.now() - 30 * 864e5).toISOString();
+  const [clRes, plRes, pRes, cvRes] = await Promise.all([
+    window.opClient.from('link_clicks').select('ip_hash,link_id').gte('clicked_at', since).limit(5000),
+    window.opClient.from('partner_links').select('id,partner_id'),
+    window.opClient.from('partners').select('id,name,nickname'),
+    window.opClient.from('conversions').select('partner_id,status')
+  ]);
+  if (clRes.error) { if (tb) tb.innerHTML = '<tr><td colspan="7"><div class="adm-empty">' + admEsc(clRes.error.message) + '</div></td></tr>'; return; }
+  const linkToPartner = {}; (plRes.data || []).forEach(l => linkToPartner[l.id] = l.partner_id);
+  const pName = {}; (pRes.data || []).forEach(p => pName[p.id] = p.name || p.nickname || '-');
+  const convCnt = {}; (cvRes.data || []).forEach(c => { if (c.status !== 'canceled') convCnt[c.partner_id] = (convCnt[c.partner_id] || 0) + 1; });
+  const agg = {};
+  (clRes.data || []).forEach(cl => {
+    const pid = linkToPartner[cl.link_id]; if (!pid) return;
+    if (!agg[pid]) agg[pid] = { pid, clicks: 0, ip: {} };
+    agg[pid].clicks++;
+    const ip = cl.ip_hash || '(none)';
+    agg[pid].ip[ip] = (agg[pid].ip[ip] || 0) + 1;
+  });
+  let totalClicks = 0, suspectClicks = 0, flagged = 0;
+  const rank = { danger: 2, warn: 1, ok: 0 };
+  const rows = Object.values(agg).map(a => {
+    const uniqIp = Object.keys(a.ip).length;
+    const maxRep = Math.max(0, ...Object.values(a.ip));
+    const conv = convCnt[a.pid] || 0;
+    const cvr = a.clicks ? conv / a.clicks : 0;
+    const dupClicks = Math.max(0, a.clicks - uniqIp);
+    totalClicks += a.clicks; suspectClicks += dupClicks;
+    const uniqRatio = a.clicks ? uniqIp / a.clicks : 1;
+    let risk = 'ok';
+    if (a.clicks >= 10 && (uniqRatio < 0.3 || maxRep >= a.clicks * 0.6)) risk = 'danger';
+    else if (a.clicks >= 5 && (uniqRatio < 0.5 || (cvr === 0 && a.clicks >= 20))) risk = 'warn';
+    if (risk !== 'ok') flagged++;
+    return { pid, clicks: a.clicks, uniqIp, maxRep, conv, cvr, risk };
+  }).sort((x, y) => (rank[y.risk] - rank[x.risk]) || (y.clicks - x.clicks));
+  setTxt('fr-total', totalClicks.toLocaleString());
+  setTxt('fr-suspect', suspectClicks.toLocaleString());
+  setTxt('fr-flagged', flagged.toLocaleString());
+  const badge = document.getElementById('nav-fraud-badge');
+  if (badge) { badge.textContent = flagged; badge.style.display = flagged ? '' : 'none'; }
+  if (!tb) return;
+  if (!rows.length) { tb.innerHTML = '<tr><td colspan="7"><div class="adm-empty"><div class="ico">🚨</div><b>클릭 데이터가 없어요</b>링크 클릭이 쌓이면 자동 분석됩니다</div></td></tr>'; return; }
+  tb.innerHTML = rows.map(r => {
+    const pill = r.risk === 'danger' ? '<span class="status-pill paused">🔴 위험</span>' : r.risk === 'warn' ? '<span class="status-pill pending">🟡 주의</span>' : '<span class="status-pill active">🟢 정상</span>';
+    const repHot = (r.maxRep >= r.clicks * 0.6 && r.clicks >= 10);
+    return '<tr>' +
+      '<td><b>' + admEsc(pName[r.pid] || '-') + '</b></td>' +
+      '<td>' + r.clicks.toLocaleString() + '</td>' +
+      '<td>' + r.uniqIp.toLocaleString() + '</td>' +
+      '<td' + (repHot ? ' style="color:#FF4D6A;font-weight:700;"' : '') + '>' + r.maxRep + '회</td>' +
+      '<td>' + r.conv + '</td>' +
+      '<td>' + (r.cvr * 100).toFixed(1) + '%</td>' +
+      '<td>' + pill + '</td></tr>';
+  }).join('');
+}
 
 // 초기 진입 시 오버뷰 로드
 document.addEventListener('DOMContentLoaded', () => { setTimeout(loadAdminOverview, 300); });
