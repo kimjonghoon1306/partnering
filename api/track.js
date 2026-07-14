@@ -128,6 +128,18 @@ module.exports = async (req, res) => {
       fetch(SUPA + '/rest/v1/rpc/op_increment_conversion', {
         method: 'POST', headers, body: JSON.stringify({ p_link: link.id })
       }).catch(() => {});
+      fetch(SUPA + '/rest/v1/notifications', {
+        method: 'POST',
+        headers: Object.assign({}, headers, { Prefer: 'return=minimal' }),
+        body: JSON.stringify({
+          partner_id: link.partner_id,
+          type: 'conversion_earn',
+          title: '💰 수수료 적립',
+          body: '구매가 발생해 수수료 ₩' + commission.toLocaleString('ko-KR') + '이 적립됐어요. (검수 후 정산)'
+        })
+      }).catch(err => {
+        console.warn('conversion notification insert failed:', err);
+      });
       return ok({ ok: true, commission: commission });
     }
     if (ins.status === 409) return ok({ ok: true, duplicate: true });

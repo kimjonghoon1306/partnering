@@ -142,6 +142,25 @@ async function createPartnerNotification(partnerId, type, title, body) {
   }
 }
 
+async function notifyAllPartners(type, title, body) {
+  if (!window.opClient) return;
+  try {
+    const { data, error } = await window.opClient.from('partners').select('id,email');
+    if (error) {
+      console.warn('bulk notification partner load failed:', error.message);
+      return;
+    }
+    const rows = (data || [])
+      .filter(p => p.id && !OP_ADMIN_EMAILS.includes((p.email || '').toLowerCase()))
+      .map(p => ({ partner_id: p.id, type, title, body }));
+    if (!rows.length) return;
+    const { error: insertError } = await window.opClient.from('notifications').insert(rows);
+    if (insertError) console.warn('bulk notification insert failed:', insertError.message);
+  } catch (err) {
+    console.warn('bulk notification insert failed:', err);
+  }
+}
+
 // ── 초기화
 document.addEventListener('DOMContentLoaded', () => {
   showAdminPage('overview');
@@ -1309,6 +1328,8 @@ async function openCampaignModal(id) {
 async function saveCampaign(btn) {
   if (!window.opClient) return;
   const id = document.getElementById('cm-id').value;
+  const previousCampaign = id ? __campaigns.find(c => String(c.id) === String(id)) : null;
+  const wasActive = !!(previousCampaign && previousCampaign.is_active);
   const title = document.getElementById('cm-title-input').value.trim();
   const starts = document.getElementById('cm-start').value;
   const ends = document.getElementById('cm-end').value;
@@ -1355,12 +1376,27 @@ async function saveCampaign(btn) {
   btn.disabled = false; btn.textContent = t;
   if (error) { alert('저장 실패: ' + error.message); return; }
   await logAdminAction(id ? 'update_campaign' : 'create_campaign', 'campaign', savedId, { title: payload.title, starts_at: payload.starts_at, ends_at: payload.ends_at, bonus_rate: payload.bonus_rate, is_active: payload.is_active, product_count: tt === 'product' ? __campSelectedProducts.size : 0 });
+  if (payload.is_active && (!id || !wasActive)) {
+    notifyAllPartners(
+      'campaign',
+      '🎁 새 캠페인: ' + payload.title,
+      payload.description || '기간 내 대상 상품 판매 시 추가 수수료가 적용돼요. 지금 확인해보세요!'
+    );
+  }
   closeModal('campaign-modal'); showToast('캠페인 저장 완료 ✅'); loadCampaigns();
 }
 async function toggleCampaign(id, active) {
   if (!window.opClient) return;
   const { error } = await window.opClient.from('campaigns').update({ is_active: active }).eq('id', id);
   if (error) { showToast('실패: ' + error.message); return; }
+  if (active) {
+    const camp = __campaigns.find(c => String(c.id) === String(id));
+    notifyAllPartners(
+      'campaign',
+      '🎁 새 캠페인: ' + (camp?.title || '캠페인'),
+      camp?.description || '기간 내 대상 상품 판매 시 추가 수수료가 적용돼요. 지금 확인해보세요!'
+    );
+  }
   loadCampaigns(); showToast(active ? '캠페인 활성화 ✅' : '캠페인 비활성화');
 }
 async function deleteCampaign(id) {
@@ -1577,6 +1613,13 @@ async function saveAd(btn) {
   btn.disabled = false; btn.textContent = prev;
   if (error) { showToast('광고 저장 실패: ' + error.message); return; }
   await logAdminAction(id ? 'update_ad' : 'create_ad', 'partner_ad', savedId, { title: payload.title, product_id: payload.product_id, sort_order: payload.sort_order, is_active: payload.is_active });
+  if (!id && payload.is_active) {
+    notifyAllPartners(
+      'ad',
+      '📢 새 추천 상품',
+      payload.title + ' — 지금 홍보하면 좋아요!'
+    );
+  }
   closeModal('ad-modal');
   showToast('광고 저장 완료 ✅');
   loadAdsAdmin();

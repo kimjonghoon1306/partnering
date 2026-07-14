@@ -726,7 +726,9 @@ function notificationMeta(type) {
     settlement_paid: { icon: '💸', color: '#8BE000' },
     account_suspended: { icon: '⛔', color: '#FF4D6A' },
     account_activated: { icon: '🟢', color: '#8BE000' },
-    campaign: { icon: '📣', color: '#5BB8FF' }
+    campaign: { icon: '🎁', color: '#8BE000' },
+    ad: { icon: '📢', color: '#5BB8FF' },
+    conversion_earn: { icon: '💰', color: '#FFB020' }
   };
   return map[type] || { icon: '🔔', color: 'var(--text2)' };
 }
