@@ -63,7 +63,7 @@
 
     <div class="sidebar-bottom">
       <a href="../index.html" class="btn-ghost" style="width:100%;justify-content:center;">← 메인으로</a>
-      <button onclick="sessionStorage.clear();window.location.href='../index.html'" class="btn-ghost" style="width:100%;justify-content:center;margin-top:6px;color:#ff6b6b;border-color:rgba(255,107,107,0.2);">로그아웃</button>
+      <button onclick="opLogout()" class="btn-ghost" style="width:100%;justify-content:center;margin-top:6px;color:#ff6b6b;border-color:rgba(255,107,107,0.2);">로그아웃</button>
     </div>
   </aside>
 
@@ -652,10 +652,16 @@
   // 세션 가드: 로그인 안 했으면 로그인 페이지로
   (async function () {
     if (!window.opClient) return;
+    document.body.style.visibility = 'hidden';
     const { data: { session } } = await window.opClient.auth.getSession();
     if (!session) { window.location.replace('login.html'); return; }
     window.__opSession = session;
-    await opEnsurePartner(session.user);
+    const partner = await opGetPartner(session.user);
+    if (!partner) {
+      window.location.replace('signup.html?mode=partner-register');
+      return;
+    }
+    document.body.style.visibility = '';
   })();
   async function opLogout() {
     await window.opClient?.auth.signOut();

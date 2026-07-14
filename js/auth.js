@@ -183,6 +183,80 @@ document.querySelectorAll('.tag-select').forEach(group => {
   });
 });
 
+function setSignupCompletion(mode, email) {
+  const title = document.querySelector('#page-3 .auth-title');
+  const sub = document.querySelector('#page-3 .auth-sub');
+  const goBtn = document.querySelector('#page-3 a.auth-submit');
+  if (mode === 'register') {
+    if (title) title.textContent = '파트너 등록 완료!';
+    if (sub) sub.innerHTML = '온파트너 파트너 등록이 완료됐어요.<br>이제 대시보드에서 링크를 만들 수 있어요.';
+    if (goBtn) { goBtn.setAttribute('href', 'dashboard.html'); goBtn.textContent = '대시보드로 이동 →'; }
+    return;
+  }
+  if (mode === 'confirm') {
+    if (sub) sub.innerHTML = '가입 신청 완료! 📩<br><b>' + (email || '') +
+      '</b> 으로 보낸 <b>확인 메일</b>의 링크를 눌러야<br>로그인할 수 있어요.';
+    if (goBtn) { goBtn.setAttribute('href', 'login.html'); goBtn.textContent = '로그인하러 가기 →'; }
+    return;
+  }
+  if (title) title.textContent = '가입 완료!';
+  if (sub) sub.innerHTML = '온파트너에 오신 걸 환영해요.<br>지금 바로 첫 링크를 만들고 수익을 시작해보세요!';
+  if (goBtn) { goBtn.setAttribute('href', 'dashboard.html'); goBtn.textContent = '대시보드로 이동 →'; }
+}
+
+async function initPartnerRegistrationMode() {
+  if (!document.getElementById('form-1') || !window.opClient) return;
+  const params = new URLSearchParams(window.location.search);
+  const wantsRegister = params.get('mode') === 'partner-register';
+  const { data: { session } } = await window.opClient.auth.getSession();
+  if (!session || !wantsRegister) return;
+
+  const partner = await opGetPartner(session.user);
+  if (partner) {
+    window.location.replace('dashboard.html');
+    return;
+  }
+
+  window.__opPartnerRegisterMode = true;
+  const m = session.user.user_metadata || {};
+  const title = document.querySelector('#page-1 .auth-title');
+  const sub = document.querySelector('#page-1 .auth-sub');
+  const divider = document.querySelector('.auth-divider');
+  const social = document.querySelector('.social-btns');
+  const footer = document.querySelector('.auth-footer');
+  const submit = document.querySelector('#form-2 button[type="submit"]');
+  if (title) title.textContent = '온파트너 파트너 등록';
+  if (sub) sub.innerHTML = '온종일팜 회원이시네요!<br>추가 정보를 입력하면 온파트너 파트너로 등록돼요.';
+  if (divider) divider.style.display = 'none';
+  if (social) social.style.display = 'none';
+  if (footer) footer.style.display = 'none';
+  if (submit) submit.textContent = '파트너 등록 완료 →';
+
+  const emailEl = document.getElementById('email');
+  const pwEl = document.getElementById('password');
+  const pwConfirmEl = document.getElementById('password-confirm');
+  const setVal = (id, value) => {
+    const el = document.getElementById(id);
+    if (el && value) el.value = value;
+  };
+  setVal('name', m.name);
+  setVal('nickname', m.nickname);
+  setVal('phone', m.phone || m.contact);
+  if (emailEl) {
+    emailEl.value = session.user.email || '';
+    emailEl.readOnly = true;
+  }
+  [pwEl, pwConfirmEl].forEach(input => {
+    if (!input) return;
+    input.required = false;
+    input.disabled = true;
+    const group = input.closest('.form-group');
+    if (group) group.style.display = 'none';
+  });
+  document.getElementById('pw-strength')?.remove();
+  document.getElementById('pw-match-error')?.remove();
+}
+
 // ── 회원가입 처리 (Supabase)
 async function handleSignup(e) {
   const form = document.getElementById('form-2');
@@ -199,11 +273,32 @@ async function handleSignup(e) {
   const categories = opSelectedTags('category-tags');
   const follower_scale = document.getElementById('followers')?.value || null;
 
-  if (!email || !password) { showErr('이메일과 비밀번호를 입력해주세요.'); return; }
   if (!window.opClient) { showErr('연결 오류입니다. 새로고침 후 다시 시도해주세요.'); return; }
 
-  setBtn('가입 중...', true);
   const info = { name, nickname, phone, email, channels, categories, follower_scale };
+  if (window.__opPartnerRegisterMode) {
+    if (!name || !nickname || !phone) { showErr('이름, 닉네임, 전화번호를 입력해주세요.'); return; }
+    setBtn('등록 중...', true);
+    const { data: { user } } = await window.opClient.auth.getUser();
+    if (!user) {
+      setBtn('파트너 등록 완료 →', false);
+      window.location.href = 'login.html';
+      return;
+    }
+    const partner = await opEnsurePartner(user, { ...info, email: user.email || email });
+    if (!partner) {
+      setBtn('파트너 등록 완료 →', false);
+      showErr('파트너 등록에 실패했어요. 잠시 후 다시 시도해주세요.');
+      return;
+    }
+    setSignupCompletion('register');
+    goStep(3);
+    return;
+  }
+
+  if (!email || !password) { showErr('이메일과 비밀번호를 입력해주세요.'); return; }
+
+  setBtn('가입 중...', true);
   const { data, error } = await window.opClient.auth.signUp({
     email, password,
     options: { data: { name, nickname, phone, channels, categories, follower_scale, role: 'partner' } }
@@ -222,16 +317,14 @@ async function handleSignup(e) {
   if (data.session && data.user) {
     await opEnsurePartner(data.user, info);
   }
-  // 세션 없으면(이메일 확인 ON) → 첫 로그인 때 opEnsurePartner가 생성
+  // 세션 없으면(이메일 확인 ON) → 확인 후 로그인하면 파트너 등록 화면에서 partners row를 생성
 
   goStep(3);
   // 이메일 확인이 필요한 경우 완료화면에 안내
   if (!data.session) {
-    const sub = document.querySelector('#page-3 .auth-sub');
-    if (sub) sub.innerHTML = '가입 신청 완료! 📩<br><b>' + (email || '') +
-      '</b> 으로 보낸 <b>확인 메일</b>의 링크를 눌러야<br>로그인할 수 있어요.';
-    const goBtn = document.querySelector('#page-3 a.auth-submit');
-    if (goBtn) { goBtn.setAttribute('href', 'login.html'); goBtn.textContent = '로그인하러 가기 →'; }
+    setSignupCompletion('confirm', email);
+  } else {
+    setSignupCompletion('signup');
   }
 }
 
@@ -261,6 +354,12 @@ async function handleLogin(e) {
     showErr(m);
     return;
   }
-  await opEnsurePartner(data.user);  // partners 없으면 metadata로 생성
-  window.location.href = 'dashboard.html';
+  const partner = await opGetPartner(data.user);
+  if (partner) {
+    window.location.href = 'dashboard.html';
+    return;
+  }
+  window.location.href = 'signup.html?mode=partner-register';
 }
+
+initPartnerRegistrationMode();

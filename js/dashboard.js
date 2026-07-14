@@ -476,10 +476,9 @@ async function loadSettings() {
   const { data: { user } } = await window.opClient.auth.getUser();
   let { data: p, error } = await window.opClient.from('partners').select('*').maybeSingle();
   if (error) console.warn('[온파트너] 설정 로드 오류:', error.message);
-  // 프로필 row가 없으면 가입정보(metadata)로 생성 시도 후 재조회
   if (!p && user) {
-    await opEnsurePartner(user);
-    ({ data: p } = await window.opClient.from('partners').select('*').maybeSingle());
+    window.location.href = 'signup.html?mode=partner-register';
+    return;
   }
   p = p || {};
   const m = (user && user.user_metadata) || {};

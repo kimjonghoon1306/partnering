@@ -15,15 +15,28 @@ function opSelectedTags(groupId) {
     .map(t => t.dataset.val);
 }
 
-// 로그인/가입 후 partners 프로필 보장
-// - 가입 시(info 있음): metadata 기반으로 생성/갱신
-// - 로그인 시(info 없음): 이미 있으면 그대로 둠 (설정에서 수정한 값 보존)
+// partners row 존재 여부가 온파트너 가입 여부다.
+async function opGetPartner(user) {
+  if (!user || !window.opClient) return null;
+  const { data, error } = await window.opClient
+    .from('partners')
+    .select('*')
+    .eq('id', user.id)
+    .maybeSingle();
+  if (error) {
+    console.warn('[온파트너] partners 조회 경고:', error.message);
+    return null;
+  }
+  return data || null;
+}
+
+// 온파트너 가입/등록 시 partners 프로필 생성
+// - info 있음: auth.users.id로 partners row 생성/갱신
+// - info 없음: 로그인/세션 진입이므로 절대 자동 생성하지 않음
 async function opEnsurePartner(user, info) {
-  if (!user) return;
-  // 이미 프로필이 있으면, 로그인(info 없음) 시엔 덮어쓰지 않음
-  const { data: existing } = await window.opClient
-    .from('partners').select('id').eq('id', user.id).maybeSingle();
-  if (existing && !info) return;
+  if (!user || !window.opClient) return null;
+  const existing = await opGetPartner(user);
+  if (!info) return existing;
 
   const m = user.user_metadata || {};
   const row = {
@@ -36,8 +49,14 @@ async function opEnsurePartner(user, info) {
     categories: (info && info.categories) || m.categories || [],
     follower_scale: (info && info.follower_scale) || m.follower_scale || null,
   };
-  const { error } = await window.opClient
+  const { data, error } = await window.opClient
     .from('partners')
-    .upsert(row, { onConflict: 'id', ignoreDuplicates: false });
-  if (error) console.warn('[온파트너] partners 저장 경고:', error.message);
+    .upsert(row, { onConflict: 'id', ignoreDuplicates: false })
+    .select('*')
+    .maybeSingle();
+  if (error) {
+    console.warn('[온파트너] partners 저장 경고:', error.message);
+    return existing;
+  }
+  return data || existing;
 }
