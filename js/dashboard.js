@@ -277,7 +277,7 @@ async function loadLinks() {
   setLinkBadge(data.length);
   if (!tbody) return;
   if (!data.length) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:44px;color:var(--text3);font-size:14px;line-height:1.6;">아직 만든 링크가 없어요.<br>위에서 온종일팜 상품 URL로 첫 링크를 만들어보세요! 🔗</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:44px;color:var(--text3);font-size:14px;line-height:1.6;">아직 만든 링크가 없어요.<br>위에서 온종일팜 상품 URL로 첫 링크를 만들어보세요! 🔗</td></tr>';
     return;
   }
   tbody.innerHTML = data.map(function (l) {
@@ -294,8 +294,20 @@ async function loadLinks() {
       '<td class="td-earn">₩0</td>' +
       '<td style="font-size:12px;color:var(--text3)">' + date + '</td>' +
       '<td><span class="status-pill active">● 활성</span></td>' +
+      '<td style="text-align:right;"><button class="link-del-btn" onclick="deleteLink(\'' + escHtml(l.code) + '\',this)" title="링크 삭제">🗑 삭제</button></td>' +
       '</tr>';
   }).join('');
+}
+
+// ── 링크 삭제
+async function deleteLink(code, btn) {
+  if (!window.opClient) return;
+  if (!confirm('이 링크를 삭제할까요?\n삭제하면 이 링크로는 더 이상 클릭·구매가 추적되지 않아요.')) return;
+  btn.disabled = true; const t = btn.textContent; btn.textContent = '삭제 중...';
+  const { error } = await window.opClient.from('partner_links').delete().eq('code', code);
+  if (error) { btn.disabled = false; btn.textContent = t; alert('삭제 실패: ' + error.message); return; }
+  loadLinks();      // 목록·배지 갱신
+  loadCatalog();    // 카탈로그 '링크 받기' 상태 복구
 }
 function escHtml(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 
