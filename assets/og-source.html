@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { width:1200px; height:630px; overflow:hidden; }
+  body {
+    font-family:'Pretendard Variable',-apple-system,sans-serif;
+    background:radial-gradient(900px circle at 30% 30%, #121212, #060606 70%);
+    position:relative;
+    display:flex;
+    align-items:center;
+    color:#F5F5F5;
+  }
+  /* 배경 글로우 */
+  .glow1 { position:absolute; width:700px; height:700px; left:-120px; top:-160px;
+    background:radial-gradient(circle, rgba(190,255,0,0.22), transparent 60%); }
+  .glow2 { position:absolute; width:620px; height:620px; right:-120px; bottom:-200px;
+    background:radial-gradient(circle, rgba(190,255,0,0.10), transparent 60%); }
+  /* 격자 */
+  .grid { position:absolute; inset:0;
+    background-image:linear-gradient(rgba(255,255,255,0.035) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(255,255,255,0.035) 1px,transparent 1px);
+    background-size:52px 52px;
+    mask-image:radial-gradient(circle at 35% 40%, #000 20%, transparent 72%);
+    -webkit-mask-image:radial-gradient(circle at 35% 40%, #000 20%, transparent 72%); }
+  /* 대각 스윕 */
+  .sweep { position:absolute; top:-30%; left:38%; width:26%; height:160%;
+    background:linear-gradient(105deg,transparent,rgba(190,255,0,0.07),transparent);
+    transform:rotate(9deg); }
+
+  .left { position:relative; z-index:2; padding:0 0 0 76px; width:660px; }
+  .badge { display:inline-flex; align-items:center; gap:10px;
+    padding:11px 22px; border-radius:999px;
+    background:rgba(190,255,0,0.10); border:1.5px solid rgba(190,255,0,0.35);
+    color:#BEFF00; font-size:22px; font-weight:700; margin-bottom:30px; }
+  .badge .dot { width:11px; height:11px; border-radius:50%; background:#BEFF00;
+    box-shadow:0 0 14px #BEFF00; }
+  h1 { font-size:76px; font-weight:900; line-height:1.12; letter-spacing:-0.035em; margin-bottom:24px; }
+  h1 em { font-style:normal; color:#BEFF00; text-shadow:0 0 44px rgba(190,255,0,0.5); }
+  .sub { font-size:27px; font-weight:500; color:rgba(255,255,255,0.62); line-height:1.5; }
+
+  .logo { position:absolute; z-index:3; left:76px; top:52px;
+    font-size:40px; font-weight:900; letter-spacing:-0.03em; display:flex; align-items:center; }
+  .logo .on { color:#060606; background:#BEFF00; border-radius:12px; padding:2px 12px;
+    margin-right:5px; box-shadow:0 0 30px rgba(190,255,0,0.45); }
+  .domain { position:absolute; z-index:3; left:78px; bottom:50px;
+    font-size:24px; font-weight:700; color:#BEFF00; letter-spacing:0.01em; }
+
+  /* 우측 수익 카드 */
+  .card { position:absolute; z-index:2; right:74px; top:50%; transform:translateY(-50%) rotate(-4deg);
+    width:352px; background:#141414; border:1px solid rgba(190,255,0,0.22);
+    border-radius:28px; padding:30px 30px; box-shadow:0 30px 80px rgba(0,0,0,0.55); }
+  .card .k { font-size:22px; color:rgba(255,255,255,0.5); font-weight:600; margin-bottom:10px; display:flex; align-items:center; gap:9px; }
+  .card .v { font-size:52px; font-weight:900; color:#BEFF00;
+    background:linear-gradient(180deg,#EAFFB0,#BEFF00 60%,#8FD100);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+    letter-spacing:-0.03em; margin-bottom:6px; }
+  .card .up { font-size:20px; color:#BEFF00; font-weight:700; }
+  .bars { display:flex; align-items:flex-end; gap:8px; height:78px; margin-top:22px; }
+  .bar { flex:1; background:rgba(190,255,0,0.25); border-radius:6px 6px 0 0; }
+  .bar.hot { background:#BEFF00; }
+  .tag { position:absolute; right:64px; top:96px; z-index:3; transform:rotate(-4deg);
+    background:#BEFF00; color:#060606; font-size:20px; font-weight:900;
+    padding:8px 18px; border-radius:999px; box-shadow:0 10px 30px rgba(190,255,0,0.3); }
+</style>
+</head>
+<body>
+  <div class="glow1"></div><div class="glow2"></div>
+  <div class="grid"></div><div class="sweep"></div>
+
+  <div class="logo"><span class="on">온</span>파트너</div>
+
+  <div class="left">
+    <div class="badge"><span class="dot"></span>온종일팜 공식 파트너스</div>
+    <h1>링크 하나로<br><em>온종일 수익</em>을<br>만드세요</h1>
+    <div class="sub">상품을 추천하고, 구매가 일어나면<br>수수료가 그대로 내 통장으로.</div>
+  </div>
+
+  <div class="tag">+₩385,000</div>
+  <div class="card">
+    <div class="k">💰 이번 달 수익</div>
+    <div class="v">₩385,000</div>
+    <div class="up">▲ 23% 지난달 대비</div>
+    <div class="bars">
+      <div class="bar" style="height:38%"></div>
+      <div class="bar" style="height:55%"></div>
+      <div class="bar" style="height:44%"></div>
+      <div class="bar" style="height:70%"></div>
+      <div class="bar" style="height:60%"></div>
+      <div class="bar" style="height:85%"></div>
+      <div class="bar hot" style="height:100%"></div>
+    </div>
+  </div>
+
+  <div class="domain">partner.yuanfnb.com</div>
+</body>
+</html>
