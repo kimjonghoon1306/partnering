@@ -66,7 +66,7 @@ module.exports = async (req, res) => {
     };
     const baseRate = clampRate(link.commission_rate, 0.05, 0.30);
     let bonusRate = 0;
-    const today = new Date().toISOString().slice(0, 10);
+    const today = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10); // KST 기준
     const campUrl = SUPA + '/rest/v1/campaigns?select=id,title,bonus_rate,target_type,target_value&is_active=eq.true&starts_at=lte.' + encodeURIComponent(today) + '&ends_at=gte.' + encodeURIComponent(today);
     const campRes = await fetch(campUrl, { headers });
     const campaigns = campRes.ok ? await campRes.json() : [];

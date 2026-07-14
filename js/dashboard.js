@@ -91,6 +91,11 @@ let __adTimer = null;
 
 function pad2(n) { return String(n).padStart(2, '0'); }
 function dateKey(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+// 한국시간(KST, UTC+9) 기준 오늘 날짜 (캠페인 기간 비교용 — UTC로 하면 자정~9시 사이 하루 어긋남)
+function todayKST() {
+  const kst = new Date(Date.now() + 9 * 3600 * 1000);
+  return kst.toISOString().slice(0, 10);
+}
 function monthKey(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1); }
 function dayLabel(d) { return (d.getMonth() + 1) + '/' + d.getDate(); }
 function monthLabelFromKey(key) { return Number(key.slice(5, 7)) + '월'; }
@@ -128,7 +133,7 @@ function setActionButtonsForStatus() {
 }
 async function loadCampaignBanner() {
   if (!window.opClient) return;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayKST();
   const { data, error } = await window.opClient.from('campaigns')
     .select('title,emoji,bonus_rate,starts_at,ends_at,target_type,target_value')
     .eq('is_active', true)
@@ -400,7 +405,7 @@ function getCatalogCampaignBonus(product, campaigns, productCampaignRates) {
 async function loadCatalog() {
   const grid = document.getElementById('catalog-grid');
   if (!grid || !window.opClient) return;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayKST();
   const [prodRes, commRes, linkRes, catRes, campRes, cpRes] = await Promise.all([
     window.opClient.from('products').select('id,name,retail_price,image_url,unit,category_id').eq('is_active', true).order('created_at', { ascending: false }),
     window.opClient.from('product_commissions').select('product_id,commission_rate'),

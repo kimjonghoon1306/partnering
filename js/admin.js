@@ -1234,7 +1234,7 @@ function renderCampaignProductPicker() {
   }).join('');
 }
 function campStatus(c) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10); // KST 기준
   if (c.starts_at > today) return 'scheduled';
   if (c.ends_at < today) return 'ended';
   return 'live';

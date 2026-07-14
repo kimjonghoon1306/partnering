@@ -1,5 +1,16 @@
 /* ── ADMIN LAYOUT ── */
-.admin-wrap { display: flex; min-height: 100vh; }
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.admin-wrap {
+  display: flex;
+  min-height: 100vh;
+  max-width: 100%;
+  overflow-x: hidden;
+}
 
 /* ── ADMIN SIDEBAR ── */
 .admin-sidebar {
@@ -116,6 +127,9 @@
   flex-direction: column;
   min-height: 100vh;
   background: #0A0A0A;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .admin-topbar {
@@ -131,7 +145,7 @@
   top: 0;
   z-index: 40;
 }
-.admin-topbar-title { font-size: 15px; font-weight: 700; color: #F5F5F5; }
+.admin-topbar-title { font-size: 15px; font-weight: 700; color: #F5F5F5; min-width: 0; }
 .admin-topbar-right { display: flex; align-items: center; gap: 8px; }
 .admin-icon-btn {
   width: 34px; height: 34px;
@@ -167,15 +181,16 @@
 }
 
 /* ── ADMIN PAGE ── */
-.admin-page { padding: 24px; flex: 1; display: none; }
+.admin-page { padding: 24px; flex: 1; display: none; min-width: 0; max-width: 100%; }
 .admin-page.active { display: block; }
 
 /* ── ADMIN SUMMARY CARDS ── */
 .admin-summary {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
   margin-bottom: 20px;
+  min-width: 0;
 }
 .admin-card {
   background: #141414;
@@ -184,6 +199,7 @@
   padding: 22px;
   position: relative;
   overflow: hidden;
+  min-width: 0;
   transition: transform 0.22s cubic-bezier(.22,.61,.36,1), border-color 0.22s, box-shadow 0.22s;
 }
 .admin-card::after {
@@ -209,9 +225,18 @@
   border-radius: 3px 3px 0 0;
 }
 .admin-card-icon { font-size: 30px; opacity: 0.16; position: absolute; top: 16px; right: 16px; transition: opacity 0.25s, transform 0.25s; }
-.admin-card-label { font-size: 12.5px; color: rgba(255,255,255,0.48); font-weight: 600; margin-bottom: 7px; }
-.admin-card-value { font-size: 31px; font-weight: 900; letter-spacing: -1.2px; line-height: 1; margin-bottom: 7px; }
-.admin-card-change { font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 4px; }
+.admin-card-label { font-size: 12.5px; color: rgba(255,255,255,0.48); font-weight: 600; margin-bottom: 7px; overflow-wrap: anywhere; }
+.admin-card-value {
+  font-size: clamp(23px, 2.9vw, 31px);
+  font-weight: 900;
+  letter-spacing: -1px;
+  line-height: 1;
+  margin-bottom: 7px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+}
+.admin-card-change { font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 4px; min-width: 0; overflow-wrap: anywhere; }
 .admin-card-change.up { color: var(--lime); }
 .admin-card-change.down { color: #FF4D6A; }
 .admin-card-change.neutral { color: rgba(255,255,255,0.3); }
@@ -223,6 +248,8 @@
   border-radius: 16px;
   overflow: hidden;
   margin-bottom: 16px;
+  min-width: 0;
+  max-width: 100%;
 }
 .admin-table-header {
   padding: 16px 20px;
@@ -233,7 +260,7 @@
   gap: 12px;
   flex-wrap: wrap;
 }
-.admin-table-title { font-size: 14px; font-weight: 700; color: #F5F5F5; }
+.admin-table-title { font-size: 14px; font-weight: 700; color: #F5F5F5; overflow-wrap: anywhere; }
 .admin-table-actions { display: flex; gap: 8px; align-items: center; }
 
 .admin-search {
@@ -269,7 +296,11 @@
 .comm-more-wrap { display:flex; justify-content:center; padding:16px 2px 2px; }
 .comm-more { display:none; }
 
-.admin-table-wrap { overflow-x: auto; }
+.admin-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
 .admin-table {
   width: 100%;
   border-collapse: collapse;
@@ -354,6 +385,7 @@
   align-items: center;
   justify-content: center;
   padding: 20px;
+  overflow-y: auto;
 }
 .admin-modal-overlay.show { display: flex; }
 .admin-modal {
@@ -364,6 +396,7 @@
   max-width: 460px;
   max-height: 85vh;
   overflow-y: auto;
+  min-width: 0;
 }
 .admin-modal-campaign { max-width: 620px; }
 .admin-modal-wide { max-width: 920px; }
@@ -494,9 +527,13 @@
   }
   .admin-modal {
     border-radius: 20px 20px 0 0;
-    max-height: 90vh;
+    max-height: 94vh;
     max-width: 100%;
+    width: 100%;
   }
+  .admin-modal-header { padding: 16px 18px 14px; }
+  .admin-modal-body { padding: 16px 18px; }
+  .admin-modal-footer { padding: 14px 18px; }
   .partner-detail-grid { grid-template-columns: 1fr; }
   .partner-detail-metrics { grid-template-columns: 1fr; }
 }
@@ -530,9 +567,10 @@
 /* ── NOTICE CENTER ── */
 .notice-layout {
   display: grid;
-  grid-template-columns: minmax(320px, 0.9fr) minmax(360px, 1.1fr);
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
   gap: 16px;
   align-items: start;
+  min-width: 0;
 }
 .notice-form {
   padding: 18px 20px 20px;
@@ -547,7 +585,7 @@
 }
 .notice-target-grid {
   display: grid;
-  grid-template-columns: minmax(160px, 0.75fr) minmax(220px, 1.25fr);
+  grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr);
   gap: 12px;
 }
 .notice-form-footer {
@@ -619,7 +657,7 @@
 
 /* ── RESPONSIVE ── */
 @media (max-width: 900px) {
-  .admin-summary { grid-template-columns: 1fr 1fr; }
+  .admin-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .notice-layout { grid-template-columns: 1fr; }
 }
 @media (max-width: 768px) {
@@ -629,13 +667,55 @@
   .admin-main { margin-left: 0; }
   .admin-hamburger { display: flex; }
   .admin-page { padding: 14px; }
-  .admin-summary { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .admin-summary { grid-template-columns: 1fr !important; gap: 10px; }
+  .admin-card { padding: 16px; }
+  .admin-card-value { font-size: clamp(23px, 7vw, 28px); }
+  .admin-table-header { align-items: stretch; }
+  .admin-table-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .admin-search {
+    width: 100%;
+    min-height: 42px;
+  }
+  .admin-filter-btn,
+  .admin-action-btn,
+  .comm-save {
+    min-height: 40px;
+  }
   .notice-target-grid { grid-template-columns: 1fr; }
   .notice-form-footer { align-items: stretch; flex-direction: column; }
   .notice-form-footer .comm-save { width: 100%; }
 }
 @media (max-width: 480px) {
-  .admin-summary { grid-template-columns: 1fr; }
+  .admin-summary { grid-template-columns: 1fr !important; }
+  .admin-topbar { padding: 0 14px; }
+  .admin-topbar-title {
+    max-width: 48vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .admin-topbar-right { gap: 6px; }
+  .admin-icon-btn,
+  .admin-hamburger {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+  }
+  .admin-page { padding: 12px; }
+  .admin-table-header { padding: 14px 16px; }
+  .admin-table th,
+  .admin-table td {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+  .admin-modal {
+    border-radius: 16px 16px 0 0;
+    max-height: 96vh;
+  }
+  .admin-modal-footer { flex-direction: column; }
 }
 
 /* ── 라이트 모드 ── */
@@ -688,7 +768,7 @@
 [data-theme="light"] .admin-modal-footer { background: #FFFFFF; }
 
 /* ── 상품 마진 설정 행 ── */
-.comm-row { display:flex; align-items:center; gap:14px; background:var(--dark3,#141414); border:1px solid var(--border,rgba(255,255,255,0.08)); border-radius:14px; padding:12px 14px; flex-wrap:wrap; }
+.comm-row { display:flex; align-items:center; gap:14px; background:var(--dark3,#141414); border:1px solid var(--border,rgba(255,255,255,0.08)); border-radius:14px; padding:12px 14px; flex-wrap:wrap; min-width:0; }
 .comm-thumb { width:52px; height:52px; border-radius:10px; background-size:cover; background-position:center; background-color:rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0; }
 .comm-info { flex:1; min-width:140px; }
 .comm-name { font-size:14px; font-weight:700; }
@@ -712,7 +792,7 @@
 .comm-save:hover { background:rgba(190,255,0,0.1); }
 .comm-save:active { transform:scale(.95); }
 .comm-save.dirty { background:var(--lime); color:#0a0a0a; }
-@media (max-width:640px){ .comm-ctrl{ width:100%; justify-content:space-between; } .comm-range{ width:110px; } }
+@media (max-width:640px){ .comm-ctrl{ width:100%; justify-content:space-between; } .comm-range{ width:min(160px,45vw); } .comm-save{ flex:1; } }
 
 /* 라이트 모드: 라임 텍스트 가독성(흰 배경) → 어두운 라임 */
 [data-theme="light"] .comm-rate-val,
@@ -752,7 +832,7 @@
 [data-theme="light"] .admin-profile-role { color: var(--lime-dim); }
 
 /* ══════════ 오버뷰 2열 레이아웃 ══════════ */
-.adm-grid-2 { display: grid; grid-template-columns: 1.55fr 1fr; gap: 14px; margin-bottom: 16px; }
+.adm-grid-2 { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 14px; margin-bottom: 16px; min-width: 0; }
 @media (max-width: 1000px){ .adm-grid-2 { grid-template-columns: 1fr; } }
 
 /* 패널(카드) 공통 */
@@ -761,6 +841,7 @@
   border: 1px solid rgba(255,255,255,0.07);
   border-radius: 16px;
   overflow: hidden;
+  min-width: 0;
 }
 .adm-panel-head {
   padding: 16px 20px 12px;
@@ -839,7 +920,7 @@
 [data-theme="light"] .status-pill.active { color: var(--lime-dim); }
 
 /* ══════════ 시즌 캠페인 ══════════ */
-.campaign-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+.campaign-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); gap: 14px; min-width: 0; }
 .campaign-card {
   background: #141414;
   border: 1px solid rgba(255,255,255,0.07);
@@ -847,6 +928,7 @@
   padding: 18px;
   position: relative;
   overflow: hidden;
+  min-width: 0;
   transition: transform 0.22s cubic-bezier(.22,.61,.36,1), border-color 0.22s, box-shadow 0.22s;
 }
 .campaign-card:hover { transform: translateY(-4px); border-color: rgba(190,255,0,0.25); box-shadow: 0 14px 36px rgba(0,0,0,0.4); }
@@ -1072,14 +1154,16 @@
 /* ══════════ 광고 관리 ══════════ */
 .ad-admin-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
   gap: 14px;
+  min-width: 0;
 }
 .ad-admin-card {
   background: #141414;
   border: 1px solid rgba(255,255,255,0.07);
   border-radius: 16px;
   overflow: hidden;
+  min-width: 0;
   transition: transform 0.22s cubic-bezier(.22,.61,.36,1), border-color 0.22s, box-shadow 0.22s;
 }
 .ad-admin-card:hover {
