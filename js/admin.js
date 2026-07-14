@@ -161,25 +161,46 @@ function renderCommissions(list) {
         '<div class="comm-price">판매가 ₩' + price.toLocaleString() + '</div></div>' +
       '<div class="comm-ctrl">' +
         '<input type="range" min="0" max="30" value="' + p.rate + '" class="comm-range" oninput="onCommRange(this)">' +
-        '<div class="comm-rate-box"><b class="comm-rate-val">' + p.rate + '</b>%</div>' +
+        '<div class="comm-rate-box"><input type="number" min="0" max="30" step="0.5" value="' + p.rate + '" class="comm-rate-input" oninput="onCommInput(this)">%</div>' +
         '<div class="comm-earn">수수료 ₩<span class="comm-earn-val">' + earn.toLocaleString() + '</span></div>' +
         '<button class="comm-save" onclick="saveCommission(this,\'' + admEsc(p.id) + '\')">저장</button>' +
       '</div></div>';
   }).join('');
 }
-function onCommRange(el) {
-  const row = el.closest('.comm-row');
-  const rate = Number(el.value);
-  row.querySelector('.comm-rate-val').textContent = rate;
+// 공통: 행의 rate로 미리보기·저장버튼 갱신
+function commApply(row, rate) {
   const p = __admProducts.find(x => x.id === row.dataset.id);
   const price = p ? (Number(p.retail_price) || 0) : 0;
   row.querySelector('.comm-earn-val').textContent = Math.round(price * rate / 100).toLocaleString();
   row.querySelector('.comm-save').classList.add('dirty');
 }
+// 슬라이더 드래그 → 입력칸 동기화
+function onCommRange(el) {
+  const row = el.closest('.comm-row');
+  const rate = Number(el.value);
+  const input = row.querySelector('.comm-rate-input');
+  if (input) input.value = rate;
+  commApply(row, rate);
+}
+// 숫자 입력 → 슬라이더 동기화 (0~30 범위 제한)
+function onCommInput(el) {
+  const row = el.closest('.comm-row');
+  let rate = parseFloat(el.value);
+  if (isNaN(rate)) return;                 // 지우는 중엔 대기
+  if (rate < 0) rate = 0;
+  if (rate > 30) { rate = 30; el.value = 30; }
+  const range = row.querySelector('.comm-range');
+  if (range) range.value = rate;
+  commApply(row, rate);
+}
 async function saveCommission(btn, pid) {
   if (!window.opClient) return;
   const row = btn.closest('.comm-row');
-  const rate = Number(row.querySelector('.comm-range').value) / 100;
+  const inputEl = row.querySelector('.comm-rate-input');
+  let pct = parseFloat(inputEl ? inputEl.value : row.querySelector('.comm-range').value);
+  if (isNaN(pct) || pct < 0) pct = 0;
+  if (pct > 30) pct = 30;
+  const rate = pct / 100;
   const t = btn.textContent; btn.disabled = true; btn.textContent = '저장 중...';
   const { data: { user } } = await window.opClient.auth.getUser();
   const { error } = await window.opClient.from('product_commissions')
