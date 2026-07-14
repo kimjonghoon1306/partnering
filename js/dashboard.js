@@ -194,7 +194,7 @@ function renderCatalog(list) {
         '<div class="catalog-price">₩' + price.toLocaleString() + '<span>/' + escHtml(p.unit || '개') + '</span></div>' +
         '<div class="catalog-earn">내 수익 <b>₩' + earn.toLocaleString() + '</b><span class="catalog-rate">' + Math.round(p.rate * 100) + '%</span></div>' +
         (p.myCode
-          ? '<div class="catalog-mylink"><span title="on.partner/r/' + p.myCode + '">🔗 on.partner/r/' + escHtml(p.myCode) + '</span><button class="catalog-copy" data-code="' + escHtml(p.myCode) + '">복사</button></div>' +
+          ? '<div class="catalog-mylink"><span title="partner.yuanfnb.com/r/' + p.myCode + '">🔗 partner.yuanfnb.com/r/' + escHtml(p.myCode) + '</span><button class="catalog-copy" data-code="' + escHtml(p.myCode) + '">복사</button></div>' +
             '<button class="catalog-regen" data-id="' + escHtml(p.id) + '">🔄 재발급</button>'
           : '<button class="catalog-getlink btn-primary" data-id="' + escHtml(p.id) + '">🔗 링크 받기</button>') +
       '</div>' +
@@ -209,7 +209,7 @@ document.getElementById('catalog-grid')?.addEventListener('click', async functio
   // 복사
   const copyBtn = e.target.closest('.catalog-copy');
   if (copyBtn) {
-    const url = 'on.partner/r/' + copyBtn.dataset.code;
+    const url = 'https://partner.yuanfnb.com/r/' + copyBtn.dataset.code;
     navigator.clipboard?.writeText(url).then(function () {
       const o = copyBtn.textContent; copyBtn.textContent = '복사됨!';
       setTimeout(function () { copyBtn.textContent = o; }, 1200);
@@ -228,7 +228,8 @@ document.getElementById('catalog-grid')?.addEventListener('click', async functio
   const t = btn.textContent; btn.disabled = true; btn.textContent = regenBtn ? '재발급 중...' : '생성 중...';
   const { data: { user } } = await window.opClient.auth.getUser();
   if (!user) { window.location.href = 'login.html'; return; }
-  const code = Math.random().toString(36).slice(2, 8);
+  const { data: prof } = await window.opClient.from('partners').select('nickname').maybeSingle();
+  const code = makeRefCode(prof && prof.nickname);
   let error;
   if (regenBtn) {
     const r = await window.opClient.from('partner_links').update({ code: code }).eq('partner_id', user.id).eq('product_id', p.id);
@@ -244,7 +245,7 @@ document.getElementById('catalog-grid')?.addEventListener('click', async functio
   }
   btn.disabled = false; btn.textContent = t;
   if (error) { alert('링크 처리 실패: ' + error.message); return; }
-  showLinkToast('on.partner/r/' + code);
+  showLinkToast('https://partner.yuanfnb.com/r/' + code);
   loadCatalog();
   loadLinks();
 });
@@ -282,7 +283,7 @@ async function loadLinks() {
   tbody.innerHTML = data.map(function (l) {
     let shop = '—'; try { shop = new URL(l.product_url).hostname; } catch (e) {}
     const name = l.title || '온종일팜 상품';
-    const purl = 'on.partner/r/' + l.code;
+    const purl = 'partner.yuanfnb.com/r/' + l.code;
     const date = (l.created_at || '').slice(0, 10).replace(/-/g, '.');
     return '<tr>' +
       '<td><div class="td-link">' + escHtml(name) + '</div></td>' +
@@ -298,6 +299,13 @@ async function loadLinks() {
 }
 function escHtml(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 
+// 추천 링크 코드: 닉네임 기반(kjhyun-3f2a). 닉네임 없거나 영숫자 아니면 랜덤.
+function makeRefCode(nick) {
+  const base = String(nick || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 12);
+  const rand = Math.random().toString(36).slice(2, 6);
+  return base ? base + '-' + rand : Math.random().toString(36).slice(2, 8);
+}
+
 // ── 검색 필터
 const searchEl = document.getElementById('links-search');
 searchEl?.addEventListener('input', function() {
@@ -311,19 +319,21 @@ searchEl?.addEventListener('input', function() {
 // ── 사이드바 파트너 정보 (실제 가입 이름)
 async function loadPartnerHeader() {
   if (!window.opClient) return;
-  const [{ data: p }, { count }] = await Promise.all([
+  const [{ data: { user } }, { data: p }, { count }] = await Promise.all([
+    window.opClient.auth.getUser(),
     window.opClient.from('partners').select('name,nickname').maybeSingle(),
     window.opClient.from('partner_links').select('id', { count: 'exact', head: true })
   ]);
-  if (p) {
-    const display = p.name || p.nickname || '파트너';
-    const nameEl = document.querySelector('.user-name');
-    const avEl = document.querySelector('.user-avatar');
-    const gradeEl = document.querySelector('.user-grade');
-    if (nameEl) nameEl.textContent = display;
-    if (avEl) avEl.textContent = display.slice(0, 1);
-    if (gradeEl) gradeEl.textContent = p.nickname ? '@' + p.nickname : '🌱 파트너';
-  }
+  const m = (user && user.user_metadata) || {};
+  const name = (p && p.name) || m.name;
+  const nick = (p && p.nickname) || m.nickname;
+  const display = name || nick || '파트너';
+  const nameEl = document.querySelector('.user-name');
+  const avEl = document.querySelector('.user-avatar');
+  const gradeEl = document.querySelector('.user-grade');
+  if (nameEl) nameEl.textContent = display;
+  if (avEl) avEl.textContent = display.slice(0, 1);
+  if (gradeEl) gradeEl.textContent = nick ? '@' + nick : '🌱 파트너';
   setLinkBadge(count || 0);
 }
 function setLinkBadge(n) {
@@ -451,21 +461,31 @@ async function loadSettlement() {
 // ── 설정 (프로필·정산계좌)
 async function loadSettings() {
   if (!window.opClient) return;
-  const { data: p } = await window.opClient.from('partners').select('*').maybeSingle();
-  if (!p) return;
+  const { data: { user } } = await window.opClient.auth.getUser();
+  let { data: p, error } = await window.opClient.from('partners').select('*').maybeSingle();
+  if (error) console.warn('[온파트너] 설정 로드 오류:', error.message);
+  // 프로필 row가 없으면 가입정보(metadata)로 생성 시도 후 재조회
+  if (!p && user) {
+    await opEnsurePartner(user);
+    ({ data: p } = await window.opClient.from('partners').select('*').maybeSingle());
+  }
+  p = p || {};
+  const m = (user && user.user_metadata) || {};
+  const g = (k) => (p[k] != null && p[k] !== '') ? p[k] : m[k];   // partners 우선, 없으면 metadata 폴백
   const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
-  setVal('set-name', p.name);
-  setVal('set-nick', p.nickname);
-  setVal('set-phone', p.phone);
-  setVal('set-email', p.email);
-  setVal('set-channels', (p.channels || []).join(', '));
-  setVal('set-categories', (p.categories || []).join(', '));
+  setVal('set-name', g('name'));
+  setVal('set-nick', g('nickname'));
+  setVal('set-phone', g('phone'));
+  setVal('set-email', p.email || (user && user.email));
+  setVal('set-channels', (g('channels') || []).join(', '));
+  setVal('set-categories', (g('categories') || []).join(', '));
   setVal('set-account', p.bank_account);
   setVal('set-holder', p.bank_holder);
   const bankEl = document.getElementById('set-bank');
   if (bankEl && p.bank_name) bankEl.value = p.bank_name;
   const av = document.getElementById('set-avatar');
-  if (av && p.name) av.textContent = p.name.slice(0, 1);
+  const dispName = g('name') || g('nickname');
+  if (av && dispName) av.textContent = dispName.slice(0, 1);
   const cur = document.getElementById('set-cur-account');
   const curH = document.getElementById('set-cur-holder');
   if (cur) cur.textContent = (p.bank_name && p.bank_account) ? (p.bank_name + ' ' + maskAccount(p.bank_account)) : '미등록';

@@ -15,15 +15,23 @@ function opSelectedTags(groupId) {
     .map(t => t.dataset.val);
 }
 
-// 로그인/가입 후 partners 프로필 보장 (없으면 metadata 기반 생성)
+// 로그인/가입 후 partners 프로필 보장
+// - 가입 시(info 있음): metadata 기반으로 생성/갱신
+// - 로그인 시(info 없음): 이미 있으면 그대로 둠 (설정에서 수정한 값 보존)
 async function opEnsurePartner(user, info) {
   if (!user) return;
+  // 이미 프로필이 있으면, 로그인(info 없음) 시엔 덮어쓰지 않음
+  const { data: existing } = await window.opClient
+    .from('partners').select('id').eq('id', user.id).maybeSingle();
+  if (existing && !info) return;
+
   const m = user.user_metadata || {};
   const row = {
     id: user.id,
     email: user.email,
     name: (info && info.name) || m.name || '',
     nickname: (info && info.nickname) || m.nickname || null,
+    phone: (info && info.phone) || m.phone || null,
     channels: (info && info.channels) || m.channels || [],
     categories: (info && info.categories) || m.categories || [],
     follower_scale: (info && info.follower_scale) || m.follower_scale || null,

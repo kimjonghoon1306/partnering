@@ -192,6 +192,7 @@ async function handleSignup(e) {
 
   const name = document.getElementById('name')?.value.trim();
   const nickname = document.getElementById('nickname')?.value.trim();
+  const phone = document.getElementById('phone')?.value.trim() || null;
   const email = document.getElementById('email')?.value.trim();
   const password = document.getElementById('password')?.value;
   const channels = opSelectedTags('channel-tags');
@@ -202,10 +203,10 @@ async function handleSignup(e) {
   if (!window.opClient) { showErr('연결 오류입니다. 새로고침 후 다시 시도해주세요.'); return; }
 
   setBtn('가입 중...', true);
-  const info = { name, nickname, email, channels, categories, follower_scale };
+  const info = { name, nickname, phone, email, channels, categories, follower_scale };
   const { data, error } = await window.opClient.auth.signUp({
     email, password,
-    options: { data: { name, nickname, channels, categories, follower_scale, role: 'partner' } }
+    options: { data: { name, nickname, phone, channels, categories, follower_scale, role: 'partner' } }
   });
 
   if (error) {
