@@ -72,7 +72,7 @@ module.exports = async (req, res) => {
     const campaigns = campRes.ok ? await campRes.json() : [];
     let productCategory = null;
     let productCategoryName = null;
-    const productCampaignIds = {};
+    const productCampaignRates = {};
     const needsCategory = Array.isArray(campaigns) && campaigns.some(c => c.target_type === 'category');
     const needsProductCampaigns = Array.isArray(campaigns) && campaigns.some(c => c.target_type === 'product');
     if (needsCategory && link.product_id) {
@@ -91,10 +91,10 @@ module.exports = async (req, res) => {
       }
     }
     if (needsProductCampaigns && link.product_id) {
-      const cpRes = await fetch(SUPA + '/rest/v1/campaign_products?select=campaign_id&product_id=eq.' + encodeURIComponent(String(link.product_id)), { headers });
+      const cpRes = await fetch(SUPA + '/rest/v1/campaign_products?select=campaign_id,bonus_rate&product_id=eq.' + encodeURIComponent(String(link.product_id)), { headers });
       const cpRows = cpRes.ok ? await cpRes.json() : [];
       if (Array.isArray(cpRows)) {
-        cpRows.forEach(r => { if (r.campaign_id) productCampaignIds[String(r.campaign_id)] = true; });
+        cpRows.forEach(r => { if (r.campaign_id) productCampaignRates[String(r.campaign_id)] = r.bonus_rate; });
       }
     }
     if (Array.isArray(campaigns)) {
@@ -102,9 +102,13 @@ module.exports = async (req, res) => {
         const targetType = c.target_type || 'all';
         const targetValue = c.target_value == null ? '' : String(c.target_value);
         const matches = targetType === 'all' ||
-          (targetType === 'product' && c.id && productCampaignIds[String(c.id)]) ||
+          (targetType === 'product' && c.id && Object.prototype.hasOwnProperty.call(productCampaignRates, String(c.id))) ||
           (targetType === 'category' && productCategory && (targetValue === productCategory || targetValue === productCategoryName));
-        if (matches) bonusRate = Math.max(bonusRate, clampRate(c.bonus_rate, 0, 0.30));
+        if (matches) {
+          const productBonus = targetType === 'product' ? productCampaignRates[String(c.id)] : null;
+          const rawBonus = productBonus == null ? c.bonus_rate : productBonus;
+          bonusRate = Math.max(bonusRate, clampRate(rawBonus, 0, 0.30));
+        }
       });
     }
     const rate = Math.min(baseRate + bonusRate, 0.60);

@@ -1096,6 +1096,7 @@ let __campaigns = [];
 let __campProducts = [];
 let __campCategories = [];
 let __campSelectedProducts = new Set();
+let __campProductRates = {};
 let __campProductCounts = {};
 async function loadCampaigns() {
   if (!window.opClient) return;
@@ -1151,9 +1152,20 @@ function updateCampaignProductCount() {
   if (el) el.textContent = '선택 ' + __campSelectedProducts.size.toLocaleString() + '개';
 }
 function toggleCampaignProduct(productId, checked) {
-  if (checked) __campSelectedProducts.add(String(productId));
-  else __campSelectedProducts.delete(String(productId));
+  const id = String(productId);
+  if (checked) {
+    __campSelectedProducts.add(id);
+    if (__campProductRates[id] == null || __campProductRates[id] === '') {
+      __campProductRates[id] = clampCampaignBonusPct(document.getElementById('cm-bonus')?.value) || 0;
+    }
+  } else {
+    __campSelectedProducts.delete(id);
+  }
   updateCampaignProductCount();
+  renderCampaignProductPicker();
+}
+function setCampaignProductRate(productId, value) {
+  __campProductRates[String(productId)] = value;
 }
 function renderCampaignProductPicker() {
   const listEl = document.getElementById('cm-product-list');
@@ -1176,13 +1188,18 @@ function renderCampaignProductPicker() {
     const id = String(p.id);
     const img = (p.image_url && /^https?:\/\//.test(p.image_url)) ? p.image_url : '';
     const price = Number(p.retail_price || 0).toLocaleString();
-    const checked = __campSelectedProducts.has(id) ? ' checked' : '';
-    return '<label class="campaign-product-option">' +
+    const isChecked = __campSelectedProducts.has(id);
+    const checked = isChecked ? ' checked' : '';
+    const rateValue = __campProductRates[id] == null ? '' : __campProductRates[id];
+    return '<div class="campaign-product-option">' +
+      '<label class="campaign-product-check">' +
       '<input type="checkbox" value="' + admEsc(id) + '"' + checked + ' onchange="toggleCampaignProduct(this.value,this.checked)">' +
+      '</label>' +
       '<span class="campaign-product-thumb" style="' + (img ? "background-image:url('" + admEsc(img) + "')" : '') + '">' + (img ? '' : '🛒') + '</span>' +
       '<span class="campaign-product-info"><span class="campaign-product-name">' + admEsc(p.name) + (p.is_active === false ? ' <em>(비활성)</em>' : '') + '</span>' +
       '<span class="campaign-product-meta">' + (categoryMap[String(p.category_id)] ? admEsc(categoryMap[String(p.category_id)]) + ' · ' : '') + '₩' + admEsc(price) + '</span></span>' +
-    '</label>';
+      '<span class="campaign-product-rate"><input type="number" min="0" max="30" step="0.5" value="' + admEsc(rateValue) + '" placeholder="' + admEsc(clampCampaignBonusPct(document.getElementById('cm-bonus')?.value)) + '" ' + (isChecked ? '' : 'disabled ') + 'oninput="setCampaignProductRate(\'' + admEsc(id) + '\',this.value)"><span>%</span></span>' +
+    '</div>';
   }).join('');
 }
 function campStatus(c) {
@@ -1211,7 +1228,7 @@ function renderCampaigns() {
       : st === 'ended' ? '<span class="camp-status ended">종료</span>'
       : '<span class="camp-status live">진행중</span>';
     const categoryName = categoryMap[String(c.target_value || '')] || c.target_value || '카테고리';
-    const tgt = c.target_type === 'category' ? ('카테고리: ' + admEsc(categoryName)) : c.target_type === 'product' ? ('상품 ' + Number(__campProductCounts[String(c.id)] || 0).toLocaleString() + '개') : '전체 상품';
+    const tgt = c.target_type === 'category' ? ('카테고리: ' + admEsc(categoryName)) : c.target_type === 'product' ? ('상품 ' + Number(__campProductCounts[String(c.id)] || 0).toLocaleString() + '개 · 상품별 수수료') : '전체 상품';
     return '<div class="campaign-card' + (c.is_active ? '' : ' inactive') + '">' +
       '<div class="camp-head"><span class="camp-emoji">' + admEsc(c.emoji || '🎁') + '</span><span class="camp-bonus-badge">+' + fmtRate(c.bonus_rate) + '%</span></div>' +
       '<div class="camp-title">' + admEsc(c.title) + '</div>' +
@@ -1234,6 +1251,7 @@ async function openCampaignModal(id) {
   await ensureCampaignPickerData();
   const c = id ? __campaigns.find(x => x.id === id) : null;
   __campSelectedProducts = new Set();
+  __campProductRates = {};
   document.getElementById('cm-title').textContent = c ? '캠페인 수정' : '새 캠페인';
   document.getElementById('cm-id').value = c ? c.id : '';
   document.getElementById('cm-emoji').value = c ? (c.emoji || '🎁') : '🎁';
@@ -1249,8 +1267,14 @@ async function openCampaignModal(id) {
   document.getElementById('cm-end').value = c ? c.ends_at : '';
   document.getElementById('cm-active').checked = c ? c.is_active : true;
   if (c && c.target_type === 'product') {
-    const { data, error } = await window.opClient.from('campaign_products').select('product_id').eq('campaign_id', c.id);
-    if (!error) (data || []).forEach(r => __campSelectedProducts.add(String(r.product_id)));
+    const { data, error } = await window.opClient.from('campaign_products').select('product_id,bonus_rate').eq('campaign_id', c.id);
+    if (!error) {
+      (data || []).forEach(r => {
+        const productId = String(r.product_id);
+        __campSelectedProducts.add(productId);
+        __campProductRates[productId] = fmtRate(r.bonus_rate);
+      });
+    }
   }
   onCampTargetChange();
   openModal('campaign-modal');
@@ -1291,7 +1315,12 @@ async function saveCampaign(btn) {
     const delRes = await window.opClient.from('campaign_products').delete().eq('campaign_id', savedId);
     if (delRes.error) error = delRes.error;
     if (!error && tt === 'product') {
-      const rows = Array.from(__campSelectedProducts).map(productId => ({ campaign_id: savedId, product_id: productId }));
+      const defaultBonusPct = clampCampaignBonusPct(document.getElementById('cm-bonus').value);
+      const rows = Array.from(__campSelectedProducts).map(productId => {
+        const rawRate = __campProductRates[String(productId)];
+        const bonusPct = rawRate == null || rawRate === '' ? defaultBonusPct : clampCampaignBonusPct(rawRate);
+        return { campaign_id: savedId, product_id: productId, bonus_rate: bonusPct / 100 };
+      });
       const insRes = await window.opClient.from('campaign_products').insert(rows);
       if (insRes.error) error = insRes.error;
     }

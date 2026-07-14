@@ -317,6 +317,15 @@
   color: rgba(255,255,255,0.5);
 }
 .admin-action-btn:hover { color: #F5F5F5; border-color: rgba(255,255,255,0.2); }
+[data-theme="light"] .admin-action-btn {
+  border-color: rgba(0,0,0,0.18);
+  color: rgba(0,0,0,0.6);
+}
+[data-theme="light"] .admin-action-btn:hover {
+  border-color: rgba(0,0,0,0.3);
+  color: #0A0A0A;
+  background: rgba(0,0,0,0.04);
+}
 .admin-action-btn.approve { border-color: rgba(190,255,0,0.3); color: var(--lime); }
 .admin-action-btn.approve:hover { background: rgba(190,255,0,0.08); }
 .admin-action-btn.reject { border-color: rgba(255,77,106,0.3); color: #FF4D6A; }
@@ -907,7 +916,7 @@
 }
 .campaign-product-option {
   display: grid;
-  grid-template-columns: 18px 44px minmax(0, 1fr);
+  grid-template-columns: 18px 44px minmax(0, 1fr) 98px;
   align-items: center;
   gap: 10px;
   min-height: 58px;
@@ -923,6 +932,14 @@
   background: #FFFFFF;
 }
 [data-theme="light"] .campaign-product-option:hover { border-color: rgba(0,0,0,0.16); }
+.campaign-product-check {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
 .campaign-product-option input {
   width: 17px;
   height: 17px;
@@ -968,6 +985,46 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.campaign-product-rate {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.campaign-product-rate input {
+  width: 72px;
+  height: 34px;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.04);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 800;
+  font-family: var(--font);
+  outline: none;
+}
+.campaign-product-rate input:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.campaign-product-rate span {
+  color: var(--text3);
+  font-size: 12px;
+  font-weight: 800;
+}
+[data-theme="light"] .campaign-product-rate input {
+  border-color: rgba(0,0,0,0.12);
+  background: rgba(0,0,0,0.03);
+}
+@media (max-width: 640px) {
+  .campaign-product-option {
+    grid-template-columns: 18px 44px minmax(0, 1fr);
+  }
+  .campaign-product-rate {
+    grid-column: 3 / 4;
+  }
 }
 .campaign-product-empty {
   padding: 28px 12px;
