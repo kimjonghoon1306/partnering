@@ -622,24 +622,19 @@
             </div>
           </div>
 
-          <!-- 보안 -->
+          <!-- 비밀번호 변경 -->
           <div class="chart-card">
-            <div class="chart-card-header"><div class="chart-card-title">🔒 보안</div></div>
-            <div style="display:flex;flex-direction:column;gap:8px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
-                <div>
-                  <div style="font-size:13px;font-weight:600;">비밀번호</div>
-                  <div style="font-size:11px;color:var(--text2);">마지막 변경: 30일 전</div>
-                </div>
-                <button class="btn-ghost" style="font-size:12px;padding:7px 12px;">변경</button>
+            <div class="chart-card-header"><div class="chart-card-title">🔒 비밀번호 변경</div></div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <div>
+                <label style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;display:block;margin-bottom:5px;">새 비밀번호</label>
+                <input class="gen-input" id="set-pw-new" type="password" placeholder="8자 이상 입력" style="width:100%;">
               </div>
-              <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;">
-                <div>
-                  <div style="font-size:13px;font-weight:600;">2단계 인증</div>
-                  <div style="font-size:11px;color:var(--text2);">보안을 강화하세요</div>
-                </div>
-                <button class="btn-ghost" style="font-size:12px;padding:7px 12px;">설정</button>
+              <div>
+                <label style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;display:block;margin-bottom:5px;">새 비밀번호 확인</label>
+                <input class="gen-input" id="set-pw-confirm" type="password" placeholder="다시 입력" style="width:100%;">
               </div>
+              <button class="btn-primary" style="width:100%;justify-content:center;" onclick="changePassword(this)">비밀번호 변경</button>
             </div>
           </div>
         </div>

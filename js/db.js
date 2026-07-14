@@ -31,7 +31,7 @@ async function opEnsurePartner(user, info) {
     email: user.email,
     name: (info && info.name) || m.name || '',
     nickname: (info && info.nickname) || m.nickname || null,
-    phone: (info && info.phone) || m.phone || null,
+    phone: (info && info.phone) || m.phone || m.contact || null,   // 온종일팜 계정은 contact 키
     channels: (info && info.channels) || m.channels || [],
     categories: (info && info.categories) || m.categories || [],
     follower_scale: (info && info.follower_scale) || m.follower_scale || null,

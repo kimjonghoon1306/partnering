@@ -487,7 +487,7 @@ async function loadSettings() {
   const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
   setVal('set-name', g('name'));
   setVal('set-nick', g('nickname'));
-  setVal('set-phone', g('phone'));
+  setVal('set-phone', g('phone') || m.contact);   // 온종일팜 계정은 contact 키
   setVal('set-email', p.email || (user && user.email));
   setVal('set-channels', (g('channels') || []).join(', '));
   setVal('set-categories', (g('categories') || []).join(', '));
@@ -537,6 +537,22 @@ async function saveBank(btn) {
   if (error) { alert('저장 실패: ' + error.message); return; }
   alert('정산 계좌가 등록됐어요!');
   loadSettings();
+}
+
+// ── 비밀번호 변경
+async function changePassword(btn) {
+  if (!window.opClient) return;
+  const pw = document.getElementById('set-pw-new')?.value || '';
+  const pw2 = document.getElementById('set-pw-confirm')?.value || '';
+  if (pw.length < 8) { alert('비밀번호는 8자 이상이어야 해요.'); return; }
+  if (pw !== pw2) { alert('새 비밀번호가 일치하지 않아요.'); return; }
+  const t = btn.textContent; btn.disabled = true; btn.textContent = '변경 중...';
+  const { error } = await window.opClient.auth.updateUser({ password: pw });
+  btn.disabled = false; btn.textContent = t;
+  if (error) { alert('변경 실패: ' + error.message); return; }
+  document.getElementById('set-pw-new').value = '';
+  document.getElementById('set-pw-confirm').value = '';
+  alert('비밀번호가 변경됐어요!');
 }
 
 // ── 알림 토글 스위치
