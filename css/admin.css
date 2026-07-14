@@ -46,13 +46,23 @@
   gap: 2px;
   overflow-y: auto;
 }
-.admin-nav-label {
+/* 섹션 헤더 라벨 (nav 직속) */
+.admin-nav > .admin-nav-label {
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 1.2px;
-  color: rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.38);
   text-transform: uppercase;
   padding: 10px 8px 5px;
+}
+/* 메뉴 항목 안 텍스트는 부모(.admin-nav-item) 색을 따름 */
+.admin-nav-item .admin-nav-label {
+  font-size: 13px;
+  font-weight: inherit;
+  letter-spacing: normal;
+  color: inherit;
+  text-transform: none;
+  padding: 0;
 }
 .admin-nav-item {
   display: flex;
@@ -61,14 +71,14 @@
   padding: 9px 10px;
   border-radius: 9px;
   font-size: 13px;
-  font-weight: 500;
-  color: rgba(255,255,255,0.45);
+  font-weight: 600;
+  color: rgba(255,255,255,0.78);
   cursor: pointer;
   transition: all 0.15s;
   border: 1px solid transparent;
   text-decoration: none;
 }
-.admin-nav-item:hover { color: #F5F5F5; background: rgba(255,255,255,0.05); }
+.admin-nav-item:hover { color: #FFFFFF; background: rgba(255,255,255,0.06); }
 .admin-nav-item.active {
   color: var(--lime);
   background: rgba(190,255,0,0.08);
@@ -624,7 +634,9 @@
 [data-theme="light"] .admin-sidebar { background: #FFFFFF; border-color: rgba(0,0,0,0.08); }
 [data-theme="light"] .admin-sidebar-header { border-color: rgba(0,0,0,0.08); }
 [data-theme="light"] .admin-logo { color: #0A0A0A; }
-[data-theme="light"] .admin-nav-label { color: rgba(0,0,0,0.28); }
+[data-theme="light"] .admin-nav > .admin-nav-label { color: rgba(0,0,0,0.4); }
+[data-theme="light"] .admin-nav-item { color: rgba(0,0,0,0.72); }
+[data-theme="light"] .admin-nav-item:hover { color: #0A0A0A; }
 [data-theme="light"] .admin-nav-item { color: rgba(0,0,0,0.5); }
 [data-theme="light"] .admin-nav-item:hover { background: rgba(0,0,0,0.05); color: #0A0A0A; }
 [data-theme="light"] .admin-nav-item.active { background: rgba(190,255,0,0.1); color: var(--lime-dim); border-color: rgba(190,255,0,0.3); }
