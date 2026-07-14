@@ -554,29 +554,36 @@ async function changePassword(btn) {
   alert('비밀번호가 변경됐어요!');
 }
 
-// ── 온파트너 파트너 탈퇴: auth.users는 유지하고 partners row만 삭제
+// ── 탈퇴: 계정(auth.users) 완전 삭제 → 같은 이메일로 재가입 자유
 async function withdrawPartner(btn) {
   if (!window.opClient) return;
-  const ok = confirm('온파트너 파트너를 탈퇴하면 발급한 링크·수익 내역이 모두 삭제됩니다. 온종일팜 계정과 쿠폰은 그대로 유지됩니다. 정말 탈퇴하시겠어요?');
+  const ok = confirm('정말 탈퇴하시겠어요?\n\n탈퇴하면 온파트너 계정과 발급한 링크·수익 내역이 모두 삭제되며, 이 작업은 되돌릴 수 없습니다.\n(같은 이메일로 언제든 다시 가입할 수 있어요.)');
   if (!ok) return;
 
-  const { data: { user } } = await window.opClient.auth.getUser();
-  if (!user) {
-    window.location.href = 'login.html';
-    return;
-  }
+  const { data: { session } } = await window.opClient.auth.getSession();
+  if (!session) { window.location.href = 'login.html'; return; }
 
-  const t = btn?.textContent || '온파트너 파트너 탈퇴';
+  const t = btn?.textContent || '탈퇴하기';
   if (btn) { btn.disabled = true; btn.textContent = '탈퇴 처리 중...'; }
-  const { error } = await window.opClient.from('partners').delete().eq('id', user.id);
-  if (error) {
+  try {
+    const resp = await fetch('/api/withdraw', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + session.access_token }
+    });
+    const out = await resp.json().catch(() => ({}));
+    if (!resp.ok || !out.ok) {
+      if (btn) { btn.disabled = false; btn.textContent = t; }
+      alert('탈퇴 처리에 실패했어요: ' + (out.err || resp.status));
+      return;
+    }
+  } catch (e) {
     if (btn) { btn.disabled = false; btn.textContent = t; }
-    alert('탈퇴 처리에 실패했어요: ' + error.message);
+    alert('탈퇴 처리 중 오류가 났어요: ' + e);
     return;
   }
 
-  await window.opClient.auth.signOut();
-  alert('탈퇴가 완료됐어요. 언제든 다시 파트너로 가입하실 수 있어요.');
+  await window.opClient.auth.signOut().catch(() => {});
+  alert('탈퇴가 완료됐어요. 그동안 이용해주셔서 감사합니다.');
   window.location.href = '../index.html';
 }
 
