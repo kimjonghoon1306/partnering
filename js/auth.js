@@ -332,7 +332,10 @@ async function handleSignup(e) {
     return;
   }
 
-  if (!email || !password) { showErr('이메일과 비밀번호를 입력해주세요.'); return; }
+  if (!name) { showErr('이름을 입력해주세요.'); goStep(1); document.getElementById('name')?.focus(); return; }
+  if (!nickname) { showErr('닉네임(활동명)을 입력해주세요.'); goStep(1); document.getElementById('nickname')?.focus(); return; }
+  if (!phone) { showErr('전화번호를 입력해주세요.'); goStep(1); document.getElementById('phone')?.focus(); return; }
+  if (!email || !password) { showErr('이메일과 비밀번호를 입력해주세요.'); goStep(1); return; }
 
   setBtn('가입 중...', true);
   const { data, error } = await window.opClient.auth.signUp({
