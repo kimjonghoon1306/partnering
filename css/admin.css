@@ -668,6 +668,12 @@
 [data-theme="light"] .admin-sidebar-bottom { border-color: rgba(0,0,0,0.08); }
 [data-theme="light"] .admin-modal { background: #FFFFFF; border-color: rgba(0,0,0,0.1); }
 [data-theme="light"] .admin-input { background: #F4F4F0; border-color: rgba(0,0,0,0.1); color: #0A0A0A; }
+[data-theme="light"] .admin-input::placeholder { color: rgba(0,0,0,0.4); }
+[data-theme="light"] .admin-modal-title { color: #0A0A0A; }
+[data-theme="light"] .admin-modal-header { background: #FFFFFF; }
+[data-theme="light"] .admin-modal-footer { background: #FFFFFF; }
+[data-theme="light"] .admin-label { color: rgba(0,0,0,0.55); }
+[data-theme="light"] .admin-modal-close { background: rgba(0,0,0,0.06); color: rgba(0,0,0,0.55); }
 [data-theme="light"] .notice-recent-item { background: rgba(0,0,0,0.02); border-color: rgba(0,0,0,0.08); }
 [data-theme="light"] .partner-detail-section { background: rgba(0,0,0,0.015); border-color: rgba(0,0,0,0.08); }
 [data-theme="light"] .partner-detail-field { border-color: rgba(0,0,0,0.05); }
