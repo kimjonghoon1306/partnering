@@ -7,8 +7,18 @@ module.exports = async (req, res) => {
   const code = (req.query && req.query.code ? String(req.query.code) : '').trim();
 
   const go = (url) => { res.statusCode = 302; res.setHeader('Location', url); res.end(); };
+  const isSafeCode = (s) => /^[a-z0-9-]{4,64}$/i.test(s);
+  const safeDest = (url) => {
+    try {
+      const u = new URL(url);
+      if (u.protocol !== 'https:' || u.hostname !== 'app.yuanfnb.com') return FALLBACK;
+      return u.toString();
+    } catch (e) {
+      return FALLBACK;
+    }
+  };
 
-  if (!SUPA || !SRK || !code) return go(FALLBACK);
+  if (!SUPA || !SRK || !code || !isSafeCode(code)) return go(FALLBACK);
 
   try {
     const headers = { apikey: SRK, Authorization: 'Bearer ' + SRK, 'Content-Type': 'application/json' };
@@ -31,8 +41,9 @@ module.exports = async (req, res) => {
     }).catch(() => {});
 
     // 30일 전환 추적 쿠키 + 온종일팜 상품으로 이동
-    const dest = link.product_url + (link.product_url.includes('?') ? '&' : '?') + 'op_ref=' + encodeURIComponent(code);
-    res.setHeader('Set-Cookie', 'op_ref=' + code + '; Max-Age=2592000; Path=/; SameSite=Lax');
+    const base = safeDest(link.product_url);
+    const dest = base + (base.includes('?') ? '&' : '?') + 'op_ref=' + encodeURIComponent(code);
+    res.setHeader('Set-Cookie', 'op_ref=' + encodeURIComponent(code) + '; Max-Age=2592000; Path=/; SameSite=Lax; Secure');
     return go(dest);
   } catch (e) {
     return go(FALLBACK);

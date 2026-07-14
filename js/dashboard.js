@@ -287,7 +287,7 @@ async function loadLinks() {
     const date = (l.created_at || '').slice(0, 10).replace(/-/g, '.');
     return '<tr>' +
       '<td><div class="td-link">' + escHtml(name) + '</div></td>' +
-      '<td><div class="td-url" title="' + purl + '">' + purl + '</div></td>' +
+      '<td><div class="td-url" title="' + escHtml(purl) + '">' + escHtml(purl) + '</div></td>' +
       '<td><div class="td-url">' + escHtml(shop) + '</div></td>' +
       '<td class="td-num">' + (l.clicks || 0) + '</td>' +
       '<td class="td-num">' + (l.conversions || 0) + '</td>' +
@@ -309,7 +309,7 @@ async function deleteLink(code, btn) {
   loadLinks();      // 목록·배지 갱신
   loadCatalog();    // 카탈로그 '링크 받기' 상태 복구
 }
-function escHtml(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+function escHtml(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 
 // 추천 링크 코드: 닉네임 기반(kjhyun-3f2a). 닉네임 없거나 영숫자 아니면 랜덤.
 function makeRefCode(nick) {

@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ══════════ 실데이터 연동 ══════════
-function admEsc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+function admEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 
 // ── 상품 마진 설정
 let __admProducts = [];

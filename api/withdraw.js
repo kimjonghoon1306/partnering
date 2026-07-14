@@ -30,14 +30,13 @@ module.exports = async (req, res) => {
       headers: { apikey: SRK, Authorization: 'Bearer ' + SRK }
     });
     if (!del.ok) {
-      const body = await del.text();
       res.statusCode = 500;
-      res.end(JSON.stringify({ ok: false, err: '탈퇴 처리 실패', detail: body.slice(0, 200) }));
+      res.end(JSON.stringify({ ok: false, err: '탈퇴 처리 실패' }));
       return;
     }
     res.end(JSON.stringify({ ok: true }));
   } catch (e) {
     res.statusCode = 500;
-    res.end(JSON.stringify({ ok: false, err: String(e).slice(0, 200) }));
+    res.end(JSON.stringify({ ok: false, err: 'server error' }));
   }
 };

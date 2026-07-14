@@ -194,7 +194,7 @@ function setSignupCompletion(mode, email) {
     return;
   }
   if (mode === 'confirm') {
-    if (sub) sub.innerHTML = '가입 신청 완료! 📩<br><b>' + (email || '') +
+    if (sub) sub.innerHTML = '가입 신청 완료! 📩<br><b>' + authEsc(email || '') +
       '</b> 으로 보낸 <b>확인 메일</b>의 링크를 눌러야<br>로그인할 수 있어요.';
     if (goBtn) { goBtn.setAttribute('href', 'login.html'); goBtn.textContent = '로그인하러 가기 →'; }
     return;
@@ -203,6 +203,7 @@ function setSignupCompletion(mode, email) {
   if (sub) sub.innerHTML = '온파트너에 오신 걸 환영해요.<br>지금 바로 첫 링크를 만들고 수익을 시작해보세요!';
   if (goBtn) { goBtn.setAttribute('href', 'dashboard.html'); goBtn.textContent = '대시보드로 이동 →'; }
 }
+function authEsc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 
 function isAlreadyRegisteredError(error) {
   return /already registered|already exists|user already/i.test(error?.message || '');

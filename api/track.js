@@ -15,8 +15,19 @@ module.exports = async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify(obj || { ok: true }));
   };
+  const isAllowedOrigin = () => {
+    const raw = req.headers.origin || req.headers.referer || '';
+    if (!raw) return true;
+    try {
+      const u = new URL(raw);
+      return u.protocol === 'https:' && (u.hostname === 'app.yuanfnb.com' || u.hostname.endsWith('.yuanfnb.com'));
+    } catch (e) {
+      return false;
+    }
+  };
   if (req.method !== 'POST') return ok({ ok: false, reason: 'method' });
   if (!SUPA || !SRK) return ok({ ok: false, reason: 'no-config' });
+  if (!isAllowedOrigin()) return ok({ ok: false, reason: 'origin' });
 
   // body 파싱 (Vercel req.body 또는 raw stream)
   let body = req.body;
@@ -36,6 +47,9 @@ module.exports = async (req, res) => {
   const orderType = String(body.order_type || body.orderType || 'general').trim();
   const amount = Number(body.amount || body.order_amount || 0);
   if (!code || !orderId || !amount) return ok({ ok: false, reason: 'missing' });
+  if (!/^[a-z0-9-]{4,64}$/i.test(code)) return ok({ ok: false, reason: 'code' });
+  if (orderId.length > 128) return ok({ ok: false, reason: 'order_id' });
+  if (!Number.isFinite(amount) || amount <= 0 || amount > 100000000) return ok({ ok: false, reason: 'amount' });
   if (['general', 'retail', 'wholesale'].indexOf(orderType) < 0) return ok({ ok: false, reason: 'order_type' });
 
   try {
