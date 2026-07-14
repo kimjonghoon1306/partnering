@@ -96,6 +96,11 @@ function todayKST() {
   const kst = new Date(Date.now() + 9 * 3600 * 1000);
   return kst.toISOString().slice(0, 10);
 }
+// "2026-07-18" → "7.18"
+function fmtCampaignDate(s) {
+  const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? (Number(m[2]) + '.' + Number(m[3])) : String(s || '');
+}
 function monthKey(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1); }
 function dayLabel(d) { return (d.getMonth() + 1) + '/' + d.getDate(); }
 function monthLabelFromKey(key) { return Number(key.slice(5, 7)) + '월'; }
@@ -156,7 +161,9 @@ async function loadCampaignBanner() {
   banner.innerHTML = campaigns.slice(0, 3).map(c => {
     const pct = Math.round(Number(c.bonus_rate || 0) * 1000) / 10;
     const icon = c.emoji || '🎁';
-    return '<div><b style="color:var(--lime);">' + escHtml(icon + ' ' + c.title) + '</b> 기간 내 +' + pct + '% 추가 수수료</div>';
+    const period = (c.starts_at && c.ends_at) ? ' <span style="color:var(--text2);font-weight:600;">(' + escHtml(fmtCampaignDate(c.starts_at)) + '~' + escHtml(fmtCampaignDate(c.ends_at)) + ')</span>' : '';
+    const rateText = pct > 0 ? ' 기간 내 +' + pct + '% 추가 수수료' : ' 대상 상품 추가 수수료 진행중';
+    return '<div><b style="color:var(--lime);">' + escHtml(icon + ' ' + c.title) + '</b>' + rateText + period + '</div>';
   }).join('');
   banner.style.display = 'block';
 }
@@ -384,6 +391,7 @@ function clampCatalogRate(v, fallback, max) {
 }
 function getCatalogCampaignBonus(product, campaigns, productCampaignRates) {
   let bonusRate = 0;
+  let endsAt = '';
   (campaigns || []).forEach(function (c) {
     const targetType = c.target_type || 'all';
     const targetValue = c.target_value == null ? '' : String(c.target_value);
@@ -397,10 +405,11 @@ function getCatalogCampaignBonus(product, campaigns, productCampaignRates) {
     if (matches) {
       const productBonus = targetType === 'product' ? productCampaignRates[productCampaignKey] : null;
       const rawBonus = productBonus == null ? c.bonus_rate : productBonus;
-      bonusRate = Math.max(bonusRate, clampCatalogRate(rawBonus, 0, 0.30));
+      const b = clampCatalogRate(rawBonus, 0, 0.30);
+      if (b >= bonusRate) { bonusRate = b; if (c.ends_at) endsAt = String(c.ends_at); }
     }
   });
-  return bonusRate;
+  return { rate: bonusRate, endsAt: endsAt };
 }
 async function loadCatalog() {
   const grid = document.getElementById('catalog-grid');
@@ -412,7 +421,7 @@ async function loadCatalog() {
     window.opClient.from('partner_links').select('code,product_id'),
     window.opClient.from('categories').select('id,name,sort_order').order('sort_order', { ascending: true }),
     window.opClient.from('campaigns')
-      .select('id,bonus_rate,target_type,target_value')
+      .select('id,bonus_rate,target_type,target_value,ends_at')
       .eq('is_active', true)
       .lte('starts_at', today)
       .gte('ends_at', today),
@@ -439,7 +448,9 @@ async function loadCatalog() {
       myCode: myCodeMap[p.id] || null,
       categoryName: categoryMap[String(p.category_id)] || ''
     });
-    product.campaignBonusRate = getCatalogCampaignBonus(product, campaigns, productCampaignRates);
+    const camp = getCatalogCampaignBonus(product, campaigns, productCampaignRates);
+    product.campaignBonusRate = camp.rate;
+    product.campaignEndsAt = camp.endsAt;
     product.rate = Math.min(product.baseRate + product.campaignBonusRate, 0.60);
     return product;
   });
@@ -491,7 +502,7 @@ function renderCatalog() {
       '<div class="catalog-info">' +
         '<div class="catalog-name">' + escHtml(p.name) + '</div>' +
         (p.categoryName ? '<div class="catalog-category">' + escHtml(p.categoryName) + '</div>' : '') +
-        (hasCampaignBonus ? '<div class="catalog-campaign-badge">🎁 캠페인 +' + escHtml(String(bonusPct).replace(/\.0$/, '')) + '%</div>' : '') +
+        (hasCampaignBonus ? '<div class="catalog-campaign-badge">🎁 캠페인 +' + escHtml(String(bonusPct).replace(/\.0$/, '')) + '%' + (p.campaignEndsAt ? '<span class="catalog-campaign-until">~' + escHtml(fmtCampaignDate(p.campaignEndsAt)) + '까지</span>' : '') + '</div>' : '') +
         '<div class="catalog-price">₩' + price.toLocaleString() + '<span>/' + escHtml(p.unit || '개') + '</span></div>' +
         '<div class="catalog-earn">' + (hasCampaignBonus ? '내 예상 수익' : '내 수익') + ' <b>₩' + earn.toLocaleString() + '</b><span class="catalog-rate' + (hasCampaignBonus ? ' boosted' : '') + '">' +
           (hasCampaignBonus ? escHtml(String(basePct).replace(/\.0$/, '')) + '% → ' + escHtml(String(ratePct).replace(/\.0$/, '')) + '% <em>▲+' + escHtml(String(bonusPct).replace(/\.0$/, '')) + '%</em>' : escHtml(String(ratePct).replace(/\.0$/, '')) + '%') +
