@@ -44,6 +44,9 @@ function showAdminPage(pageId) {
   if (pageId === 'commissions') loadCommissions();
   if (pageId === 'partners') loadAdminPartners();
   if (pageId === 'overview') loadAdminOverview();
+  if (pageId === 'review') loadReview();
+  if (pageId === 'settle') loadSettle();
+  if (pageId === 'settle-history') loadSettleHistory();
 }
 
 adminNavItems.forEach(item => {
@@ -88,48 +91,6 @@ document.querySelectorAll('.admin-modal-overlay').forEach(overlay => {
   });
 });
 
-// ── 파트너 승인/거절
-function approvePartner(btn) {
-  const row = btn.closest('tr');
-  const statusCell = row.querySelector('.status-cell');
-  if (statusCell) statusCell.innerHTML = '<span class="status-active">활성</span>';
-  btn.closest('.action-btns').innerHTML = '<span style="font-size:12px;color:rgba(255,255,255,0.3);">처리완료</span>';
-}
-function rejectPartner(btn) {
-  const row = btn.closest('tr');
-  const statusCell = row.querySelector('.status-cell');
-  if (statusCell) statusCell.innerHTML = '<span class="status-rejected">거절</span>';
-  btn.closest('.action-btns').innerHTML = '<span style="font-size:12px;color:rgba(255,255,255,0.3);">처리완료</span>';
-}
-
-// ── 쇼핑몰 승인/거절
-function approveShop(btn) {
-  const row = btn.closest('tr');
-  const statusCell = row.querySelector('.status-cell');
-  if (statusCell) statusCell.innerHTML = '<span class="status-active">승인</span>';
-  btn.closest('.action-btns').innerHTML = '<span style="font-size:12px;color:rgba(255,255,255,0.3);">처리완료</span>';
-}
-function rejectShop(btn) {
-  const row = btn.closest('tr');
-  const statusCell = row.querySelector('.status-cell');
-  if (statusCell) statusCell.innerHTML = '<span class="status-rejected">거절</span>';
-  btn.closest('.action-btns').innerHTML = '<span style="font-size:12px;color:rgba(255,255,255,0.3);">처리완료</span>';
-}
-
-// ── 정산 처리 모달 열기
-function openSettleModal(name, amount, method) {
-  document.getElementById('settle-name').textContent = name;
-  document.getElementById('settle-amount').textContent = amount;
-  document.getElementById('settle-method').textContent = method;
-  openModal('settle-modal');
-}
-
-function confirmSettle() {
-  const note = document.getElementById('settle-note').value;
-  closeModal('settle-modal');
-  showToast('정산 처리 완료 ✅');
-}
-
 // ── 검색 필터
 document.querySelectorAll('.admin-search').forEach(input => {
   input.addEventListener('input', function() {
@@ -161,51 +122,9 @@ function showToast(msg) {
   setTimeout(() => toast.remove(), 2500);
 }
 
-// ── SVG 통계 차트 (관리자 오버뷰)
-function drawAdminChart() {
-  const svg = document.getElementById('admin-chart');
-  if (!svg) return;
-
-  const data = [420, 580, 510, 790, 860, 740, 1020, 980, 1150, 1080, 1340, 1520];
-  const labels = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
-  const W = 680, H = 140, PAD = { top: 10, right: 10, bottom: 24, left: 10 };
-  const cW = W - PAD.left - PAD.right;
-  const cH = H - PAD.top - PAD.bottom;
-  const max = Math.max(...data);
-  const min = Math.min(...data) * 0.85;
-
-  const pts = data.map((v, i) => ({
-    x: PAD.left + (i / (data.length - 1)) * cW,
-    y: PAD.top + (1 - (v - min) / (max - min)) * cH,
-  }));
-
-  const pathD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
-  const areaD = pathD + ` L${pts[pts.length-1].x.toFixed(1)},${(PAD.top+cH).toFixed(1)} L${PAD.left},${(PAD.top+cH).toFixed(1)} Z`;
-
-  svg.querySelector('.ac-area')?.setAttribute('d', areaD);
-  svg.querySelector('.ac-line')?.setAttribute('d', pathD);
-
-  const dotsG = svg.querySelector('.ac-dots');
-  if (dotsG) {
-    dotsG.innerHTML = pts.map((p, i) =>
-      `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${i === pts.length-1 ? 5 : 3}"
-        fill="${i === pts.length-1 ? '#BEFF00' : '#141414'}" stroke="#BEFF00" stroke-width="1.5"/>`
-    ).join('');
-  }
-
-  const labelsG = svg.querySelector('.ac-labels');
-  if (labelsG) {
-    labelsG.innerHTML = labels.map((l, i) => {
-      const x = PAD.left + (i / (labels.length - 1)) * cW;
-      return `<text x="${x.toFixed(1)}" y="${H}" text-anchor="middle" fill="rgba(255,255,255,0.22)" font-size="10" font-family="inherit">${l}</text>`;
-    }).join('');
-  }
-}
-
 // ── 초기화
 document.addEventListener('DOMContentLoaded', () => {
   showAdminPage('overview');
-  drawAdminChart();
 });
 
 // ══════════ 실데이터 연동 ══════════
@@ -275,40 +194,323 @@ document.getElementById('comm-search')?.addEventListener('input', function () {
 });
 
 // ── 파트너 목록
+let __admPartners = [];
 async function loadAdminPartners() {
   const tb = document.querySelector('#ap-partners table tbody');
   const titleEl = document.querySelector('#ap-partners .admin-table-title');
   if (!window.opClient) return;
-  const { data, error } = await window.opClient.from('partners').select('name,nickname,email,channels,status,created_at').order('created_at', { ascending: false });
-  if (error) { if (tb) tb.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text3);">' + admEsc(error.message) + '</td></tr>'; return; }
-  if (titleEl) titleEl.textContent = '파트너 목록 (' + data.length + ')';
-  if (!tb) return;
-  if (!data.length) { tb.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:48px;color:var(--text3);">아직 가입한 파트너가 없어요.</td></tr>'; return; }
-  tb.innerHTML = data.map(p => '<tr>' +
-    '<td><b>' + admEsc(p.name || '-') + '</b>' + (p.nickname ? ' <span style="color:var(--text3);font-size:12px;">@' + admEsc(p.nickname) + '</span>' : '') + '</td>' +
-    '<td style="color:var(--text2);font-size:13px;">' + admEsc(p.email || '') + '</td>' +
-    '<td style="font-size:12px;color:var(--text3);">' + admEsc((p.channels || []).join(', ')) + '</td>' +
-    '<td>' + (p.status === 'suspended' ? '<span class="status-pill paused">정지</span>' : '<span class="status-pill active">● 활성</span>') + '</td>' +
-    '<td style="font-size:12px;color:var(--text3);">' + admEsc(String(p.created_at || '').slice(0, 10)) + '</td>' +
-    '</tr>').join('');
+  const { data, error } = await window.opClient.from('partners').select('id,name,nickname,email,channels,status,created_at').order('created_at', { ascending: false });
+  if (error) { if (tb) tb.innerHTML = '<tr><td colspan="6"><div class="adm-empty">' + admEsc(error.message) + '</div></td></tr>'; return; }
+  __admPartners = data || [];
+  if (titleEl) titleEl.textContent = '파트너 목록 (' + __admPartners.length + ')';
+  renderAdminPartners(__admPartners);
 }
+function renderAdminPartners(list) {
+  const tb = document.querySelector('#ap-partners table tbody');
+  if (!tb) return;
+  if (!list.length) { tb.innerHTML = '<tr><td colspan="6"><div class="adm-empty"><div class="ico">👥</div><b>가입한 파트너가 없어요</b>파트너가 가입하면 여기에 표시됩니다</div></td></tr>'; return; }
+  tb.innerHTML = list.map(p => {
+    const suspended = p.status === 'suspended';
+    return '<tr>' +
+      '<td><b>' + admEsc(p.name || '-') + '</b>' + (p.nickname ? ' <span style="color:var(--text3);font-size:12px;">@' + admEsc(p.nickname) + '</span>' : '') + '</td>' +
+      '<td style="color:var(--text2);font-size:13px;">' + admEsc(p.email || '') + '</td>' +
+      '<td style="font-size:12px;color:var(--text3);">' + admEsc((p.channels || []).join(', ')) + '</td>' +
+      '<td>' + (suspended ? '<span class="status-pill paused">정지</span>' : '<span class="status-pill active">● 활성</span>') + '</td>' +
+      '<td style="font-size:12px;color:var(--text3);">' + admEsc(String(p.created_at || '').slice(0, 10)) + '</td>' +
+      '<td style="text-align:right;">' + (suspended
+        ? '<button class="admin-action-btn approve" onclick="setPartnerStatus(\'' + admEsc(p.id) + '\',\'active\',this)">활성화</button>'
+        : '<button class="admin-action-btn reject" onclick="setPartnerStatus(\'' + admEsc(p.id) + '\',\'suspended\',this)">정지</button>') +
+      '</td></tr>';
+  }).join('');
+}
+async function setPartnerStatus(id, status, btn) {
+  if (!window.opClient) return;
+  const label = status === 'suspended' ? '정지' : '활성화';
+  if (status === 'suspended' && !confirm('이 파트너를 정지할까요?\n정지하면 로그인은 되지만 링크·수익 활동이 제한됩니다.')) return;
+  btn.disabled = true; const t = btn.textContent; btn.textContent = '처리 중...';
+  const { error } = await window.opClient.from('partners').update({ status }).eq('id', id);
+  btn.disabled = false;
+  if (error) { btn.textContent = t; showToast('실패: ' + error.message); return; }
+  const p = __admPartners.find(x => x.id === id); if (p) p.status = status;
+  renderAdminPartners(__admPartners);
+  showToast('파트너 ' + label + ' 완료 ✅');
+}
+document.getElementById('partner-search')?.addEventListener('input', function () {
+  const q = this.value.toLowerCase();
+  renderAdminPartners(__admPartners.filter(p => ((p.name || '') + (p.email || '') + (p.nickname || '')).toLowerCase().includes(q)));
+});
 
 // ── 관리자 오버뷰 실집계
 async function loadAdminOverview() {
   if (!window.opClient) return;
-  const [pRes, lRes, cRes] = await Promise.all([
+  const [pRes, lRes, cRes, recentPartners, settleRes] = await Promise.all([
     window.opClient.from('partners').select('id', { count: 'exact', head: true }),
     window.opClient.from('partner_links').select('id', { count: 'exact', head: true }),
-    window.opClient.from('conversions').select('commission_amount,status')
+    window.opClient.from('conversions').select('commission_amount,order_amount,status,created_at,link_id,partner_links(title)').order('created_at', { ascending: false }),
+    window.opClient.from('partners').select('name,nickname,created_at').order('created_at', { ascending: false }).limit(5),
+    window.opClient.from('settlements').select('id', { count: 'exact', head: true }).eq('status', 'pending')
   ]);
   const convs = cRes.data || [];
-  const revenue = convs.filter(c => c.status !== 'canceled').reduce((s, c) => s + Number(c.commission_amount || 0), 0);
+  const now = new Date();
+  const thisMonth = convs.filter(c => { const d = new Date(c.created_at); return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && c.status !== 'canceled'; });
+  const monthGmv = thisMonth.reduce((s, c) => s + Number(c.order_amount || 0), 0);
+  const monthComm = thisMonth.reduce((s, c) => s + Number(c.commission_amount || 0), 0);
+
   const cards = document.querySelectorAll('#ap-overview .admin-card-value');
   if (cards[0]) cards[0].textContent = (pRes.count || 0).toLocaleString();
   if (cards[1]) cards[1].textContent = (lRes.count || 0).toLocaleString();
-  if (cards[2]) cards[2].textContent = '₩' + Math.round(convs.reduce((s, c) => s + Number(c.commission_amount || 0), 0)).toLocaleString();
-  if (cards[3]) cards[3].textContent = '₩' + Math.round(revenue).toLocaleString();
+  if (cards[2]) cards[2].textContent = '₩' + Math.round(monthGmv).toLocaleString();
+  if (cards[3]) cards[3].textContent = '₩' + Math.round(monthComm).toLocaleString();
+
+  // 처리 대기 카운트
+  const pendReview = convs.filter(c => c.status === 'pending').length;
+  const rv = document.getElementById('ov-pend-review'); if (rv) rv.textContent = pendReview.toLocaleString();
+  const sv = document.getElementById('ov-pend-settle'); if (sv) sv.textContent = (settleRes.count || 0).toLocaleString();
+
+  drawAdminOverviewChart(convs);
+  renderTopProducts(convs);
+  renderRecentActivity(convs, recentPartners.data || []);
 }
+
+// ── 월별 수수료 추이 차트 (실데이터)
+function drawAdminOverviewChart(convs) {
+  const svg = document.getElementById('admin-chart');
+  if (!svg) return;
+  const months = [], labels = [];
+  const base = new Date();
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(base.getFullYear(), base.getMonth() - i, 1);
+    months.push({ key: d.getFullYear() + '-' + d.getMonth(), sum: 0 });
+    labels.push((d.getMonth() + 1) + '월');
+  }
+  const idx = {}; months.forEach((m, i) => idx[m.key] = i);
+  convs.filter(c => c.status !== 'canceled').forEach(c => {
+    const d = new Date(c.created_at); const k = d.getFullYear() + '-' + d.getMonth();
+    if (k in idx) months[idx[k]].sum += Number(c.commission_amount || 0);
+  });
+  const data = months.map(m => m.sum);
+  const W = 680, H = 150, PAD = { t: 12, r: 12, b: 26, l: 12 }, cW = W - PAD.l - PAD.r, cH = H - PAD.t - PAD.b;
+  const max = Math.max(...data, 1), min = 0;
+  const pts = data.map((v, i) => ({ x: PAD.l + (i / (data.length - 1)) * cW, y: PAD.t + (1 - (v - min) / (max - min)) * cH }));
+  const pathD = pts.map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  svg.querySelector('.ac-area')?.setAttribute('d', pathD + ` L${pts.at(-1).x.toFixed(1)},${PAD.t + cH} L${PAD.l},${PAD.t + cH} Z`);
+  svg.querySelector('.ac-line')?.setAttribute('d', pathD);
+  const dg = svg.querySelector('.ac-dots');
+  if (dg) dg.innerHTML = pts.map((p, i) => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${i === pts.length - 1 ? 5 : 3}" fill="${i === pts.length - 1 ? '#BEFF00' : '#141414'}" stroke="#BEFF00" stroke-width="1.5"/>`).join('');
+  const lg = svg.querySelector('.ac-labels');
+  if (lg) lg.innerHTML = labels.map((l, i) => `<text x="${(PAD.l + (i / (labels.length - 1)) * cW).toFixed(1)}" y="${H}" text-anchor="middle" fill="rgba(255,255,255,0.22)" font-size="10">${l}</text>`).join('');
+}
+
+// ── 인기 상품 TOP
+function renderTopProducts(convs) {
+  const box = document.getElementById('ov-top-products');
+  if (!box) return;
+  const agg = {};
+  convs.filter(c => c.status !== 'canceled').forEach(c => {
+    const name = (c.partner_links && c.partner_links.title) || '(상품 미상)';
+    if (!agg[name]) agg[name] = { name, cnt: 0, sum: 0 };
+    agg[name].cnt++; agg[name].sum += Number(c.commission_amount || 0);
+  });
+  const list = Object.values(agg).sort((a, b) => b.cnt - a.cnt).slice(0, 5);
+  if (!list.length) return;
+  box.innerHTML = list.map((p, i) =>
+    '<div class="adm-list-item"><div class="adm-rank' + (i === 0 ? ' top' : '') + '">' + (i + 1) + '</div>' +
+    '<div class="adm-list-thumb">🛒</div>' +
+    '<div class="adm-list-main"><div class="adm-list-name">' + admEsc(p.name) + '</div><div class="adm-list-meta">수수료 합계</div></div>' +
+    '<div class="adm-list-val">₩' + Math.round(p.sum).toLocaleString() + '<small>' + p.cnt + '건</small></div></div>'
+  ).join('');
+}
+
+// ── 최근 활동
+function renderRecentActivity(convs, partners) {
+  const box = document.getElementById('ov-recent');
+  if (!box) return;
+  const items = [];
+  convs.slice(0, 6).forEach(c => items.push({
+    t: new Date(c.created_at), cls: 'conv', ico: '💰', title: '수수료 발생',
+    meta: ((c.partner_links && c.partner_links.title) || '상품') + ' · +₩' + Math.round(Number(c.commission_amount || 0)).toLocaleString()
+  }));
+  partners.forEach(p => items.push({
+    t: new Date(p.created_at), cls: 'join', ico: '🙋', title: '신규 파트너 가입',
+    meta: (p.name || p.nickname || '파트너') + '님이 가입했어요'
+  }));
+  items.sort((a, b) => b.t - a.t);
+  const top = items.slice(0, 6);
+  if (!top.length) return;
+  box.innerHTML = top.map(a =>
+    '<div class="adm-list-item"><div class="adm-feed-ico ' + a.cls + '">' + a.ico + '</div>' +
+    '<div class="adm-list-main"><div class="adm-list-name">' + a.title + '</div><div class="adm-list-meta">' + admEsc(a.meta) + '</div></div>' +
+    '<div class="adm-list-val" style="color:var(--text3);font-weight:600;font-size:12px;">' + timeAgo(a.t) + '</div></div>'
+  ).join('');
+}
+
+function timeAgo(d) {
+  const s = Math.floor((Date.now() - d.getTime()) / 1000);
+  if (s < 60) return '방금';
+  if (s < 3600) return Math.floor(s / 60) + '분 전';
+  if (s < 86400) return Math.floor(s / 3600) + '시간 전';
+  return Math.floor(s / 86400) + '일 전';
+}
+
+// ══════════ 전환 검수 큐 ══════════
+let __admConvs = [];
+let __rvFilter = 'pending';
+async function loadReview() {
+  if (!window.opClient) return;
+  const tb = document.querySelector('#review-table tbody');
+  const { data, error } = await window.opClient.from('conversions')
+    .select('id,order_amount,commission_amount,status,created_at,order_type,partner_id,partners(name,nickname),partner_links(title)')
+    .order('created_at', { ascending: false });
+  if (error) { if (tb) tb.innerHTML = '<tr><td colspan="7"><div class="adm-empty">' + admEsc(error.message) + '</div></td></tr>'; return; }
+  __admConvs = data || [];
+  const pending = __admConvs.filter(c => c.status === 'pending');
+  const now = new Date();
+  const confirmedThisMonth = __admConvs.filter(c => { const d = new Date(c.created_at); return c.status === 'confirmed' && d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth(); });
+  setTxt('rv-pending-cnt', pending.length.toLocaleString());
+  setTxt('rv-pending-sum', '₩' + Math.round(pending.reduce((s, c) => s + Number(c.commission_amount || 0), 0)).toLocaleString());
+  setTxt('rv-confirmed-cnt', confirmedThisMonth.length.toLocaleString());
+  const badge = document.getElementById('nav-review-badge');
+  if (badge) { badge.textContent = pending.length; badge.style.display = pending.length ? '' : 'none'; }
+  renderReview();
+}
+function renderReview() {
+  const tb = document.querySelector('#review-table tbody');
+  if (!tb) return;
+  const list = __rvFilter === 'all' ? __admConvs : __admConvs.filter(c => c.status === __rvFilter);
+  if (!list.length) { tb.innerHTML = '<tr><td colspan="7"><div class="adm-empty"><div class="ico">✅</div><b>해당하는 전환이 없어요</b></div></td></tr>'; return; }
+  tb.innerHTML = list.map(c => {
+    const pname = (c.partners && (c.partners.name || c.partners.nickname)) || '-';
+    const prod = (c.partner_links && c.partner_links.title) || '(상품 미상)';
+    return '<tr>' +
+      '<td><b>' + admEsc(pname) + '</b></td>' +
+      '<td style="font-size:13px;color:var(--text2);">' + admEsc(prod) + '</td>' +
+      '<td>₩' + Math.round(Number(c.order_amount || 0)).toLocaleString() + '</td>' +
+      '<td style="color:var(--lime);font-weight:700;">₩' + Math.round(Number(c.commission_amount || 0)).toLocaleString() + '</td>' +
+      '<td style="font-size:12px;color:var(--text3);">' + admEsc(String(c.created_at || '').slice(0, 10)) + '</td>' +
+      '<td>' + reviewStatusPill(c.status) + '</td>' +
+      '<td style="text-align:right;white-space:nowrap;">' + (c.status === 'pending'
+        ? '<button class="admin-action-btn approve" onclick="reviewConv(\'' + admEsc(c.id) + '\',\'confirmed\',this)">확정</button> ' +
+          '<button class="admin-action-btn reject" onclick="reviewConv(\'' + admEsc(c.id) + '\',\'canceled\',this)">취소</button>'
+        : (c.status === 'confirmed'
+          ? '<button class="admin-action-btn reject" onclick="reviewConv(\'' + admEsc(c.id) + '\',\'canceled\',this)">취소로 변경</button>'
+          : '<span style="font-size:12px;color:var(--text3);">—</span>')) +
+      '</td></tr>';
+  }).join('');
+}
+function reviewStatusPill(s) {
+  if (s === 'confirmed') return '<span class="status-pill confirmed">확정</span>';
+  if (s === 'canceled') return '<span class="status-pill paused">취소</span>';
+  if (s === 'settled') return '<span class="status-pill active">정산완료</span>';
+  return '<span class="status-pill pending">대기</span>';
+}
+async function reviewConv(id, status, btn) {
+  if (!window.opClient) return;
+  if (status === 'canceled' && !confirm('이 전환을 취소 처리할까요? (반품·오류 주문)')) return;
+  btn.disabled = true; const t = btn.textContent; btn.textContent = '처리 중...';
+  const { error } = await window.opClient.from('conversions').update({ status }).eq('id', id);
+  if (error) { btn.disabled = false; btn.textContent = t; showToast('실패: ' + error.message); return; }
+  const c = __admConvs.find(x => x.id === id); if (c) c.status = status;
+  loadReview();
+  showToast(status === 'confirmed' ? '전환 확정 ✅' : '전환 취소 처리됨');
+}
+document.getElementById('rv-filters')?.addEventListener('click', e => {
+  const btn = e.target.closest('.admin-filter-btn'); if (!btn) return;
+  document.querySelectorAll('#rv-filters .admin-filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  __rvFilter = btn.dataset.status;
+  renderReview();
+});
+
+// ══════════ 정산 처리 (확정 전환 → 파트너별 지급) ══════════
+async function loadSettle() {
+  if (!window.opClient) return;
+  const tb = document.querySelector('#settle-table tbody');
+  setTxt('settle-period', '· ' + new Date().toISOString().slice(0, 7) + ' 기준');
+  const { data, error } = await window.opClient.from('conversions')
+    .select('id,commission_amount,status,partner_id,partners(name,nickname,bank_name,bank_account,bank_holder)')
+    .eq('status', 'confirmed');
+  if (error) { if (tb) tb.innerHTML = '<tr><td colspan="5"><div class="adm-empty">' + admEsc(error.message) + '</div></td></tr>'; return; }
+  const groups = {};
+  (data || []).forEach(c => {
+    const pid = c.partner_id;
+    if (!groups[pid]) groups[pid] = { pid, p: c.partners || {}, cnt: 0, sum: 0, ids: [] };
+    groups[pid].cnt++; groups[pid].sum += Number(c.commission_amount || 0); groups[pid].ids.push(c.id);
+  });
+  const list = Object.values(groups).sort((a, b) => b.sum - a.sum);
+  if (!tb) return;
+  if (!list.length) { tb.innerHTML = '<tr><td colspan="5"><div class="adm-empty"><div class="ico">💸</div><b>정산할 확정 전환이 없어요</b>전환 검수에서 확정하면 여기 나타납니다</div></td></tr>'; return; }
+  tb.innerHTML = list.map(g => {
+    const hasBank = g.p.bank_name && g.p.bank_account;
+    const bank = hasBank ? (admEsc(g.p.bank_name) + ' ' + admEsc(g.p.bank_account) + '<br><span style="font-size:11px;color:var(--text3);">' + admEsc(g.p.bank_holder || '') + '</span>') : '<span style="color:#FF4D6A;font-size:12px;">계좌 미등록</span>';
+    return '<tr>' +
+      '<td><b>' + admEsc(g.p.name || g.p.nickname || '-') + '</b></td>' +
+      '<td>' + g.cnt + '건</td>' +
+      '<td style="color:var(--lime);font-weight:800;font-size:15px;">₩' + Math.round(g.sum).toLocaleString() + '</td>' +
+      '<td style="font-size:12px;">' + bank + '</td>' +
+      '<td style="text-align:right;"><button class="comm-save" ' + (hasBank ? '' : 'disabled style="opacity:.4;cursor:not-allowed;"') + ' onclick="paySettle(\'' + admEsc(g.pid) + '\',this)">지급 처리</button></td>' +
+      '</tr>';
+  }).join('');
+  // 캐시(지급 시 사용)
+  window.__settleGroups = groups;
+}
+async function paySettle(pid, btn) {
+  if (!window.opClient) return;
+  const g = window.__settleGroups && window.__settleGroups[pid];
+  if (!g) return;
+  if (!confirm(g.p.name + '님에게 ₩' + Math.round(g.sum).toLocaleString() + ' 정산 지급 처리할까요?\n(' + g.cnt + '건의 전환이 정산 완료됩니다)')) return;
+  btn.disabled = true; btn.textContent = '처리 중...';
+  const period = new Date().toISOString().slice(0, 7);
+  const bankSnap = (g.p.bank_name || '') + ' ' + (g.p.bank_account || '') + ' (' + (g.p.bank_holder || '') + ')';
+  const nowIso = new Date().toISOString();
+  // 1) settlement upsert (같은 달 재지급 시 누적)
+  const { data: existing } = await window.opClient.from('settlements').select('id,total_amount').eq('partner_id', pid).eq('period', period).maybeSingle();
+  let sErr;
+  if (existing) {
+    ({ error: sErr } = await window.opClient.from('settlements').update({ total_amount: Number(existing.total_amount) + g.sum, status: 'paid', bank_snapshot: bankSnap, paid_at: nowIso }).eq('id', existing.id));
+  } else {
+    ({ error: sErr } = await window.opClient.from('settlements').insert({ partner_id: pid, period, total_amount: g.sum, status: 'paid', bank_snapshot: bankSnap, paid_at: nowIso }));
+  }
+  if (sErr) { btn.disabled = false; btn.textContent = '지급 처리'; showToast('정산 저장 실패: ' + sErr.message); return; }
+  // 2) 해당 전환 settled
+  const { error: cErr } = await window.opClient.from('conversions').update({ status: 'settled' }).in('id', g.ids);
+  if (cErr) { showToast('전환 상태 갱신 실패: ' + cErr.message); }
+  showToast(g.p.name + '님 정산 완료 ✅');
+  loadSettle();
+}
+
+// ══════════ 정산 내역 ══════════
+let __admSettlements = [];
+async function loadSettleHistory() {
+  if (!window.opClient) return;
+  const tb = document.querySelector('#settle-history-table tbody');
+  const { data, error } = await window.opClient.from('settlements')
+    .select('period,total_amount,status,paid_at,partners(name,nickname)')
+    .order('period', { ascending: false }).order('created_at', { ascending: false });
+  if (error) { if (tb) tb.innerHTML = '<tr><td colspan="5"><div class="adm-empty">' + admEsc(error.message) + '</div></td></tr>'; return; }
+  __admSettlements = data || [];
+  renderSettleHistory(__admSettlements);
+}
+function renderSettleHistory(list) {
+  const tb = document.querySelector('#settle-history-table tbody');
+  if (!tb) return;
+  if (!list.length) { tb.innerHTML = '<tr><td colspan="5"><div class="adm-empty"><div class="ico">🏦</div><b>정산 내역이 없어요</b>정산을 처리하면 여기에 기록됩니다</div></td></tr>'; return; }
+  tb.innerHTML = list.map(s => {
+    const pname = (s.partners && (s.partners.name || s.partners.nickname)) || '-';
+    return '<tr>' +
+      '<td><b>' + admEsc(s.period) + '</b></td>' +
+      '<td>' + admEsc(pname) + '</td>' +
+      '<td style="color:var(--lime);font-weight:700;">₩' + Math.round(Number(s.total_amount || 0)).toLocaleString() + '</td>' +
+      '<td>' + (s.status === 'paid' ? '<span class="status-pill active">지급완료</span>' : '<span class="status-pill pending">대기</span>') + '</td>' +
+      '<td style="font-size:12px;color:var(--text3);">' + admEsc(s.paid_at ? String(s.paid_at).slice(0, 10) : '-') + '</td>' +
+      '</tr>';
+  }).join('');
+}
+document.getElementById('settle-hist-search')?.addEventListener('input', function () {
+  const q = this.value.toLowerCase();
+  renderSettleHistory(__admSettlements.filter(s => (String(s.period) + ((s.partners && s.partners.name) || '')).toLowerCase().includes(q)));
+});
+
+function setTxt(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
 
 // 초기 진입 시 오버뷰 로드
 document.addEventListener('DOMContentLoaded', () => { setTimeout(loadAdminOverview, 300); });

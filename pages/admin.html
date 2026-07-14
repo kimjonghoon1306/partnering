@@ -17,6 +17,13 @@
     <div class="admin-sidebar-header">
       <div class="admin-logo"><span>온</span>파트너<span class="admin-badge">ADMIN</span></div>
     </div>
+    <div class="admin-sidebar-profile">
+      <div class="admin-profile-avatar" id="adm-avatar">A</div>
+      <div class="admin-profile-info">
+        <div class="admin-profile-name" id="adm-name">본사 관리자</div>
+        <div class="admin-profile-role">⭐ 최고 관리자</div>
+      </div>
+    </div>
     <nav class="admin-nav">
       <div class="admin-nav-label">대시보드</div>
       <a class="admin-nav-item" data-page="overview"><span class="admin-nav-icon">📊</span><span class="admin-nav-label">오버뷰</span></a>
@@ -27,7 +34,8 @@
       <div class="admin-nav-label" style="margin-top:8px;">파트너 관리</div>
       <a class="admin-nav-item" data-page="partners"><span class="admin-nav-icon">👥</span><span class="admin-nav-label">파트너 목록</span></a>
 
-      <div class="admin-nav-label" style="margin-top:8px;">정산</div>
+      <div class="admin-nav-label" style="margin-top:8px;">전환 · 정산</div>
+      <a class="admin-nav-item" data-page="review"><span class="admin-nav-icon">✅</span><span class="admin-nav-label">전환 검수</span><span class="admin-nav-badge" id="nav-review-badge" style="display:none;">0</span></a>
       <a class="admin-nav-item" data-page="settle"><span class="admin-nav-icon">💸</span><span class="admin-nav-label">정산 처리</span></a>
       <a class="admin-nav-item" data-page="settle-history"><span class="admin-nav-icon">🏦</span><span class="admin-nav-label">정산 내역</span></a>
     </nav>
@@ -55,24 +63,76 @@
     <!-- 오버뷰 -->
     <div class="admin-page" id="ap-overview">
       <div class="admin-summary">
-        <div class="admin-card"><div class="admin-card-accent" style="background:var(--lime);"></div><div class="admin-card-icon">👥</div><div class="admin-card-label">전체 파트너</div><div class="admin-card-value" style="color:var(--lime);">0</div><div class="admin-card-change neutral">아직 가입자 없음</div></div>
-        <div class="admin-card"><div class="admin-card-accent" style="background:var(--orange);"></div><div class="admin-card-icon">🔗</div><div class="admin-card-label">발급된 링크</div><div class="admin-card-value" style="color:var(--orange);">0</div><div class="admin-card-change neutral">아직 링크 없음</div></div>
-        <div class="admin-card"><div class="admin-card-accent" style="background:var(--purple);"></div><div class="admin-card-icon">💰</div><div class="admin-card-label">이번 달 총 거래액</div><div class="admin-card-value" style="color:var(--purple);">₩0</div><div class="admin-card-change neutral">-</div></div>
-        <div class="admin-card"><div class="admin-card-accent" style="background:var(--blue);"></div><div class="admin-card-icon">📈</div><div class="admin-card-label">플랫폼 수익</div><div class="admin-card-value" style="color:var(--blue);">₩0</div><div class="admin-card-change neutral">-</div></div>
+        <div class="admin-card" style="--card-glow:rgba(190,255,0,0.12);"><div class="admin-card-accent" style="background:var(--lime);"></div><div class="admin-card-icon">👥</div><div class="admin-card-label">전체 파트너</div><div class="admin-card-value" style="color:var(--lime);">0</div><div class="admin-card-change neutral">아직 가입자 없음</div></div>
+        <div class="admin-card" style="--card-glow:rgba(255,107,53,0.12);"><div class="admin-card-accent" style="background:var(--orange);"></div><div class="admin-card-icon">🔗</div><div class="admin-card-label">발급된 링크</div><div class="admin-card-value" style="color:var(--orange);">0</div><div class="admin-card-change neutral">아직 링크 없음</div></div>
+        <div class="admin-card" style="--card-glow:rgba(179,136,255,0.12);"><div class="admin-card-accent" style="background:var(--purple);"></div><div class="admin-card-icon">💰</div><div class="admin-card-label">이번 달 총 거래액</div><div class="admin-card-value" style="color:var(--purple);">₩0</div><div class="admin-card-change neutral">-</div></div>
+        <div class="admin-card" style="--card-glow:rgba(79,195,247,0.12);"><div class="admin-card-accent" style="background:var(--blue);"></div><div class="admin-card-icon">📈</div><div class="admin-card-label">플랫폼 수익</div><div class="admin-card-value" style="color:var(--blue);">₩0</div><div class="admin-card-change neutral">-</div></div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-        <div class="admin-table-card">
-          <div class="admin-table-header"><div class="admin-table-title">⏳ 처리 대기</div></div>
-          <div style="padding:40px 20px;text-align:center;color:rgba(255,255,255,0.25);font-size:13px;">
-            <div style="font-size:32px;margin-bottom:10px;">📭</div>
-            처리 대기 중인 신청이 없습니다
+
+      <!-- 수익 추이 + 인기 상품 -->
+      <div class="adm-grid-2">
+        <div class="adm-panel adm-chart-card">
+          <div class="adm-panel-head">
+            <div class="adm-panel-title">📈 월별 수수료 발생 추이</div>
+            <div class="adm-panel-sub" id="ov-chart-sum">최근 12개월</div>
+          </div>
+          <div class="adm-chart-legend">
+            <div class="lg"><i style="background:var(--lime);"></i> 수수료 발생액</div>
+          </div>
+          <div class="adm-chart-wrap">
+            <svg id="admin-chart" viewBox="0 0 680 150" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="acGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="rgba(190,255,0,0.28)"/>
+                  <stop offset="100%" stop-color="rgba(190,255,0,0)"/>
+                </linearGradient>
+              </defs>
+              <path class="ac-area" d=""></path>
+              <path class="ac-line" d=""></path>
+              <g class="ac-dots"></g>
+              <g class="ac-labels"></g>
+            </svg>
           </div>
         </div>
-        <div class="admin-table-card">
-          <div class="admin-table-header"><div class="admin-table-title">💸 정산 대기</div></div>
-          <div style="padding:40px 20px;text-align:center;color:rgba(255,255,255,0.25);font-size:13px;">
-            <div style="font-size:32px;margin-bottom:10px;">💳</div>
-            정산 대기 내역이 없습니다
+
+        <div class="adm-panel">
+          <div class="adm-panel-head">
+            <div class="adm-panel-title">🔥 인기 상품 TOP</div>
+            <div class="adm-panel-sub">판매 건수 기준</div>
+          </div>
+          <div class="adm-list" id="ov-top-products">
+            <div class="adm-empty"><div class="ico">🛒</div><b>판매 데이터가 없어요</b>구매가 발생하면 인기 상품이 표시됩니다</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 최근 활동 + 처리 대기 -->
+      <div class="adm-grid-2">
+        <div class="adm-panel">
+          <div class="adm-panel-head">
+            <div class="adm-panel-title">⚡ 최근 활동</div>
+            <div class="adm-panel-sub">실시간</div>
+          </div>
+          <div class="adm-list" id="ov-recent">
+            <div class="adm-empty"><div class="ico">📭</div><b>활동 내역이 없어요</b>클릭·구매·가입이 발생하면 여기에 표시됩니다</div>
+          </div>
+        </div>
+        <div class="adm-panel">
+          <div class="adm-panel-head">
+            <div class="adm-panel-title">⏳ 처리 대기</div>
+            <div class="adm-panel-sub">확인 필요</div>
+          </div>
+          <div class="adm-list" id="ov-pending">
+            <div class="adm-list-item" onclick="showAdminPage('review')" style="cursor:pointer;">
+              <div class="adm-feed-ico conv">✅</div>
+              <div class="adm-list-main"><div class="adm-list-name">전환 검수 대기</div><div class="adm-list-meta">확정/취소를 기다리는 전환</div></div>
+              <div class="adm-list-val" id="ov-pend-review">0</div>
+            </div>
+            <div class="adm-list-item" onclick="showAdminPage('settle')" style="cursor:pointer;">
+              <div class="adm-feed-ico settle">💸</div>
+              <div class="adm-list-main"><div class="adm-list-name">정산 지급 대기</div><div class="adm-list-meta">지급 처리를 기다리는 정산</div></div>
+              <div class="adm-list-val" id="ov-pend-settle">0</div>
+            </div>
           </div>
         </div>
       </div>
@@ -100,33 +160,47 @@
         <div class="admin-table-header">
           <div class="admin-table-title">파트너 목록</div>
           <div class="admin-table-actions">
-            <input class="admin-search" data-table="partners-table" placeholder="이름, 이메일 검색...">
+            <input class="admin-search" id="partner-search" placeholder="이름, 이메일 검색...">
           </div>
         </div>
-        <div id="partners-table">
-          <div style="padding:60px 20px;text-align:center;color:rgba(255,255,255,0.25);font-size:13px;">
-            <div style="font-size:40px;margin-bottom:12px;">👥</div>
-            <div style="font-weight:700;margin-bottom:6px;">등록된 파트너가 없습니다</div>
-            <div style="font-size:12px;">파트너가 가입하면 여기에 표시됩니다</div>
-          </div>
+        <div class="admin-table-wrap">
+          <table class="admin-table" id="partners-table">
+            <thead><tr>
+              <th>파트너</th><th>이메일</th><th>채널</th><th>상태</th><th>가입일</th><th style="text-align:right;">관리</th>
+            </tr></thead>
+            <tbody>
+              <tr><td colspan="6"><div class="adm-empty"><div class="ico">👥</div><b>불러오는 중...</b></div></td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
 
-    <!-- 파트너 가입 승인 -->
-    <div class="admin-page" id="ap-partner-apply">
+    <!-- 전환 검수 -->
+    <div class="admin-page" id="ap-review">
+      <div class="admin-summary" style="grid-template-columns:repeat(3,1fr);">
+        <div class="admin-card" style="--card-glow:rgba(255,214,10,0.12);"><div class="admin-card-accent" style="background:var(--yellow);"></div><div class="admin-card-icon">⏳</div><div class="admin-card-label">검수 대기</div><div class="admin-card-value" style="color:var(--yellow);" id="rv-pending-cnt">0</div><div class="admin-card-change neutral">확정/취소 필요</div></div>
+        <div class="admin-card" style="--card-glow:rgba(190,255,0,0.12);"><div class="admin-card-accent" style="background:var(--lime);"></div><div class="admin-card-icon">💰</div><div class="admin-card-label">대기 수수료 합계</div><div class="admin-card-value" style="color:var(--lime);" id="rv-pending-sum">₩0</div><div class="admin-card-change neutral">확정 시 정산 대상</div></div>
+        <div class="admin-card" style="--card-glow:rgba(79,195,247,0.12);"><div class="admin-card-accent" style="background:var(--blue);"></div><div class="admin-card-icon">✅</div><div class="admin-card-label">이번 달 확정</div><div class="admin-card-value" style="color:var(--blue);" id="rv-confirmed-cnt">0</div><div class="admin-card-change neutral">검수 통과</div></div>
+      </div>
       <div class="admin-table-card">
         <div class="admin-table-header">
-          <div class="admin-table-title">파트너 가입 승인</div>
-          <div class="admin-table-actions">
-            <button class="admin-filter-btn active">대기중 (0)</button>
-            <button class="admin-filter-btn">처리완료</button>
+          <div>
+            <div class="admin-table-title">✅ 전환 검수 큐</div>
+            <div style="font-size:12px;color:var(--text2);margin-top:4px;">구매(전환)를 확인해 <b>확정</b>하면 정산 대상이 되고, 취소/반품이면 <b>취소</b> 처리하세요.</div>
+          </div>
+          <div class="admin-table-actions" id="rv-filters">
+            <button class="admin-filter-btn active" data-status="pending">대기</button>
+            <button class="admin-filter-btn" data-status="confirmed">확정</button>
+            <button class="admin-filter-btn" data-status="canceled">취소</button>
+            <button class="admin-filter-btn" data-status="all">전체</button>
           </div>
         </div>
-        <div style="padding:60px 20px;text-align:center;color:rgba(255,255,255,0.25);font-size:13px;">
-          <div style="font-size:40px;margin-bottom:12px;">📋</div>
-          <div style="font-weight:700;margin-bottom:6px;">대기 중인 가입 신청이 없습니다</div>
-          <div style="font-size:12px;">파트너가 가입 신청하면 여기에 표시됩니다</div>
+        <div class="admin-table-wrap">
+          <table class="admin-table" id="review-table">
+            <thead><tr><th>파트너</th><th>상품</th><th>주문금액</th><th>수수료</th><th>발생일</th><th>상태</th><th style="text-align:right;">검수</th></tr></thead>
+            <tbody><tr><td colspan="7"><div class="adm-empty"><div class="ico">✅</div><b>불러오는 중...</b></div></td></tr></tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -134,10 +208,18 @@
     <!-- 정산 처리 -->
     <div class="admin-page" id="ap-settle">
       <div class="admin-table-card">
-        <div class="admin-table-header"><div class="admin-table-title">정산 대기 목록</div></div>
-        <div style="padding:60px 20px;text-align:center;color:rgba(255,255,255,0.25);font-size:13px;">
-          <div style="font-size:40px;margin-bottom:12px;">💸</div>
-          <div style="font-weight:700;margin-bottom:6px;">정산 대기 내역이 없습니다</div>
+        <div class="admin-table-header">
+          <div>
+            <div class="admin-table-title">💸 정산 처리 <span id="settle-period" style="font-size:12px;color:var(--lime);font-weight:700;"></span></div>
+            <div style="font-size:12px;color:var(--text2);margin-top:4px;">확정된 전환을 파트너별로 모아 정산해요. <b>지급 처리</b>하면 해당 전환이 정산 완료됩니다.</div>
+          </div>
+          <button class="comm-save" id="settle-refresh" onclick="loadSettle()">↻ 새로고침</button>
+        </div>
+        <div class="admin-table-wrap">
+          <table class="admin-table" id="settle-table">
+            <thead><tr><th>파트너</th><th>확정 전환</th><th>정산 예정액</th><th>정산 계좌</th><th style="text-align:right;">처리</th></tr></thead>
+            <tbody><tr><td colspan="5"><div class="adm-empty"><div class="ico">💸</div><b>불러오는 중...</b></div></td></tr></tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -145,38 +227,20 @@
     <!-- 정산 내역 -->
     <div class="admin-page" id="ap-settle-history">
       <div class="admin-table-card">
-        <div class="admin-table-header"><div class="admin-table-title">정산 완료 내역</div></div>
-        <div style="padding:60px 20px;text-align:center;color:rgba(255,255,255,0.25);font-size:13px;">
-          <div style="font-size:40px;margin-bottom:12px;">🏦</div>
-          <div style="font-weight:700;margin-bottom:6px;">정산 내역이 없습니다</div>
+        <div class="admin-table-header">
+          <div class="admin-table-title">🏦 정산 완료 내역</div>
+          <input class="admin-search" id="settle-hist-search" placeholder="파트너·기간 검색...">
+        </div>
+        <div class="admin-table-wrap">
+          <table class="admin-table" id="settle-history-table">
+            <thead><tr><th>기간</th><th>파트너</th><th>정산액</th><th>상태</th><th>지급일</th></tr></thead>
+            <tbody><tr><td colspan="5"><div class="adm-empty"><div class="ico">🏦</div><b>불러오는 중...</b></div></td></tr></tbody>
+          </table>
         </div>
       </div>
     </div>
 
   </main>
-</div>
-
-<!-- 정산 처리 모달 -->
-<div class="admin-modal-overlay" id="settle-modal">
-  <div class="admin-modal">
-    <div class="admin-modal-header">
-      <div class="admin-modal-title">💸 정산 처리</div>
-      <button class="admin-modal-close" onclick="closeModal('settle-modal')">✕</button>
-    </div>
-    <div class="admin-modal-body">
-      <div style="background:#1A1A1A;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px;margin-bottom:18px;">
-        <div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span style="font-size:13px;color:rgba(255,255,255,0.4);">파트너</span><span style="font-size:13px;font-weight:700;" id="settle-name">-</span></div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span style="font-size:13px;color:rgba(255,255,255,0.4);">정산 금액</span><span style="font-size:16px;font-weight:900;color:var(--lime);" id="settle-amount">-</span></div>
-        <div style="display:flex;justify-content:space-between;"><span style="font-size:13px;color:rgba(255,255,255,0.4);">정산 방식</span><span style="font-size:13px;font-weight:600;" id="settle-method">-</span></div>
-      </div>
-      <div style="margin-bottom:14px;"><label class="admin-label">처리 메모 (선택)</label><input class="admin-input" id="settle-note" type="text" placeholder="입금 완료, 이체 확인 등"></div>
-      <div style="background:rgba(190,255,0,0.06);border:1px solid rgba(190,255,0,0.18);border-radius:10px;padding:12px 14px;font-size:12px;color:rgba(190,255,0,0.8);line-height:1.6;">✅ 처리 완료 시 파트너에게 자동 알림이 발송됩니다.</div>
-    </div>
-    <div class="admin-modal-footer">
-      <button class="admin-action-btn" style="flex:1;padding:11px;" onclick="closeModal('settle-modal')">취소</button>
-      <button onclick="confirmSettle()" style="flex:2;padding:11px;border-radius:10px;border:none;background:var(--lime);color:#0A0A0A;font-size:14px;font-weight:800;cursor:pointer;font-family:var(--font);">정산 처리 완료</button>
-    </div>
-  </div>
 </div>
 
 <style>
