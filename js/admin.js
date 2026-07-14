@@ -42,6 +42,7 @@ function showAdminPage(pageId) {
   const topbarTitle = document.querySelector('.admin-topbar-title');
   if (topbarTitle && title) topbarTitle.textContent = title;
   if (pageId === 'commissions') loadCommissions();
+  if (pageId === 'campaigns') loadCampaigns();
   if (pageId === 'partners') loadAdminPartners();
   if (pageId === 'overview') loadAdminOverview();
   if (pageId === 'review') loadReview();
@@ -571,6 +572,108 @@ async function loadFraud() {
       '<td>' + (r.cvr * 100).toFixed(1) + '%</td>' +
       '<td>' + pill + '</td></tr>';
   }).join('');
+}
+
+// ══════════ 시즌 캠페인 CRUD ══════════
+let __campaigns = [];
+async function loadCampaigns() {
+  if (!window.opClient) return;
+  const box = document.getElementById('campaign-list');
+  const { data, error } = await window.opClient.from('campaigns').select('*').order('starts_at', { ascending: false });
+  if (error) { if (box) box.innerHTML = '<div class="adm-empty"><div class="ico">⚠️</div><b>캠페인을 불러오지 못했어요</b>' + admEsc(error.message) + '</div>'; return; }
+  __campaigns = data || [];
+  renderCampaigns();
+}
+function campStatus(c) {
+  const today = new Date().toISOString().slice(0, 10);
+  if (c.starts_at > today) return 'scheduled';
+  if (c.ends_at < today) return 'ended';
+  return 'live';
+}
+function fmtRate(r) { return (Number(r) * 100).toFixed(1).replace(/\.0$/, ''); }
+function renderCampaigns() {
+  const box = document.getElementById('campaign-list');
+  if (!box) return;
+  if (!__campaigns.length) { box.innerHTML = '<div class="adm-empty"><div class="ico">🎁</div><b>등록된 캠페인이 없어요</b>+ 새 캠페인으로 시즌 프로모션을 만들어보세요</div>'; return; }
+  box.innerHTML = __campaigns.map(c => {
+    const st = campStatus(c);
+    const stPill = !c.is_active ? '<span class="camp-status ended">비활성</span>'
+      : st === 'scheduled' ? '<span class="camp-status scheduled">예정</span>'
+      : st === 'ended' ? '<span class="camp-status ended">종료</span>'
+      : '<span class="camp-status live">진행중</span>';
+    const tgt = c.target_type === 'category' ? ('🎯 ' + admEsc(c.target_value || '카테고리')) : c.target_type === 'product' ? '🎯 특정 상품' : '🛒 전체 상품';
+    return '<div class="campaign-card' + (c.is_active ? '' : ' inactive') + '">' +
+      '<div class="camp-head"><span class="camp-emoji">' + admEsc(c.emoji || '🎁') + '</span><span class="camp-bonus-badge">+' + fmtRate(c.bonus_rate) + '%</span></div>' +
+      '<div class="camp-title">' + admEsc(c.title) + '</div>' +
+      '<div class="camp-desc">' + admEsc(c.description || '') + '</div>' +
+      '<div class="camp-meta">📅 ' + admEsc(c.starts_at) + ' ~ ' + admEsc(c.ends_at) + '<br>' + tgt + '</div>' +
+      '<div class="camp-footer">' + stPill + '<div class="camp-actions">' +
+        '<button class="camp-icon-btn" title="' + (c.is_active ? '비활성화' : '활성화') + '" onclick="toggleCampaign(\'' + c.id + '\',' + (!c.is_active) + ')">' + (c.is_active ? '⏸' : '▶') + '</button>' +
+        '<button class="camp-icon-btn" title="수정" onclick="openCampaignModal(\'' + c.id + '\')">✏️</button>' +
+        '<button class="camp-icon-btn del" title="삭제" onclick="deleteCampaign(\'' + c.id + '\')">🗑</button>' +
+      '</div></div></div>';
+  }).join('');
+}
+function onCampTargetChange() {
+  const t = document.getElementById('cm-target-type').value;
+  document.getElementById('cm-target-value-wrap').style.display = t === 'category' ? '' : 'none';
+}
+function openCampaignModal(id) {
+  const c = id ? __campaigns.find(x => x.id === id) : null;
+  document.getElementById('cm-title').textContent = c ? '캠페인 수정' : '새 캠페인';
+  document.getElementById('cm-id').value = c ? c.id : '';
+  document.getElementById('cm-emoji').value = c ? (c.emoji || '🎁') : '🎁';
+  document.getElementById('cm-title-input').value = c ? c.title : '';
+  document.getElementById('cm-desc').value = c ? (c.description || '') : '';
+  document.getElementById('cm-target-type').value = c ? c.target_type : 'all';
+  document.getElementById('cm-target-value').value = c ? (c.target_value || '') : '';
+  document.getElementById('cm-bonus').value = c ? Number(c.bonus_rate) * 100 : 3;
+  document.getElementById('cm-start').value = c ? c.starts_at : '';
+  document.getElementById('cm-end').value = c ? c.ends_at : '';
+  document.getElementById('cm-active').checked = c ? c.is_active : true;
+  onCampTargetChange();
+  openModal('campaign-modal');
+}
+async function saveCampaign(btn) {
+  if (!window.opClient) return;
+  const id = document.getElementById('cm-id').value;
+  const title = document.getElementById('cm-title-input').value.trim();
+  const starts = document.getElementById('cm-start').value;
+  const ends = document.getElementById('cm-end').value;
+  if (!title) { alert('제목을 입력하세요'); return; }
+  if (!starts || !ends) { alert('시작일과 종료일을 입력하세요'); return; }
+  if (ends < starts) { alert('종료일이 시작일보다 빠릅니다'); return; }
+  const tt = document.getElementById('cm-target-type').value;
+  const payload = {
+    title,
+    description: document.getElementById('cm-desc').value.trim() || null,
+    emoji: document.getElementById('cm-emoji').value || '🎁',
+    target_type: tt,
+    target_value: tt === 'category' ? (document.getElementById('cm-target-value').value.trim() || null) : null,
+    bonus_rate: (Number(document.getElementById('cm-bonus').value) || 0) / 100,
+    starts_at: starts, ends_at: ends,
+    is_active: document.getElementById('cm-active').checked
+  };
+  btn.disabled = true; const t = btn.textContent; btn.textContent = '저장 중...';
+  let error;
+  if (id) { ({ error } = await window.opClient.from('campaigns').update(payload).eq('id', id)); }
+  else { ({ error } = await window.opClient.from('campaigns').insert(payload)); }
+  btn.disabled = false; btn.textContent = t;
+  if (error) { alert('저장 실패: ' + error.message); return; }
+  closeModal('campaign-modal'); showToast('캠페인 저장 완료 ✅'); loadCampaigns();
+}
+async function toggleCampaign(id, active) {
+  if (!window.opClient) return;
+  const { error } = await window.opClient.from('campaigns').update({ is_active: active }).eq('id', id);
+  if (error) { showToast('실패: ' + error.message); return; }
+  loadCampaigns(); showToast(active ? '캠페인 활성화 ✅' : '캠페인 비활성화');
+}
+async function deleteCampaign(id) {
+  if (!window.opClient) return;
+  if (!confirm('이 캠페인을 삭제할까요?')) return;
+  const { error } = await window.opClient.from('campaigns').delete().eq('id', id);
+  if (error) { showToast('실패: ' + error.message); return; }
+  loadCampaigns(); showToast('캠페인 삭제됨');
 }
 
 // 초기 진입 시 오버뷰 로드

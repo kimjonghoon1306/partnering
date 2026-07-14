@@ -30,6 +30,7 @@
 
       <div class="admin-nav-label" style="margin-top:8px;">상품</div>
       <a class="admin-nav-item" data-page="commissions"><span class="admin-nav-icon">🏷️</span><span class="admin-nav-label">상품 마진 설정</span></a>
+      <a class="admin-nav-item" data-page="campaigns"><span class="admin-nav-icon">🎁</span><span class="admin-nav-label">시즌 캠페인</span></a>
 
       <div class="admin-nav-label" style="margin-top:8px;">파트너 관리</div>
       <a class="admin-nav-item" data-page="partners"><span class="admin-nav-icon">👥</span><span class="admin-nav-label">파트너 목록</span></a>
@@ -157,6 +158,20 @@
       </div>
     </div>
 
+    <!-- 시즌 캠페인 -->
+    <div class="admin-page" id="ap-campaigns">
+      <div class="admin-table-header" style="padding:0 2px 16px;">
+        <div>
+          <div class="admin-table-title" style="font-size:17px;">🎁 시즌 캠페인</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:4px;">명절·제철·김장철 등 기간 한정으로 추가 수수료를 걸어 파트너 홍보를 독려하세요.</div>
+        </div>
+        <button class="comm-save dirty" onclick="openCampaignModal()">+ 새 캠페인</button>
+      </div>
+      <div id="campaign-list" class="campaign-grid">
+        <div class="adm-empty"><div class="ico">🎁</div><b>불러오는 중...</b></div>
+      </div>
+    </div>
+
     <!-- 파트너 목록 -->
     <div class="admin-page" id="ap-partners">
       <div class="admin-table-card">
@@ -268,6 +283,43 @@
     </div>
 
   </main>
+</div>
+
+<!-- 캠페인 생성/수정 모달 -->
+<div class="admin-modal-overlay" id="campaign-modal">
+  <div class="admin-modal">
+    <div class="admin-modal-header">
+      <div class="admin-modal-title" id="cm-title">새 캠페인</div>
+      <button class="admin-modal-close" onclick="closeModal('campaign-modal')">✕</button>
+    </div>
+    <div class="admin-modal-body">
+      <input type="hidden" id="cm-id">
+      <div style="display:flex;gap:10px;margin-bottom:14px;">
+        <div style="width:78px;"><label class="admin-label">이모지</label><input class="admin-input" id="cm-emoji" value="🎁" style="text-align:center;font-size:20px;"></div>
+        <div style="flex:1;"><label class="admin-label">캠페인 제목</label><input class="admin-input" id="cm-title-input" placeholder="예: 설 명절 선물세트 캠페인"></div>
+      </div>
+      <div style="margin-bottom:14px;"><label class="admin-label">설명 (파트너에게 노출)</label><input class="admin-input" id="cm-desc" placeholder="예: 기간 내 선물세트 판매 시 수수료 +3%"></div>
+      <div style="display:flex;gap:10px;margin-bottom:14px;">
+        <div style="flex:1;"><label class="admin-label">대상</label>
+          <select class="admin-input" id="cm-target-type" onchange="onCampTargetChange()">
+            <option value="all">전체 상품</option>
+            <option value="category">특정 카테고리</option>
+          </select>
+        </div>
+        <div style="flex:1;display:none;" id="cm-target-value-wrap"><label class="admin-label">카테고리명</label><input class="admin-input" id="cm-target-value" placeholder="예: 선물세트"></div>
+      </div>
+      <div style="margin-bottom:14px;"><label class="admin-label">추가 수수료율 (%)</label><input class="admin-input" id="cm-bonus" type="number" min="0" max="30" step="0.5" value="3"></div>
+      <div style="display:flex;gap:10px;margin-bottom:16px;">
+        <div style="flex:1;"><label class="admin-label">시작일</label><input class="admin-input" id="cm-start" type="date"></div>
+        <div style="flex:1;"><label class="admin-label">종료일</label><input class="admin-input" id="cm-end" type="date"></div>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;color:var(--text);"><input type="checkbox" id="cm-active" checked style="width:17px;height:17px;accent-color:var(--lime);"> 활성 (파트너에게 노출)</label>
+    </div>
+    <div class="admin-modal-footer">
+      <button class="admin-action-btn" style="flex:1;padding:11px;" onclick="closeModal('campaign-modal')">취소</button>
+      <button onclick="saveCampaign(this)" style="flex:2;padding:11px;border-radius:10px;border:none;background:var(--lime);color:#0A0A0A;font-size:14px;font-weight:800;cursor:pointer;font-family:var(--font);">저장</button>
+    </div>
+  </div>
 </div>
 
 <style>
