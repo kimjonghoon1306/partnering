@@ -554,6 +554,32 @@ async function changePassword(btn) {
   alert('비밀번호가 변경됐어요!');
 }
 
+// ── 온파트너 파트너 탈퇴: auth.users는 유지하고 partners row만 삭제
+async function withdrawPartner(btn) {
+  if (!window.opClient) return;
+  const ok = confirm('온파트너 파트너를 탈퇴하면 발급한 링크·수익 내역이 모두 삭제됩니다. 온종일팜 계정과 쿠폰은 그대로 유지됩니다. 정말 탈퇴하시겠어요?');
+  if (!ok) return;
+
+  const { data: { user } } = await window.opClient.auth.getUser();
+  if (!user) {
+    window.location.href = 'login.html';
+    return;
+  }
+
+  const t = btn?.textContent || '온파트너 파트너 탈퇴';
+  if (btn) { btn.disabled = true; btn.textContent = '탈퇴 처리 중...'; }
+  const { error } = await window.opClient.from('partners').delete().eq('id', user.id);
+  if (error) {
+    if (btn) { btn.disabled = false; btn.textContent = t; }
+    alert('탈퇴 처리에 실패했어요: ' + error.message);
+    return;
+  }
+
+  await window.opClient.auth.signOut();
+  alert('탈퇴가 완료됐어요. 언제든 다시 파트너로 가입하실 수 있어요.');
+  window.location.href = '../index.html';
+}
+
 // ── 알림 토글 스위치
 document.addEventListener('click', (e) => {
   const wrap = e.target.closest('.toggle-wrap');

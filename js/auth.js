@@ -204,6 +204,41 @@ function setSignupCompletion(mode, email) {
   if (goBtn) { goBtn.setAttribute('href', 'dashboard.html'); goBtn.textContent = '대시보드로 이동 →'; }
 }
 
+function isAlreadyRegisteredError(error) {
+  return /already registered|already exists|user already/i.test(error?.message || '');
+}
+
+async function connectExistingFarmAccount(email, password, info, setBtn, showErr) {
+  setBtn('기존 계정 확인 중...', true);
+  const { data, error } = await window.opClient.auth.signInWithPassword({ email, password });
+  if (error) {
+    setBtn('다음 단계 →', false);
+    showErr('이미 온종일팜/온파트너에 가입된 이메일이에요. 온종일팜에서 쓰던 비밀번호로 입력하시거나, 로그인 페이지에서 진행해주세요.');
+    document.getElementById('password')?.focus();
+    return;
+  }
+
+  const user = data.user;
+  const partner = await opGetPartner(user);
+  if (partner) {
+    alert('이미 온파트너 파트너세요. 대시보드로 이동합니다');
+    window.location.href = 'dashboard.html';
+    return;
+  }
+
+  setBtn('파트너 연결 중...', true);
+  const created = await opEnsurePartner(user, { ...info, email: user.email || email });
+  if (!created) {
+    setBtn('다음 단계 →', false);
+    showErr('파트너 연결에 실패했어요. 잠시 후 다시 시도해주세요.');
+    return;
+  }
+
+  alert('이미 온종일팜 회원이시네요! 온파트너 파트너로 연결해드렸어요');
+  setSignupCompletion('register');
+  goStep(3);
+}
+
 async function initPartnerRegistrationMode() {
   if (!document.getElementById('form-1') || !window.opClient) return;
   const params = new URLSearchParams(window.location.search);
@@ -305,6 +340,10 @@ async function handleSignup(e) {
   });
 
   if (error) {
+    if (isAlreadyRegisteredError(error)) {
+      await connectExistingFarmAccount(email, password, info, setBtn, showErr);
+      return;
+    }
     setBtn('다음 단계 →', false);
     const m = /already registered/i.test(error.message)
       ? '이미 가입된 이메일이에요. 로그인해주세요.'
