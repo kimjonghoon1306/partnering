@@ -724,6 +724,9 @@ function setNotificationBadge(n) {
     badge.textContent = n > 99 ? '99+' : String(n);
     badge.style.display = n ? '' : 'none';
   }
+  // 상단 벨 배지도 함께 갱신 (사이드바 메뉴와 연동)
+  const top = document.getElementById('topbar-notif-badge');
+  if (top) top.style.display = n ? '' : 'none';
 }
 
 async function loadNotificationBadge() {
