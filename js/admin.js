@@ -44,6 +44,7 @@ function showAdminPage(pageId) {
   if (pageId === 'commissions') loadCommissions();
   if (pageId === 'campaigns') loadCampaigns();
   if (pageId === 'partners') loadAdminPartners();
+  if (pageId === 'notice') loadNoticeCenter();
   if (pageId === 'overview') loadAdminOverview();
   if (pageId === 'review') loadReview();
   if (pageId === 'settle') loadSettle();
@@ -377,12 +378,140 @@ async function setPartnerStatus(id, status, btn) {
       : '계정이 다시 활성화되었습니다. 파트너 활동을 이어갈 수 있어요.'
   );
   renderAdminPartners(__admPartners);
+  if (document.getElementById('ap-fraud')?.classList.contains('active')) loadFraud();
   showToast('파트너 ' + label + ' 완료 ✅');
 }
 document.getElementById('partner-search')?.addEventListener('input', function () {
   const q = this.value.toLowerCase();
   renderAdminPartners(__admPartners.filter(p => ((p.name || '') + (p.email || '') + (p.nickname || '')).toLowerCase().includes(q)));
 });
+
+// ── 공지 발송 센터
+let __noticePartners = [];
+async function loadNoticeCenter() {
+  if (!window.opClient) return;
+  await loadNoticePartners();
+  await loadRecentNotices();
+}
+async function loadNoticePartners() {
+  const sel = document.getElementById('notice-partner');
+  const { data, error } = await window.opClient.from('partners')
+    .select('id,name,nickname,email,status')
+    .order('created_at', { ascending: false });
+  if (error) {
+    showToast('파트너 목록 로딩 실패: ' + error.message);
+    return;
+  }
+  __noticePartners = (data || []).filter(p => !OP_ADMIN_EMAILS.includes((p.email || '').toLowerCase()));
+  if (sel) {
+    sel.innerHTML = '<option value="">파트너를 선택하세요</option>' + __noticePartners.map(p => {
+      const label = (p.name || p.nickname || '이름 없음') + ' · ' + (p.email || '-') + (p.status === 'suspended' ? ' · 정지' : '');
+      return '<option value="' + admEsc(p.id) + '">' + admEsc(label) + '</option>';
+    }).join('');
+  }
+  updateNoticeTargetCount();
+}
+function onNoticeTargetChange() {
+  const type = document.getElementById('notice-target-type')?.value || 'all';
+  const wrap = document.getElementById('notice-partner-wrap');
+  if (wrap) wrap.style.display = type === 'selected' ? '' : 'none';
+  updateNoticeTargetCount();
+}
+function getNoticeTargetIds() {
+  const type = document.getElementById('notice-target-type')?.value || 'all';
+  if (type === 'selected') {
+    const pid = document.getElementById('notice-partner')?.value || '';
+    return pid ? [pid] : [];
+  }
+  return __noticePartners.map(p => p.id);
+}
+function updateNoticeTargetCount() {
+  const el = document.getElementById('notice-target-count');
+  if (!el) return;
+  const type = document.getElementById('notice-target-type')?.value || 'all';
+  const ids = getNoticeTargetIds();
+  el.textContent = (type === 'selected' && !ids.length) ? '파트너를 선택하세요' : '대상 ' + ids.length.toLocaleString() + '명';
+}
+document.getElementById('notice-partner')?.addEventListener('change', updateNoticeTargetCount);
+async function sendNotice(btn) {
+  if (!window.opClient) return;
+  const titleEl = document.getElementById('notice-title');
+  const bodyEl = document.getElementById('notice-body');
+  const title = (titleEl?.value || '').trim();
+  const body = (bodyEl?.value || '').trim();
+  const partnerIds = getNoticeTargetIds();
+  if (!title) { showToast('공지 제목을 입력하세요'); titleEl?.focus(); return; }
+  if (!body) { showToast('공지 내용을 입력하세요'); bodyEl?.focus(); return; }
+  if (!partnerIds.length) { showToast('공지 대상을 선택하세요'); return; }
+  if (!confirm('파트너 ' + partnerIds.length.toLocaleString() + '명에게 공지를 발송할까요?')) return;
+  const prev = btn?.textContent || '공지 발송';
+  if (btn) { btn.disabled = true; btn.textContent = '발송 중...'; }
+  const payload = partnerIds.map(partnerId => ({ partner_id: partnerId, type: 'notice', title, body }));
+  const { error } = await window.opClient.from('notifications').insert(payload);
+  if (btn) { btn.disabled = false; btn.textContent = prev; }
+  if (error) { showToast('공지 발송 실패: ' + error.message); return; }
+  await logAdminAction('notice_sent', 'notice', null, {
+    title,
+    body,
+    target_type: document.getElementById('notice-target-type')?.value || 'all',
+    partner_count: partnerIds.length,
+    partner_ids: partnerIds
+  });
+  if (titleEl) titleEl.value = '';
+  if (bodyEl) bodyEl.value = '';
+  showToast('공지 발송 완료 ✅');
+  await loadRecentNotices();
+}
+async function loadRecentNotices() {
+  const box = document.getElementById('notice-recent-list');
+  if (!box || !window.opClient) return;
+  const { data, error } = await window.opClient.from('notifications')
+    .select('id,partner_id,title,body,created_at')
+    .eq('type', 'notice')
+    .order('created_at', { ascending: false })
+    .limit(200);
+  if (error) {
+    await loadRecentNoticesFromAudit(box);
+    return;
+  }
+  const notices = data || [];
+  if (!notices.length) { box.innerHTML = '<div class="adm-empty"><div class="ico">📣</div><b>아직 발송한 공지가 없어요</b></div>'; return; }
+  const partnerName = {};
+  __noticePartners.forEach(p => { partnerName[p.id] = p.name || p.nickname || p.email || '-'; });
+  const groups = {};
+  notices.forEach(n => {
+    const key = [n.title || '', n.body || '', String(n.created_at || '').slice(0, 16)].join('\n');
+    if (!groups[key]) groups[key] = { title: n.title || '-', body: n.body || '', created_at: n.created_at, partner_ids: [] };
+    groups[key].partner_ids.push(n.partner_id);
+  });
+  box.innerHTML = Object.values(groups).slice(0, 10).map(g => {
+    const names = g.partner_ids.slice(0, 3).map(id => partnerName[id] || '파트너').join(', ');
+    const extra = g.partner_ids.length > 3 ? ' 외 ' + (g.partner_ids.length - 3).toLocaleString() + '명' : '';
+    return '<div class="notice-recent-item">' +
+      '<div class="notice-recent-head"><b>' + admEsc(g.title) + '</b><span>' + admEsc(String(g.created_at || '').replace('T', ' ').slice(0, 16)) + '</span></div>' +
+      '<div class="notice-recent-body">' + admEsc(g.body) + '</div>' +
+      '<div class="notice-recent-meta">발송 ' + g.partner_ids.length.toLocaleString() + '명 · ' + admEsc(names + extra) + '</div>' +
+      '</div>';
+  }).join('');
+}
+async function loadRecentNoticesFromAudit(box) {
+  const { data, error } = await window.opClient.from('admin_audit_log')
+    .select('created_at,detail')
+    .eq('action', 'notice_sent')
+    .eq('target_type', 'notice')
+    .order('created_at', { ascending: false })
+    .limit(10);
+  if (error) { box.innerHTML = '<div class="adm-empty"><b>공지 목록을 불러오지 못했어요</b>' + admEsc(error.message) + '</div>'; return; }
+  if (!(data || []).length) { box.innerHTML = '<div class="adm-empty"><div class="ico">📣</div><b>아직 발송한 공지가 없어요</b></div>'; return; }
+  box.innerHTML = (data || []).map(l => {
+    const d = l.detail || {};
+    return '<div class="notice-recent-item">' +
+      '<div class="notice-recent-head"><b>' + admEsc(d.title || '-') + '</b><span>' + admEsc(String(l.created_at || '').replace('T', ' ').slice(0, 16)) + '</span></div>' +
+      '<div class="notice-recent-body">' + admEsc(d.body || '') + '</div>' +
+      '<div class="notice-recent-meta">발송 ' + Number(d.partner_count || 0).toLocaleString() + '명 · 감사 로그 기준</div>' +
+      '</div>';
+  }).join('');
+}
 
 // ── 관리자 오버뷰 실집계
 async function loadAdminOverview() {
@@ -767,6 +896,29 @@ async function exportSettlementTaxCsv() {
 function setTxt(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
 
 // ══════════ 관리자 감사 로그 ══════════
+let __auditFilter = 'all';
+const AUDIT_FILTERS = {
+  all: null,
+  conversion: { targets: ['conversion'], actions: ['review_conversion'] },
+  settlement: { targets: ['settlement', 'settlements'], actions: ['pay_settlement', 'export_settlement_tax_csv'] },
+  partner: { targets: ['partner'], actions: ['set_partner_status'] },
+  commission: { targets: ['product_commission'], actions: ['save_commission'] },
+  campaign: { targets: ['campaign'], actions: ['create_campaign', 'update_campaign', 'delete_campaign'] },
+  notice: { targets: ['notice'], actions: ['notice_sent'] }
+};
+document.getElementById('audit-filters')?.addEventListener('click', e => {
+  const btn = e.target.closest('[data-audit-filter]');
+  if (!btn) return;
+  __auditFilter = btn.dataset.auditFilter || 'all';
+  loadAuditLog();
+});
+function auditLogMatchesFilter(row) {
+  const rule = AUDIT_FILTERS[__auditFilter];
+  if (!rule) return true;
+  const action = row.action || '';
+  const targetType = row.target_type || '';
+  return rule.actions.includes(action) || rule.targets.includes(targetType);
+}
 async function loadAuditLog() {
   if (!window.opClient) return;
   const tb = document.querySelector('#audit-table tbody');
@@ -776,8 +928,9 @@ async function loadAuditLog() {
     .limit(100);
   if (error) { if (tb) tb.innerHTML = '<tr><td colspan="4"><div class="adm-empty">' + admEsc(error.message) + '</div></td></tr>'; return; }
   if (!tb) return;
-  if (!(data || []).length) { tb.innerHTML = '<tr><td colspan="4"><div class="adm-empty"><div class="ico">🧾</div><b>감사 로그가 없어요</b></div></td></tr>'; return; }
-  tb.innerHTML = data.map(l => {
+  const rows = (data || []).filter(auditLogMatchesFilter);
+  if (!rows.length) { tb.innerHTML = '<tr><td colspan="4"><div class="adm-empty"><div class="ico">🧾</div><b>감사 로그가 없어요</b></div></td></tr>'; return; }
+  tb.innerHTML = rows.map(l => {
     const detail = JSON.stringify(l.detail || {});
     return '<tr>' +
       '<td style="font-size:12px;color:var(--text3);white-space:nowrap;">' + admEsc(String(l.created_at || '').replace('T', ' ').slice(0, 19)) + '</td>' +
@@ -796,16 +949,20 @@ async function loadFraud() {
   const [clRes, plRes, pRes, cvRes] = await Promise.all([
     window.opClient.from('link_clicks').select('ip_hash,link_id').gte('clicked_at', since).limit(5000),
     window.opClient.from('partner_links').select('id,partner_id'),
-    window.opClient.from('partners').select('id,name,nickname'),
+    window.opClient.from('partners').select('id,name,nickname,email,status'),
     window.opClient.from('conversions').select('partner_id,status')
   ]);
-  if (clRes.error) { if (tb) tb.innerHTML = '<tr><td colspan="7"><div class="adm-empty">' + admEsc(clRes.error.message) + '</div></td></tr>'; return; }
+  if (clRes.error) { if (tb) tb.innerHTML = '<tr><td colspan="8"><div class="adm-empty">' + admEsc(clRes.error.message) + '</div></td></tr>'; return; }
   const linkToPartner = {}; (plRes.data || []).forEach(l => linkToPartner[l.id] = l.partner_id);
-  const pName = {}; (pRes.data || []).forEach(p => pName[p.id] = p.name || p.nickname || '-');
+  const pMap = {};
+  (pRes.data || []).forEach(p => {
+    if (!OP_ADMIN_EMAILS.includes((p.email || '').toLowerCase())) pMap[p.id] = p;
+  });
   const convCnt = {}; (cvRes.data || []).forEach(c => { if (c.status !== 'canceled') convCnt[c.partner_id] = (convCnt[c.partner_id] || 0) + 1; });
   const agg = {};
   (clRes.data || []).forEach(cl => {
     const pid = linkToPartner[cl.link_id]; if (!pid) return;
+    if (!pMap[pid]) return;
     if (!agg[pid]) agg[pid] = { pid, clicks: 0, ip: {} };
     agg[pid].clicks++;
     const ip = cl.ip_hash || '(none)';
@@ -825,7 +982,7 @@ async function loadFraud() {
     if (a.clicks >= 10 && (uniqRatio < 0.3 || maxRep >= a.clicks * 0.6)) risk = 'danger';
     else if (a.clicks >= 5 && (uniqRatio < 0.5 || (cvr === 0 && a.clicks >= 20))) risk = 'warn';
     if (risk !== 'ok') flagged++;
-    return { pid, clicks: a.clicks, uniqIp, maxRep, conv, cvr, risk };
+    return { pid: a.pid, clicks: a.clicks, uniqIp, maxRep, conv, cvr, risk, status: pMap[a.pid]?.status || 'active' };
   }).sort((x, y) => (rank[y.risk] - rank[x.risk]) || (y.clicks - x.clicks));
   setTxt('fr-total', totalClicks.toLocaleString());
   setTxt('fr-suspect', suspectClicks.toLocaleString());
@@ -833,18 +990,28 @@ async function loadFraud() {
   const badge = document.getElementById('nav-fraud-badge');
   if (badge) { badge.textContent = flagged; badge.style.display = flagged ? '' : 'none'; }
   if (!tb) return;
-  if (!rows.length) { tb.innerHTML = '<tr><td colspan="7"><div class="adm-empty"><div class="ico">🚨</div><b>클릭 데이터가 없어요</b>링크 클릭이 쌓이면 자동 분석됩니다</div></td></tr>'; return; }
+  if (!rows.length) { tb.innerHTML = '<tr><td colspan="8"><div class="adm-empty"><div class="ico">🚨</div><b>클릭 데이터가 없어요</b>링크 클릭이 쌓이면 자동 분석됩니다</div></td></tr>'; return; }
   tb.innerHTML = rows.map(r => {
     const pill = r.risk === 'danger' ? '<span class="status-pill paused">🔴 위험</span>' : r.risk === 'warn' ? '<span class="status-pill pending">🟡 주의</span>' : '<span class="status-pill active">🟢 정상</span>';
     const repHot = (r.maxRep >= r.clicks * 0.6 && r.clicks >= 10);
+    const partner = pMap[r.pid] || {};
+    const partnerName = partner.name || partner.nickname || '-';
+    const suspendAction = r.status === 'suspended'
+      ? '<span class="status-pill paused">정지됨</span>'
+      : (r.risk === 'danger' || r.risk === 'warn')
+        ? '<button class="admin-action-btn reject" onclick="setPartnerStatus(\'' + admEsc(r.pid) + '\',\'suspended\',this)">정지</button>'
+        : '';
     return '<tr>' +
-      '<td><b>' + admEsc(pName[r.pid] || '-') + '</b></td>' +
+      '<td><b>' + admEsc(partnerName) + '</b></td>' +
       '<td>' + r.clicks.toLocaleString() + '</td>' +
       '<td>' + r.uniqIp.toLocaleString() + '</td>' +
       '<td' + (repHot ? ' style="color:#FF4D6A;font-weight:700;"' : '') + '>' + r.maxRep + '회</td>' +
       '<td>' + r.conv + '</td>' +
       '<td>' + (r.cvr * 100).toFixed(1) + '%</td>' +
-      '<td>' + pill + '</td></tr>';
+      '<td>' + pill + '</td>' +
+      '<td style="text-align:right;white-space:nowrap;">' +
+        '<button class="admin-action-btn" onclick="openPartnerDetail(\'' + admEsc(r.pid) + '\')">상세</button> ' + suspendAction +
+      '</td></tr>';
   }).join('');
 }
 
