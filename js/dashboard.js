@@ -273,6 +273,7 @@ async function loadLinks() {
     .order('created_at', { ascending: false });
   if (error) { console.warn('[온파트너] 링크 조회 오류:', error.message); return; }
   if (titleEl) titleEl.textContent = '전체 링크 (' + data.length + ')';
+  setLinkBadge(data.length);
   if (!tbody) return;
   if (!data.length) {
     tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:44px;color:var(--text3);font-size:14px;line-height:1.6;">아직 만든 링크가 없어요.<br>위에서 온종일팜 상품 URL로 첫 링크를 만들어보세요! 🔗</td></tr>';
@@ -310,15 +311,24 @@ searchEl?.addEventListener('input', function() {
 // ── 사이드바 파트너 정보 (실제 가입 이름)
 async function loadPartnerHeader() {
   if (!window.opClient) return;
-  const { data: p } = await window.opClient.from('partners').select('name,nickname').maybeSingle();
-  if (!p) return;
-  const display = p.name || p.nickname || '파트너';
-  const nameEl = document.querySelector('.user-name');
-  const avEl = document.querySelector('.user-avatar');
-  const gradeEl = document.querySelector('.user-grade');
-  if (nameEl) nameEl.textContent = display;
-  if (avEl) avEl.textContent = display.slice(0, 1);
-  if (gradeEl) gradeEl.textContent = p.nickname ? '@' + p.nickname : '🌱 파트너';
+  const [{ data: p }, { count }] = await Promise.all([
+    window.opClient.from('partners').select('name,nickname').maybeSingle(),
+    window.opClient.from('partner_links').select('id', { count: 'exact', head: true })
+  ]);
+  if (p) {
+    const display = p.name || p.nickname || '파트너';
+    const nameEl = document.querySelector('.user-name');
+    const avEl = document.querySelector('.user-avatar');
+    const gradeEl = document.querySelector('.user-grade');
+    if (nameEl) nameEl.textContent = display;
+    if (avEl) avEl.textContent = display.slice(0, 1);
+    if (gradeEl) gradeEl.textContent = p.nickname ? '@' + p.nickname : '🌱 파트너';
+  }
+  setLinkBadge(count || 0);
+}
+function setLinkBadge(n) {
+  const lb = document.getElementById('link-count-badge');
+  if (lb) { lb.textContent = n; lb.style.display = n ? '' : 'none'; }
 }
 
 // ── 초기화
