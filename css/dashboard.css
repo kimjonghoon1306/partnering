@@ -155,14 +155,6 @@
   position: relative;
 }
 .topbar-btn:hover { background: rgba(255,255,255,0.08); }
-.notif-dot {
-  position: absolute;
-  top: 7px; right: 7px;
-  width: 6px; height: 6px;
-  background: var(--lime);
-  border-radius: 50%;
-}
-
 .hamburger {
   display: none;
   width: 36px; height: 36px;
@@ -295,6 +287,125 @@
 .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-right: 8px; }
 .legend-label { display: flex; align-items: center; color: var(--text2); flex: 1; }
 .legend-val { font-weight: 700; }
+
+.chart-empty {
+  color: var(--text3);
+  font-size: 13px;
+  line-height: 1.6;
+  padding: 42px 10px;
+  text-align: center;
+}
+.chart-empty-icon,
+.notif-empty-icon {
+  font-size: 28px;
+  margin-bottom: 8px;
+  opacity: 0.7;
+}
+.chart-empty-sub {
+  color: var(--text3);
+  font-size: 11px;
+  margin-top: 3px;
+}
+.top-products-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 188px;
+}
+.top-product-item {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: rgba(255,255,255,0.025);
+}
+.top-product-rank {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(190,255,0,0.12);
+  color: var(--lime);
+  font-size: 12px;
+  font-weight: 900;
+}
+.top-product-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 700;
+}
+.top-product-meta {
+  color: var(--text3);
+  font-size: 11px;
+  margin-top: 3px;
+}
+.top-product-earn {
+  color: var(--lime);
+  font-size: 13px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+.monthly-chart {
+  padding: 10px 0 20px;
+}
+.monthly-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  height: 150px;
+}
+.monthly-bar-item {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+}
+.monthly-bar-track {
+  width: 100%;
+  height: 120px;
+  display: flex;
+  align-items: flex-end;
+}
+.monthly-bar-fill {
+  width: 100%;
+  min-height: 2px;
+  border-radius: 4px 4px 0 0;
+  background: rgba(190,255,0,0.22);
+}
+.monthly-bar-item.latest .monthly-bar-fill {
+  background: var(--lime);
+}
+.monthly-bar-value {
+  color: var(--text2);
+  font-size: 10px;
+  min-height: 12px;
+}
+.monthly-labels {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+.monthly-label {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text3);
+}
+.monthly-label.latest {
+  color: var(--lime);
+  font-weight: 700;
+}
 
 /* ── LINKS TABLE ── */
 .table-card {
@@ -459,6 +570,14 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 .notif-sub { font-size: 12px; color: var(--text2); }
 .notif-time { font-size: 11px; color: var(--text3); flex-shrink: 0; margin-top: 2px; }
 .notif-dot-indicator { width: 7px; height: 7px; background: var(--lime); border-radius: 50%; flex-shrink: 0; margin-top: 6px; }
+.notif-empty {
+  padding: 70px 20px;
+  text-align: center;
+  color: var(--text2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--dark3);
+}
 
 /* ── MOBILE OVERLAY ── */
 .sidebar-overlay {

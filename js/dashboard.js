@@ -72,41 +72,96 @@ document.querySelectorAll('.period-btn').forEach(btn => {
     group.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
     this.classList.add('active');
     if (this.dataset.range) updateChart(this.dataset.range);
+    if (this.dataset.earningsRange) renderMonthlyEarningsChart(this.dataset.earningsRange);
   });
 });
 
 // ── 수익 라인 차트 (SVG)
-const chartData = {
-  '7d': {
-    labels: ['6/16','6/17','6/18','6/19','6/20','6/21','6/22'],
-    values: [28000, 35000, 22000, 48000, 41000, 56000, 63000]
-  },
-  '1m': {
-    labels: ['6/1','6/5','6/10','6/15','6/20','6/25','6/30'],
-    values: [95000, 118000, 87000, 142000, 165000, 128000, 198000]
-  },
-  '3m': {
-    labels: ['4월','4월말','5월초','5월','5월말','6월','6월말'],
-    values: [280000, 320000, 295000, 410000, 388000, 456000, 520000]
-  }
+let chartData = {
+  '7d': buildEmptyDailySeries(7),
+  '1m': buildEmptyDailySeries(30),
+  '3m': buildEmptyDailySeries(90)
 };
+let monthlyEarningsData = { '6m': [], '12m': [] };
+
+function pad2(n) { return String(n).padStart(2, '0'); }
+function dateKey(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+function monthKey(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1); }
+function dayLabel(d) { return (d.getMonth() + 1) + '/' + d.getDate(); }
+function monthLabelFromKey(key) { return Number(key.slice(5, 7)) + '월'; }
+function formatWon(n) { return '₩' + Math.round(Number(n) || 0).toLocaleString(); }
+
+function buildEmptyDailySeries(days) {
+  const today = new Date();
+  const labels = [];
+  const keys = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() - i);
+    labels.push(dayLabel(d));
+    keys.push(dateKey(d));
+  }
+  return { labels, keys, values: new Array(days).fill(0), hasData: false };
+}
+
+function buildDailySeries(convs, days) {
+  const series = buildEmptyDailySeries(days);
+  const byDay = {};
+  series.keys.forEach(k => { byDay[k] = 0; });
+  convs.forEach(c => {
+    if (c.status === 'canceled' || !c.created_at) return;
+    const key = dateKey(new Date(c.created_at));
+    if (Object.prototype.hasOwnProperty.call(byDay, key)) {
+      byDay[key] += Number(c.commission_amount || 0);
+    }
+  });
+  series.values = series.keys.map(k => byDay[k] || 0);
+  series.hasData = series.values.some(v => v > 0);
+  return series;
+}
+
+function setChartEmpty(show) {
+  const svg = document.getElementById('earnings-chart');
+  if (!svg) return;
+  let empty = document.getElementById('earnings-chart-empty');
+  if (!empty) {
+    empty = document.createElement('div');
+    empty.id = 'earnings-chart-empty';
+    empty.className = 'chart-empty';
+    empty.innerHTML = '<div class="chart-empty-icon">📈</div><div>아직 수익 데이터가 없어요</div>';
+    svg.insertAdjacentElement('afterend', empty);
+  }
+  empty.style.display = show ? 'block' : 'none';
+  svg.style.display = '';
+}
+
+function applyOverviewChartData(convs) {
+  chartData = {
+    '7d': buildDailySeries(convs, 7),
+    '1m': buildDailySeries(convs, 30),
+    '3m': buildDailySeries(convs, 90)
+  };
+  const active = document.querySelector('#page-overview .period-btn.active[data-range]')?.dataset.range || '7d';
+  updateChart(active);
+}
 
 function updateChart(range) {
   const data = chartData[range];
   if (!data) return;
   const svg = document.getElementById('earnings-chart');
   if (!svg) return;
+  setChartEmpty(!data.hasData);
 
   const W = 580, H = 140, PAD = { top: 10, right: 10, bottom: 28, left: 10 };
   const chartW = W - PAD.left - PAD.right;
   const chartH = H - PAD.top - PAD.bottom;
 
-  const max = Math.max(...data.values);
-  const min = Math.min(...data.values) * 0.8;
-  const range_v = max - min;
+  const max = Math.max(...data.values, 0);
+  const min = max ? Math.min(...data.values) * 0.8 : 0;
+  const range_v = max - min || 1;
+  const denom = Math.max(data.values.length - 1, 1);
 
   const points = data.values.map((v, i) => ({
-    x: PAD.left + (i / (data.values.length - 1)) * chartW,
+    x: PAD.left + (i / denom) * chartW,
     y: PAD.top + (1 - (v - min) / range_v) * chartH,
     v
   }));
@@ -136,9 +191,11 @@ function updateChart(range) {
   // 레이블
   const labelsG = svg.querySelector('.chart-x-labels');
   if (labelsG) {
+    const labelStep = data.labels.length <= 10 ? 1 : Math.ceil(data.labels.length / 7);
     labelsG.innerHTML = data.labels.map((l, i) => {
-      const x = PAD.left + (i / (data.labels.length - 1)) * chartW;
-      return `<text x="${x.toFixed(1)}" y="${H}" text-anchor="middle" fill="rgba(255,255,255,0.28)" font-size="10" font-family="inherit">${l}</text>`;
+      if (i % labelStep !== 0 && i !== data.labels.length - 1) return '';
+      const x = PAD.left + (i / Math.max(data.labels.length - 1, 1)) * chartW;
+      return `<text x="${x.toFixed(1)}" y="${H}" text-anchor="middle" fill="rgba(255,255,255,0.28)" font-size="10" font-family="inherit">${escHtml(l)}</text>`;
     }).join('');
   }
 }
@@ -269,10 +326,19 @@ async function loadLinks() {
   if (!window.opClient) return;
   const tbody = document.querySelector('#links-table tbody');
   const titleEl = document.querySelector('#page-links .table-title');
-  const { data, error } = await window.opClient.from('partner_links')
-    .select('code,product_url,title,clicks,conversions,created_at')
-    .order('created_at', { ascending: false });
-  if (error) { console.warn('[온파트너] 링크 조회 오류:', error.message); return; }
+  const [linkRes, convRes] = await Promise.all([
+    window.opClient.from('partner_links')
+      .select('id,code,product_url,title,clicks,conversions,created_at')
+      .order('created_at', { ascending: false }),
+    window.opClient.from('conversions').select('link_id,commission_amount,status')
+  ]);
+  const data = linkRes.data || [];
+  if (linkRes.error) { console.warn('[온파트너] 링크 조회 오류:', linkRes.error.message); return; }
+  const earningsByLink = {};
+  (convRes.data || []).forEach(c => {
+    if (c.status === 'canceled' || !c.link_id) return;
+    earningsByLink[c.link_id] = (earningsByLink[c.link_id] || 0) + Number(c.commission_amount || 0);
+  });
   if (titleEl) titleEl.textContent = '전체 링크 (' + data.length + ')';
   setLinkBadge(data.length);
   if (!tbody) return;
@@ -291,7 +357,7 @@ async function loadLinks() {
       '<td><div class="td-url">' + escHtml(shop) + '</div></td>' +
       '<td class="td-num">' + (l.clicks || 0) + '</td>' +
       '<td class="td-num">' + (l.conversions || 0) + '</td>' +
-      '<td class="td-earn">₩0</td>' +
+      '<td class="td-earn">' + formatWon(earningsByLink[l.id]) + '</td>' +
       '<td style="font-size:12px;color:var(--text3)">' + date + '</td>' +
       '<td><span class="status-pill active">● 활성</span></td>' +
       '<td style="text-align:right;"><button class="link-del-btn" onclick="deleteLink(\'' + escHtml(l.code) + '\',this)" title="링크 삭제">🗑 삭제</button></td>' +
@@ -345,7 +411,7 @@ async function loadPartnerHeader() {
   const gradeEl = document.querySelector('.user-grade');
   if (nameEl) nameEl.textContent = display;
   if (avEl) avEl.textContent = display.slice(0, 1);
-  if (gradeEl) gradeEl.textContent = nick ? '@' + nick : '🌱 파트너';
+  if (gradeEl) gradeEl.textContent = nick ? '@' + nick : '파트너 계정';
   setLinkBadge(count || 0);
 }
 function setLinkBadge(n) {
@@ -355,6 +421,7 @@ function setLinkBadge(n) {
 
 // ── 초기화
 document.addEventListener('DOMContentLoaded', () => {
+  initNotificationToggles();
   loadPartnerHeader();
   showPage('overview');   // → loadOverview() 실집계 호출
   updateChart('7d');
@@ -378,14 +445,20 @@ function countUpEl(el, target, prefix, suffix, isFloat) {
 async function loadOverview() {
   if (!window.opClient) return;
   const [linkRes, convRes] = await Promise.all([
-    window.opClient.from('partner_links').select('product_name,title,product_url,clicks,conversions,created_at').order('created_at', { ascending: false }),
-    window.opClient.from('conversions').select('commission_amount,status')
+    window.opClient.from('partner_links').select('id,product_name,title,product_url,clicks,conversions,created_at').order('created_at', { ascending: false }),
+    window.opClient.from('conversions').select('link_id,commission_amount,status,created_at')
   ]);
   const links = linkRes.data || [];
   const convs = convRes.data || [];
+  const validConvs = convs.filter(c => c.status !== 'canceled');
+  const earningsByLink = {};
+  validConvs.forEach(c => {
+    if (!c.link_id) return;
+    earningsByLink[c.link_id] = (earningsByLink[c.link_id] || 0) + Number(c.commission_amount || 0);
+  });
   const totalClicks = links.reduce((s, l) => s + (l.clicks || 0), 0);
-  const totalConv = links.reduce((s, l) => s + (l.conversions || 0), 0);
-  const revenue = convs.filter(c => c.status !== 'canceled').reduce((s, c) => s + Number(c.commission_amount || 0), 0);
+  const totalConv = validConvs.length || links.reduce((s, l) => s + (l.conversions || 0), 0);
+  const revenue = validConvs.reduce((s, c) => s + Number(c.commission_amount || 0), 0);
   const rate = totalClicks ? (totalConv / totalClicks * 100) : 0;
   const vals = [revenue, totalClicks, totalConv, rate];
   document.querySelectorAll('#page-overview .summary-grid .s-value').forEach((el, i) => {
@@ -403,10 +476,49 @@ async function loadOverview() {
       tb.innerHTML = links.slice(0, 5).map(function (l) {
         let shop = '—'; try { shop = new URL(l.product_url).hostname; } catch (e) {}
         const name = l.product_name || l.title || '온종일팜 상품';
-        return '<tr><td><div class="td-link">' + escHtml(name) + '</div></td><td><div class="td-url">' + escHtml(shop) + '</div></td><td class="td-num">' + (l.clicks || 0) + '</td><td class="td-num">' + (l.conversions || 0) + '</td><td class="td-earn">₩0</td><td><span class="status-pill active">● 활성</span></td></tr>';
+        return '<tr><td><div class="td-link">' + escHtml(name) + '</div></td><td><div class="td-url">' + escHtml(shop) + '</div></td><td class="td-num">' + (l.clicks || 0) + '</td><td class="td-num">' + (l.conversions || 0) + '</td><td class="td-earn">' + formatWon(earningsByLink[l.id]) + '</td><td><span class="status-pill active">● 활성</span></td></tr>';
       }).join('');
     }
   }
+  renderTopProducts(links, validConvs);
+  applyOverviewChartData(convs);
+}
+
+function renderTopProducts(links, convs) {
+  const wrap = document.getElementById('overview-top-products');
+  if (!wrap) return;
+  if (!convs.length) {
+    wrap.innerHTML = '<div class="chart-empty"><div class="chart-empty-icon">🛒</div><div>아직 판매 데이터가 없어요</div></div>';
+    return;
+  }
+  const linkMap = {};
+  links.forEach(l => { linkMap[l.id] = l; });
+  const grouped = {};
+  convs.forEach(c => {
+    if (!c.link_id) return;
+    const link = linkMap[c.link_id];
+    const title = (link && (link.product_name || link.title)) || '온종일팜 상품';
+    if (!grouped[c.link_id]) grouped[c.link_id] = { title, count: 0, commission: 0 };
+    grouped[c.link_id].count += 1;
+    grouped[c.link_id].commission += Number(c.commission_amount || 0);
+  });
+  const rows = Object.keys(grouped).map(k => grouped[k])
+    .sort((a, b) => b.count - a.count || b.commission - a.commission)
+    .slice(0, 5);
+  if (!rows.length) {
+    wrap.innerHTML = '<div class="chart-empty"><div class="chart-empty-icon">🛒</div><div>아직 판매 데이터가 없어요</div></div>';
+    return;
+  }
+  wrap.innerHTML = rows.map((item, i) => (
+    '<div class="top-product-item">' +
+      '<div class="top-product-rank">' + (i + 1) + '</div>' +
+      '<div style="min-width:0;">' +
+        '<div class="top-product-name" title="' + escHtml(item.title) + '">' + escHtml(item.title) + '</div>' +
+        '<div class="top-product-meta">' + item.count.toLocaleString() + '건 판매</div>' +
+      '</div>' +
+      '<div class="top-product-earn">' + formatWon(item.commission) + '</div>' +
+    '</div>'
+  )).join('');
 }
 
 // ── 수익현황 실집계
@@ -430,6 +542,58 @@ async function loadEarnings() {
   document.querySelectorAll('#page-earnings .summary-grid .s-change').forEach(el => {
     if (!total) { el.textContent = '아직 데이터 없음'; el.className = 's-change neutral'; }
   });
+  buildMonthlyEarningsData(valid);
+  const active = document.querySelector('#page-earnings .period-btn.active[data-earnings-range]')?.dataset.earningsRange || '6m';
+  renderMonthlyEarningsChart(active);
+}
+
+function buildMonthlyEarningsData(convs) {
+  monthlyEarningsData = {
+    '6m': buildMonthlySeries(convs, 6),
+    '12m': buildMonthlySeries(convs, 12)
+  };
+}
+
+function buildMonthlySeries(convs, months) {
+  const now = new Date();
+  const buckets = [];
+  for (let i = months - 1; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    buckets.push({ key: monthKey(d), label: monthLabelFromKey(monthKey(d)), value: 0 });
+  }
+  const byMonth = {};
+  buckets.forEach(b => { byMonth[b.key] = b; });
+  convs.forEach(c => {
+    if (!c.created_at) return;
+    const key = monthKey(new Date(c.created_at));
+    if (byMonth[key]) byMonth[key].value += Number(c.commission_amount || 0);
+  });
+  return buckets;
+}
+
+function renderMonthlyEarningsChart(range) {
+  const wrap = document.getElementById('earnings-monthly-chart');
+  if (!wrap) return;
+  const data = monthlyEarningsData[range] || [];
+  if (!data.length || !data.some(m => m.value > 0)) {
+    wrap.innerHTML = '<div class="chart-empty"><div class="chart-empty-icon">📊</div><div>아직 월별 수익 데이터가 없어요</div></div>';
+    return;
+  }
+  const max = Math.max(...data.map(m => m.value), 1);
+  wrap.innerHTML =
+    '<div class="monthly-bars">' +
+      data.map((m, i) => {
+        const h = Math.max(2, Math.round((m.value / max) * 100));
+        const latest = i === data.length - 1 ? ' latest' : '';
+        return '<div class="monthly-bar-item' + latest + '">' +
+          '<div class="monthly-bar-value">' + (m.value ? formatWon(m.value) : '') + '</div>' +
+          '<div class="monthly-bar-track"><div class="monthly-bar-fill" style="height:' + h + '%;"></div></div>' +
+        '</div>';
+      }).join('') +
+    '</div>' +
+    '<div class="monthly-labels">' +
+      data.map((m, i) => '<div class="monthly-label' + (i === data.length - 1 ? ' latest' : '') + '">' + escHtml(m.label) + '</div>').join('') +
+    '</div>';
 }
 
 // ── 정산 실집계
@@ -472,6 +636,7 @@ async function loadSettlement() {
 
 // ── 설정 (프로필·정산계좌)
 async function loadSettings() {
+  initNotificationToggles();
   if (!window.opClient) return;
   const { data: { user } } = await window.opClient.auth.getUser();
   let { data: p, error } = await window.opClient.from('partners').select('*').maybeSingle();
@@ -588,10 +753,41 @@ async function withdrawPartner(btn) {
 }
 
 // ── 알림 토글 스위치
-document.addEventListener('click', (e) => {
-  const wrap = e.target.closest('.toggle-wrap');
-  if (!wrap) return;
+const NOTIF_STORAGE_PREFIX = 'ptnr-notif-';
+
+function initNotificationToggles() {
+  document.querySelectorAll('.toggle-wrap[data-key]').forEach(wrap => {
+    const track = wrap.querySelector('.toggle-track');
+    if (!track) return;
+    const saved = localStorage.getItem(NOTIF_STORAGE_PREFIX + wrap.dataset.key);
+    const on = saved == null ? track.classList.contains('on') : saved === 'true';
+    track.classList.toggle('on', on);
+    wrap.dataset.on = on ? 'true' : 'false';
+    wrap.setAttribute('role', 'switch');
+    wrap.setAttribute('aria-checked', on ? 'true' : 'false');
+    wrap.setAttribute('tabindex', '0');
+  });
+}
+
+function setNotificationToggle(wrap, on) {
   const track = wrap.querySelector('.toggle-track');
-  track.classList.toggle('on');
-  wrap.dataset.on = track.classList.contains('on') ? 'true' : 'false';
+  if (!track || !wrap.dataset.key) return;
+  track.classList.toggle('on', on);
+  wrap.dataset.on = on ? 'true' : 'false';
+  wrap.setAttribute('aria-checked', on ? 'true' : 'false');
+  localStorage.setItem(NOTIF_STORAGE_PREFIX + wrap.dataset.key, on ? 'true' : 'false');
+}
+
+document.addEventListener('click', (e) => {
+  const wrap = e.target.closest('.toggle-wrap[data-key]');
+  if (!wrap) return;
+  setNotificationToggle(wrap, wrap.dataset.on !== 'true');
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const wrap = e.target.closest?.('.toggle-wrap[data-key]');
+  if (!wrap) return;
+  e.preventDefault();
+  setNotificationToggle(wrap, wrap.dataset.on !== 'true');
 });

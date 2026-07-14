@@ -24,7 +24,7 @@
       <div class="user-avatar">·</div>
       <div>
         <div class="user-name">파트너</div>
-        <div class="user-grade">🌱 파트너</div>
+        <div class="user-grade">파트너 계정</div>
       </div>
     </div>
 
@@ -81,10 +81,7 @@
       </div>
       <div class="topbar-right">
         <button class="topbar-btn" id="theme-btn" title="테마 전환">☀️</button>
-        <button class="topbar-btn">
-          🔔
-          <div class="notif-dot"></div>
-        </button>
+        <button class="topbar-btn">🔔</button>
       </div>
     </div>
 
@@ -96,26 +93,26 @@
         <div class="summary-card lime">
           <div class="s-icon">💰</div>
           <div class="s-label">이번 달 수익</div>
-          <div class="s-value lime" data-target="384200" data-prefix="₩">₩0</div>
-          <div class="s-change up">▲ 23% 지난달 대비</div>
+          <div class="s-value lime" data-target="0" data-prefix="₩">₩0</div>
+          <div class="s-change neutral">이번 달 집계</div>
         </div>
         <div class="summary-card orange">
           <div class="s-icon">👆</div>
           <div class="s-label">총 클릭 수</div>
-          <div class="s-value orange" data-target="2847">0</div>
-          <div class="s-change up">▲ 18% 지난달 대비</div>
+          <div class="s-value orange" data-target="0">0</div>
+          <div class="s-change neutral">누적 클릭</div>
         </div>
         <div class="summary-card purple">
           <div class="s-icon">🛒</div>
           <div class="s-label">전환 건수</div>
-          <div class="s-value purple" data-target="142">0</div>
-          <div class="s-change up">▲ 8% 지난달 대비</div>
+          <div class="s-value purple" data-target="0">0</div>
+          <div class="s-change neutral">취소 제외</div>
         </div>
         <div class="summary-card blue">
           <div class="s-icon">📈</div>
           <div class="s-label">전환율</div>
-          <div class="s-value blue" data-target="4.2" data-float="true" data-suffix="%">0%</div>
-          <div class="s-change neutral">업계 평균 2.1%</div>
+          <div class="s-value blue" data-target="0" data-float="true" data-suffix="%">0%</div>
+          <div class="s-change neutral">클릭 대비 전환</div>
         </div>
       </div>
 
@@ -146,48 +143,13 @@
           </svg>
         </div>
 
-        <!-- 카테고리 도넛 -->
+        <!-- 인기 상품 TOP -->
         <div class="chart-card">
           <div class="chart-card-header">
-            <div class="chart-card-title">카테고리별</div>
+            <div class="chart-card-title">인기 상품 TOP</div>
           </div>
-          <div class="donut-wrap">
-            <svg viewBox="0 0 120 120" width="120" height="120">
-              <!-- 도넛 차트 수동 계산 -->
-              <!-- 수산·식품 42% -->
-              <circle cx="60" cy="60" r="48" fill="none" stroke="#1A1A1A" stroke-width="18"/>
-              <circle cx="60" cy="60" r="48" fill="none" stroke="#BEFF00" stroke-width="18"
-                stroke-dasharray="127 174" stroke-dashoffset="0" transform="rotate(-90 60 60)"/>
-              <!-- 뷰티 28% -->
-              <circle cx="60" cy="60" r="48" fill="none" stroke="#FF6B35" stroke-width="18"
-                stroke-dasharray="84 217" stroke-dashoffset="-127" transform="rotate(-90 60 60)"/>
-              <!-- 패션 18% -->
-              <circle cx="60" cy="60" r="48" fill="none" stroke="#B388FF" stroke-width="18"
-                stroke-dasharray="54 247" stroke-dashoffset="-211" transform="rotate(-90 60 60)"/>
-              <!-- 기타 12% -->
-              <circle cx="60" cy="60" r="48" fill="none" stroke="#4FC3F7" stroke-width="18"
-                stroke-dasharray="36 265" stroke-dashoffset="-265" transform="rotate(-90 60 60)"/>
-              <text x="60" y="56" text-anchor="middle" fill="#F5F5F5" font-size="14" font-weight="900" font-family="inherit">42%</text>
-              <text x="60" y="70" text-anchor="middle" fill="rgba(255,255,255,0.45)" font-size="9" font-family="inherit">수산·식품</text>
-            </svg>
-            <div class="donut-legend">
-              <div class="legend-item">
-                <div class="legend-label"><div class="legend-dot" style="background:var(--lime)"></div>수산·식품</div>
-                <div class="legend-val" style="color:var(--lime)">42%</div>
-              </div>
-              <div class="legend-item">
-                <div class="legend-label"><div class="legend-dot" style="background:var(--orange)"></div>뷰티·화장품</div>
-                <div class="legend-val" style="color:var(--orange)">28%</div>
-              </div>
-              <div class="legend-item">
-                <div class="legend-label"><div class="legend-dot" style="background:var(--purple)"></div>패션·의류</div>
-                <div class="legend-val" style="color:var(--purple)">18%</div>
-              </div>
-              <div class="legend-item">
-                <div class="legend-label"><div class="legend-dot" style="background:var(--blue)"></div>기타</div>
-                <div class="legend-val" style="color:var(--blue)">12%</div>
-              </div>
-            </div>
+          <div class="top-products-list" id="overview-top-products">
+            <div class="chart-empty">불러오는 중...</div>
           </div>
         </div>
       </div>
@@ -273,60 +235,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td><div class="td-link">굴비 명품 선물세트</div></td>
-                <td><div class="td-url" title="partner.yuanfnb.com/r/x1a2b3">partner.yuanfnb.com/r/x1a2b3</div></td>
-                <td><div class="td-url">app.yuanfnb.com</div></td>
-                <td class="td-num">847</td><td class="td-num">38</td>
-                <td class="td-earn">₩76,000</td>
-                <td style="font-size:12px;color:var(--text3)">2026.05.01</td>
-                <td><span class="status-pill active">● 활성</span></td>
-              </tr>
-              <tr>
-                <td><div class="td-link">영광 굴비 1kg</div></td>
-                <td><div class="td-url" title="partner.yuanfnb.com/r/y4c5d6">partner.yuanfnb.com/r/y4c5d6</div></td>
-                <td><div class="td-url">app.yuanfnb.com</div></td>
-                <td class="td-num">624</td><td class="td-num">31</td>
-                <td class="td-earn">₩62,000</td>
-                <td style="font-size:12px;color:var(--text3)">2026.05.03</td>
-                <td><span class="status-pill active">● 활성</span></td>
-              </tr>
-              <tr>
-                <td><div class="td-link">냉동 손질 갈치 500g</div></td>
-                <td><div class="td-url">partner.yuanfnb.com/r/z7e8f9</div></td>
-                <td><div class="td-url">fish.shop.kr</div></td>
-                <td class="td-num">312</td><td class="td-num">14</td>
-                <td class="td-earn">₩28,000</td>
-                <td style="font-size:12px;color:var(--text3)">2026.05.10</td>
-                <td><span class="status-pill active">● 활성</span></td>
-              </tr>
-              <tr>
-                <td><div class="td-link">천일염 프리미엄 3kg</div></td>
-                <td><div class="td-url">partner.yuanfnb.com/r/a1b2c3</div></td>
-                <td><div class="td-url">salt.shop.kr</div></td>
-                <td class="td-num">198</td><td class="td-num">7</td>
-                <td class="td-earn">₩14,000</td>
-                <td style="font-size:12px;color:var(--text3)">2026.05.15</td>
-                <td><span class="status-pill paused">○ 일시중지</span></td>
-              </tr>
-              <tr>
-                <td><div class="td-link">수제 명란젓 200g</div></td>
-                <td><div class="td-url">partner.yuanfnb.com/r/d4e5f6</div></td>
-                <td><div class="td-url">myeongran.com</div></td>
-                <td class="td-num">445</td><td class="td-num">22</td>
-                <td class="td-earn">₩44,000</td>
-                <td style="font-size:12px;color:var(--text3)">2026.05.20</td>
-                <td><span class="status-pill active">● 활성</span></td>
-              </tr>
-              <tr>
-                <td><div class="td-link">건조 오징어 특선</div></td>
-                <td><div class="td-url">partner.yuanfnb.com/r/g7h8i9</div></td>
-                <td><div class="td-url">squid.kr</div></td>
-                <td class="td-num">267</td><td class="td-num">11</td>
-                <td class="td-earn">₩22,000</td>
-                <td style="font-size:12px;color:var(--text3)">2026.05.22</td>
-                <td><span class="status-pill active">● 활성</span></td>
-              </tr>
+              <tr><td colspan="9" style="text-align:center;padding:44px;color:var(--text3);font-size:14px;">링크를 불러오는 중...</td></tr>
             </tbody>
           </table>
         </div>
@@ -339,26 +248,26 @@
         <div class="summary-card lime">
           <div class="s-icon">💰</div>
           <div class="s-label">이번 달 수익</div>
-          <div class="s-value lime">₩384,200</div>
-          <div class="s-change up">▲ 23%</div>
+          <div class="s-value lime">₩0</div>
+          <div class="s-change neutral">이번 달 집계</div>
         </div>
         <div class="summary-card orange">
           <div class="s-icon">📅</div>
           <div class="s-label">지난달 수익</div>
-          <div class="s-value orange">₩312,000</div>
-          <div class="s-change neutral">기준</div>
+          <div class="s-value orange">₩0</div>
+          <div class="s-change neutral">지난달 집계</div>
         </div>
         <div class="summary-card purple">
-          <div class="s-icon">🏆</div>
+          <div class="s-icon">💼</div>
           <div class="s-label">누적 수익</div>
-          <div class="s-value purple">₩2,847,000</div>
-          <div class="s-change up">▲ 총 18개월</div>
+          <div class="s-value purple">₩0</div>
+          <div class="s-change neutral">전체 기간</div>
         </div>
         <div class="summary-card blue">
           <div class="s-icon">⏳</div>
           <div class="s-label">정산 대기</div>
-          <div class="s-value blue">₩384,200</div>
-          <div class="s-change neutral">2026.07.01 예정</div>
+          <div class="s-value blue">₩0</div>
+          <div class="s-change neutral">정산 가능 상태</div>
         </div>
       </div>
 
@@ -366,39 +275,12 @@
         <div class="chart-card-header">
           <div class="chart-card-title">월별 수익 추이</div>
           <div class="chart-period">
-            <button class="period-btn active">6개월</button>
-            <button class="period-btn">1년</button>
+            <button class="period-btn active" data-earnings-range="6m">6개월</button>
+            <button class="period-btn" data-earnings-range="12m">1년</button>
           </div>
         </div>
-        <div style="padding:10px 0 20px;">
-          <div style="display:flex;align-items:flex-end;gap:10px;height:120px;">
-            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;">
-              <div style="height:55%;background:rgba(190,255,0,0.2);width:100%;border-radius:4px 4px 0 0;"></div>
-            </div>
-            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;">
-              <div style="height:65%;background:rgba(190,255,0,0.2);width:100%;border-radius:4px 4px 0 0;"></div>
-            </div>
-            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;">
-              <div style="height:52%;background:rgba(190,255,0,0.2);width:100%;border-radius:4px 4px 0 0;"></div>
-            </div>
-            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;">
-              <div style="height:78%;background:rgba(190,255,0,0.2);width:100%;border-radius:4px 4px 0 0;"></div>
-            </div>
-            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;">
-              <div style="height:70%;background:rgba(190,255,0,0.3);width:100%;border-radius:4px 4px 0 0;"></div>
-            </div>
-            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;">
-              <div style="height:100%;background:var(--lime);width:100%;border-radius:4px 4px 0 0;"></div>
-            </div>
-          </div>
-          <div style="display:flex;gap:10px;margin-top:8px;">
-            <div style="flex:1;text-align:center;font-size:11px;color:var(--text3);">1월</div>
-            <div style="flex:1;text-align:center;font-size:11px;color:var(--text3);">2월</div>
-            <div style="flex:1;text-align:center;font-size:11px;color:var(--text3);">3월</div>
-            <div style="flex:1;text-align:center;font-size:11px;color:var(--text3);">4월</div>
-            <div style="flex:1;text-align:center;font-size:11px;color:var(--text3);">5월</div>
-            <div style="flex:1;text-align:center;font-size:11px;color:var(--lime);font-weight:700;">6월</div>
-          </div>
+        <div class="monthly-chart" id="earnings-monthly-chart">
+          <div class="chart-empty">불러오는 중...</div>
         </div>
       </div>
     </div>
@@ -457,67 +339,16 @@
     <!-- ══════════ 페이지: 알림 ══════════ -->
     <div class="page" id="page-notifications">
       <div class="notif-list">
-        <div class="notif-item unread">
-          <div class="notif-dot-indicator"></div>
-          <div class="notif-icon">💰</div>
-          <div class="notif-body">
-            <div class="notif-title">수익 발생 — 굴비 명품 선물세트</div>
-            <div class="notif-sub">1건 구매 · +₩4,000 적립</div>
-          </div>
-          <div class="notif-time">방금 전</div>
-        </div>
-        <div class="notif-item unread">
-          <div class="notif-dot-indicator"></div>
-          <div class="notif-icon">🏆</div>
-          <div class="notif-body">
-            <div class="notif-title">골드 파트너 등급 달성!</div>
-            <div class="notif-sub">이번 달 누적 수익 30만원 돌파 — 수수료 +1% 혜택 적용</div>
-          </div>
-          <div class="notif-time">2시간 전</div>
-        </div>
-        <div class="notif-item unread">
-          <div class="notif-dot-indicator"></div>
-          <div class="notif-icon">📅</div>
-          <div class="notif-body">
-            <div class="notif-title">정산 완료 — 5월분 ₩312,000</div>
-            <div class="notif-sub">국민은행 ***-**-1234으로 입금 완료</div>
-          </div>
-          <div class="notif-time">2026.06.01</div>
-        </div>
-        <div class="notif-item">
-          <div class="notif-icon">🔗</div>
-          <div class="notif-body">
-            <div class="notif-title">온종일팜 신상품 입고 — 제철 과일</div>
-            <div class="notif-sub">햇사과·단감 등 신상품 30종 추가. 지금 링크 만들기!</div>
-          </div>
-          <div class="notif-time">2026.05.28</div>
-        </div>
-        <div class="notif-item">
-          <div class="notif-icon">📊</div>
-          <div class="notif-body">
-            <div class="notif-title">5월 수익 리포트 생성</div>
-            <div class="notif-sub">5월 총 수익 ₩312,000 · 전환율 3.8% · 클릭 2,341회</div>
-          </div>
-          <div class="notif-time">2026.06.01</div>
+        <div class="notif-empty">
+          <div class="notif-empty-icon">🔔</div>
+          <div class="notif-title">아직 도착한 알림이 없어요</div>
+          <div class="notif-sub">새 알림이 생기면 이곳에 표시됩니다.</div>
         </div>
       </div>
     </div>
 
     <!-- ══════════ 페이지: 설정 ══════════ -->
     <div class="page" id="page-settings">
-
-      <!-- 상단: 추천 코드 배너 -->
-      <div style="background:linear-gradient(135deg,rgba(190,255,0,0.08),rgba(190,255,0,0.02));border:1px solid var(--lime-border);border-radius:var(--radius-lg);padding:22px 28px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
-        <div>
-          <div style="font-size:12px;color:var(--text2);margin-bottom:4px;font-weight:600;">내 추천 코드</div>
-          <div style="font-size:22px;font-weight:900;color:var(--lime);letter-spacing:2px;">KJHYUN2026</div>
-          <div style="font-size:12px;color:var(--text2);margin-top:4px;">친구가 이 코드로 가입하면 첫 정산 +5% 보너스</div>
-        </div>
-        <div style="display:flex;gap:8px;">
-          <button class="btn-ghost" onclick="navigator.clipboard?.writeText('KJHYUN2026')">코드 복사</button>
-          <button class="btn-primary" style="padding:10px 18px;font-size:13px;">카카오 공유</button>
-        </div>
-      </div>
 
       <!-- 3컬럼 그리드 -->
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;" class="settings-grid">
@@ -601,23 +432,23 @@
             <div style="display:flex;flex-direction:column;gap:0;">
               <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border);">
                 <div><div style="font-size:13px;font-weight:600;">수익 발생 알림</div><div style="font-size:11px;color:var(--text2);margin-top:1px;">링크로 구매 시 즉시</div></div>
-                <div class="toggle-wrap"><div class="toggle-track on"><div class="toggle-thumb"></div></div></div>
+                <div class="toggle-wrap" data-key="earning"><div class="toggle-track on"><div class="toggle-thumb"></div></div></div>
               </div>
               <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border);">
                 <div><div style="font-size:13px;font-weight:600;">주간 리포트</div><div style="font-size:11px;color:var(--text2);margin-top:1px;">매주 월요일 오전 9시</div></div>
-                <div class="toggle-wrap"><div class="toggle-track on"><div class="toggle-thumb"></div></div></div>
+                <div class="toggle-wrap" data-key="weekly-report"><div class="toggle-track on"><div class="toggle-thumb"></div></div></div>
               </div>
               <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border);">
                 <div><div style="font-size:13px;font-weight:600;">정산 완료 알림</div><div style="font-size:11px;color:var(--text2);margin-top:1px;">정산일 당일</div></div>
-                <div class="toggle-wrap"><div class="toggle-track on"><div class="toggle-thumb"></div></div></div>
+                <div class="toggle-wrap" data-key="settlement"><div class="toggle-track on"><div class="toggle-thumb"></div></div></div>
               </div>
               <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border);">
                 <div><div style="font-size:13px;font-weight:600;">온종일팜 신상품 소식</div><div style="font-size:11px;color:var(--text2);margin-top:1px;">새 상품·시즌 이벤트</div></div>
-                <div class="toggle-wrap"><div class="toggle-track"><div class="toggle-thumb"></div></div></div>
+                <div class="toggle-wrap" data-key="new-products"><div class="toggle-track"><div class="toggle-thumb"></div></div></div>
               </div>
               <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 0;">
                 <div><div style="font-size:13px;font-weight:600;">마케팅 정보</div><div style="font-size:11px;color:var(--text2);margin-top:1px;">이벤트 및 프로모션</div></div>
-                <div class="toggle-wrap"><div class="toggle-track"><div class="toggle-thumb"></div></div></div>
+                <div class="toggle-wrap" data-key="marketing"><div class="toggle-track"><div class="toggle-thumb"></div></div></div>
               </div>
             </div>
           </div>
