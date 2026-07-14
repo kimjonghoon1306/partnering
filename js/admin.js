@@ -315,13 +315,18 @@ function drawAdminOverviewChart(convs) {
   const W = 680, H = 150, PAD = { t: 12, r: 12, b: 26, l: 12 }, cW = W - PAD.l - PAD.r, cH = H - PAD.t - PAD.b;
   const max = Math.max(...data, 1), min = 0;
   const pts = data.map((v, i) => ({ x: PAD.l + (i / (data.length - 1)) * cW, y: PAD.t + (1 - (v - min) / (max - min)) * cH }));
+  // 테마별 색 (라이트=핑크, 다크=라임)
+  const cs = getComputedStyle(document.documentElement);
+  const lime = (cs.getPropertyValue('--lime') || '#BEFF00').trim();
+  const dotBg = (cs.getPropertyValue('--dark3') || '#141414').trim();
+  const labelCol = (cs.getPropertyValue('--text3') || 'rgba(255,255,255,0.22)').trim();
   const pathD = pts.map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
   svg.querySelector('.ac-area')?.setAttribute('d', pathD + ` L${pts.at(-1).x.toFixed(1)},${PAD.t + cH} L${PAD.l},${PAD.t + cH} Z`);
-  svg.querySelector('.ac-line')?.setAttribute('d', pathD);
+  const lineEl = svg.querySelector('.ac-line'); if (lineEl) { lineEl.setAttribute('d', pathD); lineEl.setAttribute('stroke', lime); }
   const dg = svg.querySelector('.ac-dots');
-  if (dg) dg.innerHTML = pts.map((p, i) => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${i === pts.length - 1 ? 5 : 3}" fill="${i === pts.length - 1 ? '#BEFF00' : '#141414'}" stroke="#BEFF00" stroke-width="1.5"/>`).join('');
+  if (dg) dg.innerHTML = pts.map((p, i) => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${i === pts.length - 1 ? 5 : 3}" fill="${i === pts.length - 1 ? lime : dotBg}" stroke="${lime}" stroke-width="1.5"/>`).join('');
   const lg = svg.querySelector('.ac-labels');
-  if (lg) lg.innerHTML = labels.map((l, i) => `<text x="${(PAD.l + (i / (labels.length - 1)) * cW).toFixed(1)}" y="${H}" text-anchor="middle" fill="rgba(255,255,255,0.22)" font-size="10">${l}</text>`).join('');
+  if (lg) lg.innerHTML = labels.map((l, i) => `<text x="${(PAD.l + (i / (labels.length - 1)) * cW).toFixed(1)}" y="${H}" text-anchor="middle" fill="${labelCol}" font-size="10">${l}</text>`).join('');
 }
 
 // ── 인기 상품 TOP
