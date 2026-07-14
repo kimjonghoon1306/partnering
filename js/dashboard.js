@@ -36,6 +36,7 @@ function showPage(pageId) {
   if (pageId === 'overview') loadOverview();
   if (pageId === 'earnings') loadEarnings();
   if (pageId === 'settlement') loadSettlement();
+  if (pageId === 'wallet') loadWallet();
   if (pageId === 'notifications') loadNotifications();
   if (pageId === 'settings') loadSettings();
 }
@@ -816,6 +817,166 @@ async function loadSettlement() {
       }).join('');
     }
   }
+}
+
+// ── 캐시·포인트
+let __walletPartnerBank = null;
+function walletAmountInput(id) {
+  const raw = document.getElementById(id)?.value || '';
+  const amount = Math.floor(Number(raw));
+  return Number.isFinite(amount) ? amount : 0;
+}
+function walletDate(v) {
+  if (!v) return '-';
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime())) return String(v).slice(0, 10);
+  return d.getFullYear() + '.' + pad2(d.getMonth() + 1) + '.' + pad2(d.getDate()) + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+}
+function walletKindLabel(kind, source) {
+  const key = kind || source || '';
+  const labels = {
+    settlement: '정산적립',
+    cash_add: '정산적립',
+    add_cash: '정산적립',
+    partner_settlement: '정산적립',
+    convert_to_point: '전환',
+    cash_to_point: '전환',
+    withdraw_request: '출금신청',
+    withdrawal_request: '출금신청',
+    withdraw_complete: '출금완료',
+    withdrawal_complete: '출금완료',
+    point_use: '포인트사용',
+    point_spend: '포인트사용'
+  };
+  return labels[key] || key || '-';
+}
+function walletStatusLabel(status) {
+  const labels = {
+    pending: '신청',
+    requested: '신청',
+    approved: '승인',
+    paid: '출금완료',
+    completed: '출금완료',
+    rejected: '반려',
+    canceled: '취소'
+  };
+  return labels[status] || status || '-';
+}
+function walletDelta(cashDelta, pointDelta) {
+  const cash = Number(cashDelta || 0);
+  const point = Number(pointDelta || 0);
+  const parts = [];
+  if (cash) parts.push((cash > 0 ? '+' : '-') + formatWon(Math.abs(cash)));
+  if (point) parts.push((point > 0 ? '+' : '-') + Math.abs(Math.round(point)).toLocaleString() + 'P');
+  return parts.length ? parts.join('<br>') : '-';
+}
+async function loadWallet() {
+  if (!window.opClient) return;
+  const { data: { user } } = await window.opClient.auth.getUser();
+  if (!user) { window.location.href = 'login.html'; return; }
+  const [accountRes, partnerRes, withdrawalsRes, ledgerRes] = await Promise.all([
+    window.opClient.from('cash_accounts').select('cash_balance,point_balance').eq('user_id', user.id).maybeSingle(),
+    window.opClient.from('partners').select('bank_name,bank_account,bank_holder').eq('id', user.id).maybeSingle(),
+    window.opClient.from('cash_withdrawals').select('amount,status,bank_name,bank_account,bank_holder,created_at').order('created_at', { ascending: false }).limit(20),
+    window.opClient.from('cash_ledger').select('kind,cash_delta,point_delta,cash_after,point_after,source,ref_type,ref_id,memo,created_at').order('created_at', { ascending: false }).limit(50)
+  ]);
+  if (accountRes.error && accountRes.error.code !== 'PGRST116') console.warn('[온파트너] 캐시 계좌 로드 오류:', accountRes.error.message);
+  if (partnerRes.error && partnerRes.error.code !== 'PGRST116') console.warn('[온파트너] 계좌 로드 오류:', partnerRes.error.message);
+  if (withdrawalsRes.error) console.warn('[온파트너] 출금 내역 로드 오류:', withdrawalsRes.error.message);
+  if (ledgerRes.error) console.warn('[온파트너] 거래 내역 로드 오류:', ledgerRes.error.message);
+
+  const account = accountRes.data || {};
+  const cashEl = document.getElementById('wallet-cash-balance');
+  const pointEl = document.getElementById('wallet-point-balance');
+  if (cashEl) cashEl.textContent = formatWon(account.cash_balance || 0);
+  if (pointEl) pointEl.textContent = Math.round(Number(account.point_balance || 0)).toLocaleString() + 'P';
+
+  const p = partnerRes.data || {};
+  __walletPartnerBank = p;
+  const hasBank = !!(p.bank_name && p.bank_account && p.bank_holder);
+  const bankEl = document.getElementById('wallet-bank-account');
+  const holderEl = document.getElementById('wallet-bank-holder');
+  const withdrawBtn = document.getElementById('wallet-withdraw-btn');
+  const settingsBtn = document.getElementById('wallet-bank-settings-btn');
+  if (bankEl) bankEl.textContent = hasBank ? (p.bank_name + ' ' + maskAccount(p.bank_account)) : '미등록';
+  if (holderEl) holderEl.textContent = hasBank ? ('예금주: ' + p.bank_holder) : '설정에서 출금 계좌를 먼저 등록해주세요.';
+  if (withdrawBtn) withdrawBtn.disabled = !hasBank;
+  if (settingsBtn) settingsBtn.style.display = hasBank ? 'none' : 'flex';
+
+  renderWalletWithdrawals(withdrawalsRes.data || []);
+  renderWalletLedger(ledgerRes.data || []);
+}
+function renderWalletWithdrawals(list) {
+  const tb = document.getElementById('wallet-withdrawals');
+  if (!tb) return;
+  if (!list.length) {
+    tb.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:36px;color:var(--text3);">아직 출금 신청내역이 없어요.</td></tr>';
+    return;
+  }
+  tb.innerHTML = list.map(w => {
+    const account = [w.bank_name, maskAccount(w.bank_account || ''), w.bank_holder].filter(Boolean).join(' ');
+    return '<tr>' +
+      '<td style="font-size:12px;color:var(--text2);">' + escHtml(walletDate(w.created_at)) + '</td>' +
+      '<td class="td-earn">' + formatWon(w.amount || 0) + '</td>' +
+      '<td style="font-size:12px;">' + escHtml(account || '-') + '</td>' +
+      '<td><span class="status-pill active">' + escHtml(walletStatusLabel(w.status)) + '</span></td>' +
+      '</tr>';
+  }).join('');
+}
+function renderWalletLedger(list) {
+  const tb = document.getElementById('wallet-ledger');
+  if (!tb) return;
+  if (!list.length) {
+    tb.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:36px;color:var(--text3);">아직 거래 내역이 없어요.</td></tr>';
+    return;
+  }
+  tb.innerHTML = list.map(l => {
+    const label = walletKindLabel(l.kind, l.source);
+    const memo = l.memo || l.ref_type || l.source || '-';
+    const balance = formatWon(l.cash_after || 0) + '<br><span style="color:var(--text3);">' + Math.round(Number(l.point_after || 0)).toLocaleString() + 'P</span>';
+    return '<tr>' +
+      '<td><b>' + escHtml(label) + '</b></td>' +
+      '<td style="font-size:12px;color:var(--text2);">' + escHtml(memo) + '</td>' +
+      '<td class="td-earn">' + walletDelta(l.cash_delta, l.point_delta) + '</td>' +
+      '<td style="font-size:12px;">' + balance + '</td>' +
+      '<td style="font-size:12px;color:var(--text3);">' + escHtml(walletDate(l.created_at)) + '</td>' +
+      '</tr>';
+  }).join('');
+}
+async function convertWalletCash(btn) {
+  if (!window.opClient) return;
+  const amount = walletAmountInput('wallet-convert-amount');
+  if (amount <= 0) { alert('전환할 금액을 입력해주세요.'); return; }
+  const t = btn.textContent; btn.disabled = true; btn.textContent = '전환 중...';
+  const { error } = await window.opClient.rpc('cp_convert_to_point', { p_amount: amount });
+  btn.disabled = false; btn.textContent = t;
+  if (error) { alert('전환 실패: ' + error.message); return; }
+  const input = document.getElementById('wallet-convert-amount');
+  if (input) input.value = '';
+  alert('쇼핑포인트로 전환됐어요.');
+  loadWallet();
+}
+async function requestWalletWithdraw(btn) {
+  if (!window.opClient) return;
+  const amount = walletAmountInput('wallet-withdraw-amount');
+  if (amount <= 0) { alert('출금할 금액을 입력해주세요.'); return; }
+  const p = __walletPartnerBank || {};
+  if (!(p.bank_name && p.bank_account && p.bank_holder)) { alert('설정에서 출금 계좌를 먼저 등록해주세요.'); showPage('settings'); return; }
+  const ok = confirm(formatWon(amount) + ' 출금을 신청할까요?\n' + p.bank_name + ' ' + maskAccount(p.bank_account) + ' / ' + p.bank_holder);
+  if (!ok) return;
+  const t = btn.textContent; btn.disabled = true; btn.textContent = '신청 중...';
+  const { error } = await window.opClient.rpc('cp_request_withdraw', {
+    p_amount: amount,
+    p_bank_name: p.bank_name,
+    p_bank_account: p.bank_account,
+    p_bank_holder: p.bank_holder
+  });
+  btn.disabled = false; btn.textContent = t;
+  if (error) { alert('출금 신청 실패: ' + error.message); return; }
+  const input = document.getElementById('wallet-withdraw-amount');
+  if (input) input.value = '';
+  alert('출금 신청이 접수됐어요.');
+  loadWallet();
 }
 
 // ── 설정 (프로필·정산계좌)

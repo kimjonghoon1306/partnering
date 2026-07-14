@@ -801,6 +801,23 @@ async function paySettle(pid, btn) {
     }));
   }
   if (sErr) { btn.disabled = false; btn.textContent = '지급 처리'; showToast('정산 저장 실패: ' + sErr.message); return; }
+  // 1-1) 온종일팜 캐시 적립: 실패해도 정산 기록은 유지
+  let cashCreditOk = false;
+  try {
+    const { error: cashErr } = await window.opClient.rpc('cp_add_cash', {
+      p_user: pid,
+      p_amount: net,
+      p_source: 'partner_settlement',
+      p_ref_type: 'settlement',
+      p_ref_id: period,
+      p_memo: period + ' 정산 지급'
+    });
+    if (cashErr) throw cashErr;
+    cashCreditOk = true;
+  } catch (err) {
+    console.warn('cp_add_cash failed:', err);
+    showToast('정산은 저장됐지만 캐시 적립 실패: ' + (err?.message || err));
+  }
   // 2) 해당 전환 settled
   const { error: cErr } = await window.opClient.from('conversions').update({ status: 'settled' }).in('id', g.ids);
   if (cErr) { showToast('전환 상태 갱신 실패: ' + cErr.message); }
@@ -810,8 +827,8 @@ async function paySettle(pid, btn) {
     '정산이 완료됐어요',
     '₩' + net.toLocaleString() + ' 정산이 지급 처리됐습니다.'
   );
-  await logAdminAction('pay_settlement', 'settlement', pid, { partner_id: pid, period, gross_amount: gross, withholding_amount: withholding, net_amount: net, conversion_ids: g.ids });
-  showToast(g.p.name + '님 정산 완료 ✅');
+  await logAdminAction('pay_settlement', 'settlement', pid, { partner_id: pid, period, gross_amount: gross, withholding_amount: withholding, net_amount: net, cash_credit_ok: cashCreditOk, conversion_ids: g.ids });
+  if (cashCreditOk) showToast(g.p.name + '님 정산 및 캐시 적립 완료 ✅');
   loadSettle();
 }
 

@@ -49,6 +49,10 @@
         <span class="nav-icon">🏦</span>
         <span class="nav-label">정산 내역</span>
       </a>
+      <a class="nav-item" data-page="wallet">
+        <span class="nav-icon">💰</span>
+        <span class="nav-label">캐시·포인트</span>
+      </a>
 
       <div class="nav-group-label" style="margin-top:8px;">기타</div>
       <a class="nav-item" data-page="notifications">
@@ -334,6 +338,105 @@
               </tbody>
             </table>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ 페이지: 캐시·포인트 ══════════ -->
+    <div class="page" id="page-wallet">
+      <div class="summary-grid">
+        <div class="summary-card lime">
+          <div class="s-icon">💰</div>
+          <div class="s-label">캐시 잔액</div>
+          <div class="s-value lime" id="wallet-cash-balance">₩0</div>
+          <div class="s-change neutral">출금 가능</div>
+        </div>
+        <div class="summary-card blue">
+          <div class="s-icon">🛒</div>
+          <div class="s-label">쇼핑포인트 잔액</div>
+          <div class="s-value blue" id="wallet-point-balance">0P</div>
+          <div class="s-change neutral">온종일팜 결제용</div>
+        </div>
+      </div>
+
+      <div class="chart-row" style="align-items:start;">
+        <div class="chart-card">
+          <div class="chart-card-header"><div class="chart-card-title">캐시 → 쇼핑포인트 전환</div></div>
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <div style="font-size:12px;color:var(--text2);line-height:1.7;background:var(--dark4);border-radius:var(--radius-sm);padding:10px 12px;">
+              1캐시 = 1포인트로 전환됩니다. 전환한 쇼핑포인트는 온종일팜 상품 구매에 사용할 수 있어요.
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;display:block;margin-bottom:5px;">전환 금액</label>
+              <input class="gen-input" id="wallet-convert-amount" type="number" min="1" step="1" inputmode="numeric" placeholder="전환할 캐시 금액" style="width:100%;">
+            </div>
+            <button class="btn-primary" style="width:100%;justify-content:center;" onclick="convertWalletCash(this)">전환하기</button>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-card-header"><div class="chart-card-title">출금 신청</div></div>
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <div style="background:rgba(190,255,0,0.06);border:1px solid var(--lime-border);border-radius:var(--radius);padding:14px 16px;">
+              <div style="font-size:11px;color:var(--text2);margin-bottom:4px;">등록된 출금 계좌</div>
+              <div id="wallet-bank-account" style="font-size:15px;font-weight:700;">불러오는 중...</div>
+              <div id="wallet-bank-holder" style="font-size:12px;color:var(--text2);margin-top:2px;"></div>
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;display:block;margin-bottom:5px;">출금 금액</label>
+              <input class="gen-input" id="wallet-withdraw-amount" type="number" min="1" step="1" inputmode="numeric" placeholder="출금할 캐시 금액" style="width:100%;">
+            </div>
+            <button class="btn-primary" id="wallet-withdraw-btn" style="width:100%;justify-content:center;" onclick="requestWalletWithdraw(this)">신청하기</button>
+            <button class="btn-ghost" id="wallet-bank-settings-btn" style="display:none;width:100%;justify-content:center;" onclick="showPage('settings')">설정에서 계좌 등록</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-card" style="margin-bottom:24px;border-color:var(--lime-border);background:linear-gradient(135deg,rgba(190,255,0,0.08),rgba(190,255,0,0.02));">
+        <div style="font-size:14px;line-height:1.8;color:var(--text2);">
+          <div><b style="color:var(--text1);">캐시</b>는 온파트너에서 상품을 판매해 발생한 정산금이에요. 계좌로 출금하거나 쇼핑포인트로 전환할 수 있어요.</div>
+          <div><b style="color:var(--text1);">쇼핑포인트</b>는 온종일팜에서 상품 구매에 사용할 수 있어요.</div>
+          <div style="color:var(--lime);font-weight:900;">온파트너의 제품 판매 캐시는 쇼핑포인트로 전환 후 온종일팜에서 사용이 가능합니다.</div>
+          <div>쇼핑포인트는 온종일팜 자체 적립분과 온파트너 전환분이 있으며, <b style="color:var(--lime);">결제 시 양쪽이 합산되어 사용됩니다.</b></div>
+        </div>
+      </div>
+
+      <div class="table-card" style="margin-bottom:24px;">
+        <div class="table-header"><div class="table-title">출금 신청내역</div></div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>신청일</th>
+                <th>금액</th>
+                <th>계좌</th>
+                <th>상태</th>
+              </tr>
+            </thead>
+            <tbody id="wallet-withdrawals">
+              <tr><td colspan="4" style="text-align:center;padding:36px;color:var(--text3);">불러오는 중...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-header"><div class="table-title">거래 내역</div></div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>구분</th>
+                <th>내용</th>
+                <th>변동</th>
+                <th>잔액</th>
+                <th>일시</th>
+              </tr>
+            </thead>
+            <tbody id="wallet-ledger">
+              <tr><td colspan="5" style="text-align:center;padding:36px;color:var(--text3);">불러오는 중...</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
