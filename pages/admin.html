@@ -42,6 +42,7 @@
 
       <div class="admin-nav-label" style="margin-top:8px;">리스크 관리</div>
       <a class="admin-nav-item" data-page="fraud"><span class="admin-nav-icon">🚨</span><span class="admin-nav-label">부정 클릭 탐지</span><span class="admin-nav-badge" id="nav-fraud-badge" style="display:none;">0</span></a>
+      <a class="admin-nav-item" data-page="audit"><span class="admin-nav-icon">🧾</span><span class="admin-nav-label">감사 로그</span></a>
     </nav>
     <div class="admin-sidebar-bottom">
       <a class="admin-nav-item" href="../index.html"><span class="admin-nav-icon">🏠</span><span class="admin-nav-label">메인으로</span></a>
@@ -231,7 +232,10 @@
             <div class="admin-table-title">💸 정산 처리 <span id="settle-period" style="font-size:12px;color:var(--lime);font-weight:700;"></span></div>
             <div style="font-size:12px;color:var(--text2);margin-top:4px;">확정된 전환을 파트너별로 모아 정산해요. <b>지급 처리</b>하면 해당 전환이 정산 완료됩니다.</div>
           </div>
-          <button class="comm-save" id="settle-refresh" onclick="loadSettle()">↻ 새로고침</button>
+          <div class="admin-table-actions">
+            <button class="comm-save" onclick="exportSettlementTaxCsv()">CSV 내보내기</button>
+            <button class="comm-save" id="settle-refresh" onclick="loadSettle()">↻ 새로고침</button>
+          </div>
         </div>
         <div class="admin-table-wrap">
           <table class="admin-table" id="settle-table">
@@ -247,7 +251,10 @@
       <div class="admin-table-card">
         <div class="admin-table-header">
           <div class="admin-table-title">🏦 정산 완료 내역</div>
-          <input class="admin-search" id="settle-hist-search" placeholder="파트너·기간 검색...">
+          <div class="admin-table-actions">
+            <button class="comm-save" onclick="exportSettlementTaxCsv()">CSV 내보내기</button>
+            <input class="admin-search" id="settle-hist-search" placeholder="파트너·기간 검색...">
+          </div>
         </div>
         <div class="admin-table-wrap">
           <table class="admin-table" id="settle-history-table">
@@ -282,7 +289,39 @@
       </div>
     </div>
 
+    <!-- 감사 로그 -->
+    <div class="admin-page" id="ap-audit">
+      <div class="admin-table-card">
+        <div class="admin-table-header">
+          <div>
+            <div class="admin-table-title">🧾 관리자 액션 감사 로그</div>
+            <div style="font-size:12px;color:var(--text2);margin-top:4px;">관리자 주요 변경 액션을 최신순으로 확인합니다.</div>
+          </div>
+          <button class="comm-save" onclick="loadAuditLog()">↻ 새로고침</button>
+        </div>
+        <div class="admin-table-wrap">
+          <table class="admin-table" id="audit-table">
+            <thead><tr><th>시각</th><th>액션</th><th>대상</th><th>상세</th></tr></thead>
+            <tbody><tr><td colspan="4"><div class="adm-empty"><div class="ico">🧾</div><b>불러오는 중...</b></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
   </main>
+</div>
+
+<!-- 파트너 상세 모달 -->
+<div class="admin-modal-overlay" id="partner-detail-modal">
+  <div class="admin-modal admin-modal-wide">
+    <div class="admin-modal-header">
+      <div class="admin-modal-title" id="pdm-title">파트너 상세</div>
+      <button class="admin-modal-close" onclick="closeModal('partner-detail-modal')">✕</button>
+    </div>
+    <div class="admin-modal-body" id="pdm-body">
+      <div class="adm-empty"><div class="ico">👥</div><b>불러오는 중...</b></div>
+    </div>
+  </div>
 </div>
 
 <!-- 캠페인 생성/수정 모달 -->

@@ -49,6 +49,7 @@ function showAdminPage(pageId) {
   if (pageId === 'settle') loadSettle();
   if (pageId === 'settle-history') loadSettleHistory();
   if (pageId === 'fraud') loadFraud();
+  if (pageId === 'audit') loadAuditLog();
 }
 
 adminNavItems.forEach(item => {
@@ -146,6 +147,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ══════════ 실데이터 연동 ══════════
 function admEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function admMoney(v) { return '₩' + Math.round(Number(v || 0)).toLocaleString(); }
+function admDate(v) { return v ? String(v).slice(0, 10) : '-'; }
+function admArrText(v) { return Array.isArray(v) ? v.join(', ') : (v || ''); }
+function maskResidentNo(v) {
+  const digits = String(v || '').replace(/\D/g, '');
+  if (!digits) return '-';
+  return digits.charAt(0) + '**-***';
+}
+function taxTypeLabel(v) { return v === 'business' ? '사업자' : '개인'; }
+async function logAdminAction(action, targetType, targetId, detail) {
+  if (!window.opClient) return;
+  try {
+    const { data: { user } } = await window.opClient.auth.getUser();
+    const { error } = await window.opClient.from('admin_audit_log').insert({
+      admin_id: user?.id || null,
+      action,
+      target_type: targetType,
+      target_id: targetId == null ? null : String(targetId),
+      detail: detail || {}
+    });
+    if (error) console.warn('admin audit log failed:', error.message);
+  } catch (err) {
+    console.warn('admin audit log failed:', err);
+  }
+}
 
 // ── 상품 마진 설정
 let __admProducts = [];
@@ -222,6 +248,7 @@ async function saveCommission(btn, pid) {
     .upsert({ product_id: pid, commission_rate: rate, updated_by: user?.id, updated_at: new Date().toISOString() }, { onConflict: 'product_id' });
   btn.disabled = false;
   if (error) { btn.textContent = t; alert('저장 실패: ' + error.message); return; }
+  await logAdminAction('save_commission', 'product_commission', pid, { product_id: pid, commission_rate: rate });
   btn.textContent = '✓ 저장됨'; btn.classList.remove('dirty');
   const p = __admProducts.find(x => x.id === pid); if (p) p.rate = Number(row.querySelector('.comm-range').value);
   setTimeout(() => { btn.textContent = '저장'; }, 1500);
@@ -258,11 +285,78 @@ function renderAdminPartners(list) {
       '<td style="font-size:12px;color:var(--text3);">' + admEsc((p.channels || []).join(', ')) + '</td>' +
       '<td>' + (suspended ? '<span class="status-pill paused">정지</span>' : '<span class="status-pill active">● 활성</span>') + '</td>' +
       '<td style="font-size:12px;color:var(--text3);">' + admEsc(String(p.created_at || '').slice(0, 10)) + '</td>' +
-      '<td style="text-align:right;">' + (suspended
-        ? '<button class="admin-action-btn approve" onclick="setPartnerStatus(\'' + admEsc(p.id) + '\',\'active\',this)">활성화</button>'
-        : '<button class="admin-action-btn reject" onclick="setPartnerStatus(\'' + admEsc(p.id) + '\',\'suspended\',this)">정지</button>') +
+      '<td style="text-align:right;">' +
+        '<button class="admin-action-btn" onclick="openPartnerDetail(\'' + admEsc(p.id) + '\')">상세</button> ' +
+        (suspended
+          ? '<button class="admin-action-btn approve" onclick="setPartnerStatus(\'' + admEsc(p.id) + '\',\'active\',this)">활성화</button>'
+          : '<button class="admin-action-btn reject" onclick="setPartnerStatus(\'' + admEsc(p.id) + '\',\'suspended\',this)">정지</button>') +
       '</td></tr>';
   }).join('');
+}
+function detailField(label, value) {
+  return '<div class="partner-detail-field"><span>' + admEsc(label) + '</span><b>' + admEsc(value || '-') + '</b></div>';
+}
+function detailMetric(label, value) {
+  return '<div class="partner-detail-metric"><span>' + admEsc(label) + '</span><b>' + admEsc(value) + '</b></div>';
+}
+function renderPartnerDetail(p, links, convs, settlements, clickCount) {
+  const body = document.getElementById('pdm-body');
+  const title = document.getElementById('pdm-title');
+  if (!body) return;
+  if (title) title.textContent = '파트너 상세 · ' + (p.name || p.nickname || '-');
+  const confirmed = convs.filter(c => c.status === 'confirmed').length;
+  const pending = convs.filter(c => c.status === 'pending').length;
+  const canceled = convs.filter(c => c.status === 'canceled').length;
+  const totalCommission = convs.filter(c => c.status !== 'canceled').reduce((s, c) => s + Number(c.commission_amount || 0), 0);
+  const paidAmount = settlements.filter(s => s.status === 'paid').reduce((s, x) => s + Number(x.net_amount || x.total_amount || 0), 0);
+  const recentRows = convs.slice(0, 5).map(c => {
+    const prod = (c.partner_links && c.partner_links.title) || '-';
+    return '<tr><td>' + admEsc(admDate(c.created_at)) + '</td><td>' + admEsc(prod) + '</td><td>' + admMoney(c.order_amount) + '</td><td style="color:var(--lime);font-weight:700;">' + admMoney(c.commission_amount) + '</td><td>' + reviewStatusPill(c.status) + '</td></tr>';
+  }).join('');
+  body.innerHTML =
+    '<div class="partner-detail-grid">' +
+      '<section class="partner-detail-section"><h4>프로필</h4>' +
+        detailField('이름', p.name) + detailField('닉네임', p.nickname) + detailField('이메일', p.email) + detailField('전화', p.phone) +
+        detailField('채널', admArrText(p.channels)) + detailField('카테고리', admArrText(p.categories)) + detailField('가입일', admDate(p.created_at)) + detailField('상태', p.status === 'suspended' ? '정지' : '활성') +
+      '</section>' +
+      '<section class="partner-detail-section"><h4>세금정보</h4>' +
+        detailField('구분', taxTypeLabel(p.tax_type)) + detailField('주민번호', p.tax_type === 'business' ? '-' : maskResidentNo(p.resident_no)) +
+        detailField('사업자번호', p.business_no) + detailField('상호', p.business_name) +
+      '</section>' +
+      '<section class="partner-detail-section"><h4>계좌</h4>' +
+        detailField('은행', p.bank_name) + detailField('계좌', p.bank_account) + detailField('예금주', p.bank_holder) +
+      '</section>' +
+      '<section class="partner-detail-section"><h4>성과요약</h4><div class="partner-detail-metrics">' +
+        detailMetric('총 링크수', links.length.toLocaleString()) + detailMetric('총 클릭', Number(clickCount || 0).toLocaleString()) +
+        detailMetric('전환', '확정 ' + confirmed + ' · 대기 ' + pending + ' · 취소 ' + canceled) +
+        detailMetric('총 수수료', admMoney(totalCommission)) + detailMetric('정산완료액', admMoney(paidAmount)) +
+      '</div></section>' +
+    '</div>' +
+    '<section class="partner-detail-section partner-detail-recent"><h4>최근 전환 5건</h4>' +
+      '<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>발생일</th><th>상품</th><th>주문금액</th><th>수수료</th><th>상태</th></tr></thead><tbody>' +
+        (recentRows || '<tr><td colspan="5"><div class="adm-empty"><b>전환 내역이 없어요</b></div></td></tr>') +
+      '</tbody></table></div>' +
+    '</section>';
+}
+async function openPartnerDetail(partnerId) {
+  if (!window.opClient) return;
+  const body = document.getElementById('pdm-body');
+  if (body) body.innerHTML = '<div class="adm-empty"><div class="ico">👥</div><b>불러오는 중...</b></div>';
+  openModal('partner-detail-modal');
+  const [pRes, lRes, cRes, sRes] = await Promise.all([
+    window.opClient.from('partners').select('id,name,nickname,email,phone,channels,categories,status,bank_name,bank_account,bank_holder,tax_type,resident_no,business_no,business_name,created_at').eq('id', partnerId).single(),
+    window.opClient.from('partner_links').select('id').eq('partner_id', partnerId),
+    window.opClient.from('conversions').select('id,status,commission_amount,order_amount,created_at,link_id,partner_id,partner_links(title)').eq('partner_id', partnerId).order('created_at', { ascending: false }),
+    window.opClient.from('settlements').select('status,total_amount,net_amount').eq('partner_id', partnerId)
+  ]);
+  if (pRes.error) { if (body) body.innerHTML = '<div class="adm-empty"><b>파트너 정보를 불러오지 못했어요</b>' + admEsc(pRes.error.message) + '</div>'; return; }
+  const links = lRes.data || [];
+  let clickCount = 0;
+  if (links.length) {
+    const { count, error } = await window.opClient.from('link_clicks').select('id', { count: 'exact', head: true }).in('link_id', links.map(l => l.id));
+    if (!error) clickCount = count || 0;
+  }
+  renderPartnerDetail(pRes.data, links, cRes.data || [], sRes.data || [], clickCount);
 }
 async function setPartnerStatus(id, status, btn) {
   if (!window.opClient) return;
@@ -272,6 +366,7 @@ async function setPartnerStatus(id, status, btn) {
   const { error } = await window.opClient.from('partners').update({ status }).eq('id', id);
   btn.disabled = false;
   if (error) { btn.textContent = t; showToast('실패: ' + error.message); return; }
+  await logAdminAction('set_partner_status', 'partner', id, { status });
   const p = __admPartners.find(x => x.id === id); if (p) p.status = status;
   await createPartnerNotification(
     id,
@@ -467,6 +562,7 @@ async function reviewConv(id, status, btn) {
   const { error } = await window.opClient.from('conversions').update({ status }).eq('id', id);
   if (error) { btn.disabled = false; btn.textContent = t; showToast('실패: ' + error.message); return; }
   const c = __admConvs.find(x => x.id === id); if (c) c.status = status;
+  await logAdminAction('review_conversion', 'conversion', id, { status, partner_id: c?.partner_id || null });
   if (c && (status === 'confirmed' || status === 'canceled')) {
     await createPartnerNotification(
       c.partner_id,
@@ -494,7 +590,7 @@ async function loadSettle() {
   const tb = document.querySelector('#settle-table tbody');
   setTxt('settle-period', '· ' + new Date().toISOString().slice(0, 7) + ' 기준');
   const { data, error } = await window.opClient.from('conversions')
-    .select('id,commission_amount,status,partner_id,partners(name,nickname,bank_name,bank_account,bank_holder,tax_type)')
+    .select('id,commission_amount,status,partner_id,partners(name,nickname,bank_name,bank_account,bank_holder,tax_type,resident_no,business_no)')
     .eq('status', 'confirmed');
   if (error) { if (tb) tb.innerHTML = '<tr><td colspan="7"><div class="adm-empty">' + admEsc(error.message) + '</div></td></tr>'; return; }
   const groups = {};
@@ -507,11 +603,17 @@ async function loadSettle() {
   if (!tb) return;
   if (!list.length) { tb.innerHTML = '<tr><td colspan="7"><div class="adm-empty"><div class="ico">💸</div><b>정산할 확정 전환이 없어요</b>전환 검수에서 확정하면 여기 나타납니다</div></td></tr>'; return; }
   tb.innerHTML = list.map(g => {
-    const hasBank = g.p.bank_name && g.p.bank_account;
-    const bank = hasBank ? (admEsc(g.p.bank_name) + ' ' + admEsc(g.p.bank_account) + '<br><span style="font-size:11px;color:var(--text3);">' + admEsc(g.p.bank_holder || '') + '</span>') : '<span style="color:#FF4D6A;font-size:12px;">계좌 미등록</span>';
+    const hasBank = !!(g.p.bank_name && g.p.bank_account);
     const isBiz = g.p.tax_type === 'business';
+    const hasTax = isBiz ? !!g.p.business_no : !!g.p.resident_no;
+    const canPay = hasBank && hasTax;
+    const bank = hasBank ? (admEsc(g.p.bank_name) + ' ' + admEsc(g.p.bank_account) + '<br><span style="font-size:11px;color:var(--text3);">' + admEsc(g.p.bank_holder || '') + '</span>') : '<span style="color:#FF4D6A;font-size:12px;">계좌 미등록</span>';
     const wh = isBiz ? 0 : Math.round(g.sum * 0.033);
     const net = Math.round(g.sum) - wh;
+    const reasons = [];
+    if (!hasBank) reasons.push('계좌 미등록');
+    if (!hasTax) reasons.push('세금정보 미완성');
+    const reasonBadges = reasons.map(r => '<span class="settle-hold-badge">' + admEsc(r) + '</span>').join('');
     const taxCell = isBiz
       ? '<span style="color:var(--text3);font-size:12px;">사업자<br>(세금계산서)</span>'
       : '<span style="color:#FF4D6A;font-size:13px;">-₩' + wh.toLocaleString() + '</span><br><span style="font-size:11px;color:var(--text3);">3.3%</span>';
@@ -521,8 +623,8 @@ async function loadSettle() {
       '<td style="font-weight:700;">₩' + Math.round(g.sum).toLocaleString() + '</td>' +
       '<td>' + taxCell + '</td>' +
       '<td style="color:var(--lime);font-weight:800;font-size:15px;">₩' + net.toLocaleString() + '</td>' +
-      '<td style="font-size:12px;">' + bank + '</td>' +
-      '<td style="text-align:right;"><button class="comm-save" ' + (hasBank ? '' : 'disabled style="opacity:.4;cursor:not-allowed;"') + ' onclick="paySettle(\'' + admEsc(g.pid) + '\',this)">지급 처리</button></td>' +
+      '<td style="font-size:12px;">' + bank + (reasonBadges ? '<div class="settle-hold-wrap">' + reasonBadges + '</div>' : '') + '</td>' +
+      '<td style="text-align:right;"><button class="comm-save" ' + (canPay ? '' : 'disabled style="opacity:.4;cursor:not-allowed;"') + ' onclick="paySettle(\'' + admEsc(g.pid) + '\',this)">지급 처리</button></td>' +
       '</tr>';
   }).join('');
   // 캐시(지급 시 사용)
@@ -532,6 +634,9 @@ async function paySettle(pid, btn) {
   if (!window.opClient) return;
   const g = window.__settleGroups && window.__settleGroups[pid];
   if (!g) return;
+  const hasBank = !!(g.p.bank_name && g.p.bank_account);
+  const hasTax = g.p.tax_type === 'business' ? !!g.p.business_no : !!g.p.resident_no;
+  if (!hasBank || !hasTax) { showToast('계좌/세금정보 확인 후 지급할 수 있어요'); return; }
   const gross = Math.round(g.sum);
   const withholding = g.p.tax_type === 'business' ? 0 : Math.round(gross * 0.033);
   const net = gross - withholding;
@@ -576,6 +681,7 @@ async function paySettle(pid, btn) {
     '정산이 완료됐어요',
     '₩' + net.toLocaleString() + ' 정산이 지급 처리됐습니다.'
   );
+  await logAdminAction('pay_settlement', 'settlement', pid, { partner_id: pid, period, gross_amount: gross, withholding_amount: withholding, net_amount: net, conversion_ids: g.ids });
   showToast(g.p.name + '님 정산 완료 ✅');
   loadSettle();
 }
@@ -586,7 +692,7 @@ async function loadSettleHistory() {
   if (!window.opClient) return;
   const tb = document.querySelector('#settle-history-table tbody');
   const { data, error } = await window.opClient.from('settlements')
-    .select('period,total_amount,status,paid_at,partners(name,nickname)')
+    .select('period,total_amount,gross_amount,withholding_amount,net_amount,status,paid_at,partners(name,nickname,tax_type,resident_no,business_no,bank_name,bank_account,bank_holder)')
     .order('period', { ascending: false }).order('created_at', { ascending: false });
   if (error) { if (tb) tb.innerHTML = '<tr><td colspan="5"><div class="adm-empty">' + admEsc(error.message) + '</div></td></tr>'; return; }
   __admSettlements = data || [];
@@ -612,7 +718,75 @@ document.getElementById('settle-hist-search')?.addEventListener('input', functio
   renderSettleHistory(__admSettlements.filter(s => (String(s.period) + ((s.partners && s.partners.name) || '')).toLowerCase().includes(q)));
 });
 
+function csvEscape(v) {
+  const s = String(v == null ? '' : v);
+  return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+function downloadCsv(filename, rows) {
+  const csv = '\ufeff' + rows.map(row => row.map(csvEscape).join(',')).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+async function exportSettlementTaxCsv() {
+  if (!window.opClient) return;
+  const { data, error } = await window.opClient.from('settlements')
+    .select('period,total_amount,gross_amount,withholding_amount,net_amount,status,paid_at,partners(name,nickname,tax_type,resident_no,business_no,bank_name,bank_account,bank_holder)')
+    .order('period', { ascending: false }).order('created_at', { ascending: false });
+  if (error) { showToast('CSV 내보내기 실패: ' + error.message); return; }
+  const header = ['기간', '파트너명', '사업자/개인구분', '주민번호or사업자번호', '은행', '계좌', '예금주', '총수수료(gross)', '원천징수(withholding)', '실지급(net)', '상태', '지급일'];
+  const rows = [header].concat((data || []).map(s => {
+    const p = s.partners || {};
+    const isBiz = p.tax_type === 'business';
+    return [
+      s.period || '',
+      p.name || p.nickname || '',
+      taxTypeLabel(p.tax_type),
+      isBiz ? (p.business_no || '') : (p.resident_no || ''),
+      p.bank_name || '',
+      p.bank_account || '',
+      p.bank_holder || '',
+      Math.round(Number(s.gross_amount || s.total_amount || 0)),
+      Math.round(Number(s.withholding_amount || 0)),
+      Math.round(Number(s.net_amount || s.total_amount || 0)),
+      s.status || '',
+      admDate(s.paid_at)
+    ];
+  }));
+  downloadCsv('onpartner_settlements_tax_' + new Date().toISOString().slice(0, 10) + '.csv', rows);
+  await logAdminAction('export_settlement_tax_csv', 'settlements', 'csv', { row_count: Math.max(rows.length - 1, 0) });
+  showToast('CSV 다운로드를 시작했어요');
+}
+
 function setTxt(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
+
+// ══════════ 관리자 감사 로그 ══════════
+async function loadAuditLog() {
+  if (!window.opClient) return;
+  const tb = document.querySelector('#audit-table tbody');
+  const { data, error } = await window.opClient.from('admin_audit_log')
+    .select('created_at,action,target_type,target_id,detail')
+    .order('created_at', { ascending: false })
+    .limit(100);
+  if (error) { if (tb) tb.innerHTML = '<tr><td colspan="4"><div class="adm-empty">' + admEsc(error.message) + '</div></td></tr>'; return; }
+  if (!tb) return;
+  if (!(data || []).length) { tb.innerHTML = '<tr><td colspan="4"><div class="adm-empty"><div class="ico">🧾</div><b>감사 로그가 없어요</b></div></td></tr>'; return; }
+  tb.innerHTML = data.map(l => {
+    const detail = JSON.stringify(l.detail || {});
+    return '<tr>' +
+      '<td style="font-size:12px;color:var(--text3);white-space:nowrap;">' + admEsc(String(l.created_at || '').replace('T', ' ').slice(0, 19)) + '</td>' +
+      '<td><b>' + admEsc(l.action || '-') + '</b></td>' +
+      '<td style="font-size:12px;color:var(--text2);">' + admEsc((l.target_type || '-') + ' · ' + (l.target_id || '-')) + '</td>' +
+      '<td><code class="audit-detail-code">' + admEsc(detail) + '</code></td>' +
+      '</tr>';
+  }).join('');
+}
 
 // ══════════ 부정 클릭 탐지 ══════════
 async function loadFraud() {
@@ -756,10 +930,17 @@ async function saveCampaign(btn) {
   };
   btn.disabled = true; const t = btn.textContent; btn.textContent = '저장 중...';
   let error;
-  if (id) { ({ error } = await window.opClient.from('campaigns').update(payload).eq('id', id)); }
-  else { ({ error } = await window.opClient.from('campaigns').insert(payload)); }
+  let savedId = id;
+  if (id) {
+    ({ error } = await window.opClient.from('campaigns').update(payload).eq('id', id));
+  } else {
+    const res = await window.opClient.from('campaigns').insert(payload).select('id').single();
+    error = res.error;
+    savedId = res.data?.id || '';
+  }
   btn.disabled = false; btn.textContent = t;
   if (error) { alert('저장 실패: ' + error.message); return; }
+  await logAdminAction(id ? 'update_campaign' : 'create_campaign', 'campaign', savedId, { title: payload.title, starts_at: payload.starts_at, ends_at: payload.ends_at, bonus_rate: payload.bonus_rate, is_active: payload.is_active });
   closeModal('campaign-modal'); showToast('캠페인 저장 완료 ✅'); loadCampaigns();
 }
 async function toggleCampaign(id, active) {
@@ -771,8 +952,10 @@ async function toggleCampaign(id, active) {
 async function deleteCampaign(id) {
   if (!window.opClient) return;
   if (!confirm('이 캠페인을 삭제할까요?')) return;
+  const camp = __campaigns.find(c => c.id === id);
   const { error } = await window.opClient.from('campaigns').delete().eq('id', id);
   if (error) { showToast('실패: ' + error.message); return; }
+  await logAdminAction('delete_campaign', 'campaign', id, { title: camp?.title || null });
   loadCampaigns(); showToast('캠페인 삭제됨');
 }
 

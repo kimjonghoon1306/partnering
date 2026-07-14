@@ -343,6 +343,7 @@
   max-height: 85vh;
   overflow-y: auto;
 }
+.admin-modal-wide { max-width: 920px; }
 .admin-modal-header {
   position: sticky;
   top: 0;
@@ -377,6 +378,91 @@
   gap: 8px;
 }
 
+.partner-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.partner-detail-section {
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 14px;
+  background: rgba(255,255,255,0.025);
+}
+.partner-detail-section h4 {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--lime);
+}
+.partner-detail-field {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 10px;
+  padding: 7px 0;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  font-size: 13px;
+}
+.partner-detail-field:first-of-type { border-top: none; }
+.partner-detail-field span,
+.partner-detail-metric span {
+  color: var(--text3);
+  font-weight: 700;
+}
+.partner-detail-field b {
+  color: var(--text);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.partner-detail-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.partner-detail-metric {
+  min-height: 70px;
+  padding: 12px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--lime) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--lime) 14%, transparent);
+}
+.partner-detail-metric b {
+  display: block;
+  margin-top: 8px;
+  color: var(--text);
+  font-size: 17px;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+.partner-detail-recent { margin-top: 14px; }
+.settle-hold-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+.settle-hold-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(255,77,106,0.1);
+  border: 1px solid rgba(255,77,106,0.24);
+  color: #FF4D6A;
+  font-size: 11px;
+  font-weight: 800;
+}
+.audit-detail-code {
+  display: block;
+  max-width: 520px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--text2);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 /* 모달 모바일 */
 @media (max-width: 768px) {
   .admin-modal-overlay {
@@ -388,6 +474,8 @@
     max-height: 90vh;
     max-width: 100%;
   }
+  .partner-detail-grid { grid-template-columns: 1fr; }
+  .partner-detail-metrics { grid-template-columns: 1fr; }
 }
 
 /* ── SETTLE INPUT ── */
@@ -470,6 +558,9 @@
 [data-theme="light"] .admin-sidebar-bottom { border-color: rgba(0,0,0,0.08); }
 [data-theme="light"] .admin-modal { background: #FFFFFF; border-color: rgba(0,0,0,0.1); }
 [data-theme="light"] .admin-input { background: #F4F4F0; border-color: rgba(0,0,0,0.1); color: #0A0A0A; }
+[data-theme="light"] .partner-detail-section { background: rgba(0,0,0,0.015); border-color: rgba(0,0,0,0.08); }
+[data-theme="light"] .partner-detail-field { border-color: rgba(0,0,0,0.05); }
+[data-theme="light"] .partner-detail-metric { background: color-mix(in srgb, var(--lime-dim) 8%, transparent); border-color: color-mix(in srgb, var(--lime-dim) 18%, transparent); }
 
 /* 라이트 모드 모바일 */
 @media (max-width: 768px) {
