@@ -31,6 +31,7 @@
       <div class="admin-nav-label" style="margin-top:8px;">상품</div>
       <a class="admin-nav-item" data-page="commissions"><span class="admin-nav-icon">🏷️</span><span class="admin-nav-label">상품 마진 설정</span></a>
       <a class="admin-nav-item" data-page="campaigns"><span class="admin-nav-icon">🎁</span><span class="admin-nav-label">시즌 캠페인</span></a>
+      <a class="admin-nav-item" data-page="ads"><span class="admin-nav-icon">📢</span><span class="admin-nav-label">광고 관리</span></a>
 
       <div class="admin-nav-label" style="margin-top:8px;">파트너 관리</div>
       <a class="admin-nav-item" data-page="partners"><span class="admin-nav-icon">👥</span><span class="admin-nav-label">파트너 목록</span></a>
@@ -175,6 +176,20 @@
       </div>
       <div id="campaign-list" class="campaign-grid">
         <div class="adm-empty"><div class="ico">🎁</div><b>불러오는 중...</b></div>
+      </div>
+    </div>
+
+    <!-- 광고 관리 -->
+    <div class="admin-page" id="ap-ads">
+      <div class="admin-table-header" style="padding:0 2px 16px;">
+        <div>
+          <div class="admin-table-title" style="font-size:17px;">📢 광고 관리</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:4px;">파트너 대시보드 최상단에 노출할 온종일팜 추천 상품 광고를 관리합니다.</div>
+        </div>
+        <button class="comm-save dirty" onclick="openAdModal()">+ 새 광고</button>
+      </div>
+      <div id="ad-list" class="ad-admin-grid">
+        <div class="adm-empty"><div class="ico">📢</div><b>불러오는 중...</b></div>
       </div>
     </div>
 
@@ -379,6 +394,68 @@
     </div>
 
   </main>
+</div>
+
+<!-- 광고 생성/수정 모달 -->
+<div class="admin-modal-overlay" id="ad-modal">
+  <div class="admin-modal admin-modal-wide">
+    <div class="admin-modal-header">
+      <div class="admin-modal-title" id="ad-modal-title">새 광고</div>
+      <button class="admin-modal-close" onclick="closeModal('ad-modal')">✕</button>
+    </div>
+    <div class="admin-modal-body">
+      <input type="hidden" id="ad-id">
+      <div class="ad-form-grid">
+        <div>
+          <label class="admin-label" for="ad-image-url">이미지 URL</label>
+          <input class="admin-input" id="ad-image-url" placeholder="https://...">
+        </div>
+        <div>
+          <label class="admin-label" for="ad-tag">태그</label>
+          <input class="admin-input" id="ad-tag" maxlength="40" placeholder="예: BEST">
+        </div>
+        <div>
+          <label class="admin-label" for="ad-title-input">제목</label>
+          <input class="admin-input" id="ad-title-input" maxlength="90" placeholder="예: 지금 가장 잘나가는 상품">
+        </div>
+        <div>
+          <label class="admin-label" for="ad-cta">CTA 라벨</label>
+          <input class="admin-input" id="ad-cta" maxlength="40" placeholder="자세히 보기">
+        </div>
+        <div class="ad-form-full">
+          <label class="admin-label" for="ad-subtitle">부제</label>
+          <input class="admin-input" id="ad-subtitle" maxlength="160" placeholder="파트너에게 보여줄 설명을 입력하세요">
+        </div>
+        <div>
+          <label class="admin-label" for="ad-product">연결 상품</label>
+          <select class="admin-input" id="ad-product"></select>
+        </div>
+        <div>
+          <label class="admin-label" for="ad-link-url">링크 URL</label>
+          <input class="admin-input" id="ad-link-url" placeholder="상품 미선택 시 사용">
+        </div>
+        <div>
+          <label class="admin-label" for="ad-sort">순서</label>
+          <input class="admin-input" id="ad-sort" type="number" step="1" value="0">
+        </div>
+        <div>
+          <label class="admin-label" for="ad-start">시작일시</label>
+          <input class="admin-input" id="ad-start" type="datetime-local">
+        </div>
+        <div>
+          <label class="admin-label" for="ad-end">종료일시</label>
+          <input class="admin-input" id="ad-end" type="datetime-local">
+        </div>
+      </div>
+      <label class="ad-active-row"><input type="checkbox" id="ad-active" checked> 활성 (기간 내 파트너에게 노출)</label>
+      <div class="ad-preview-title">실제 노출 미리보기</div>
+      <div class="ad-preview" id="ad-preview"></div>
+    </div>
+    <div class="admin-modal-footer">
+      <button class="admin-action-btn" style="flex:1;padding:11px;" onclick="closeModal('ad-modal')">취소</button>
+      <button onclick="saveAd(this)" style="flex:2;padding:11px;border-radius:10px;border:none;background:var(--lime);color:#0A0A0A;font-size:14px;font-weight:800;cursor:pointer;font-family:var(--font);">저장</button>
+    </div>
+  </div>
 </div>
 
 <!-- 파트너 상세 모달 -->

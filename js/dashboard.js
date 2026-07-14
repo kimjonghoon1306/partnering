@@ -85,6 +85,9 @@ let chartData = {
   '3m': buildEmptyDailySeries(90)
 };
 let monthlyEarningsData = { '6m': [], '12m': [] };
+let __adSlides = [];
+let __adIndex = 0;
+let __adTimer = null;
 
 function pad2(n) { return String(n).padStart(2, '0'); }
 function dateKey(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
@@ -151,6 +154,81 @@ async function loadCampaignBanner() {
     return '<div><b style="color:var(--lime);">' + escHtml(icon + ' ' + c.title) + '</b> 기간 내 +' + pct + '% 추가 수수료</div>';
   }).join('');
   banner.style.display = 'block';
+}
+
+async function loadAds() {
+  const slider = document.getElementById('partner-ad-slider');
+  if (!slider || !window.opClient) return;
+  const { data, error } = await window.opClient.from('partner_ads')
+    .select('id,tag,title,subtitle,cta_label,image_url,product_id,link_url,sort_order,starts_at,ends_at,is_active')
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true });
+  if (error) {
+    slider.style.display = 'none';
+    return;
+  }
+  const now = Date.now();
+  __adSlides = (data || []).filter(ad => {
+    const startsOk = !ad.starts_at || new Date(ad.starts_at).getTime() <= now;
+    const endsOk = !ad.ends_at || new Date(ad.ends_at).getTime() >= now;
+    return startsOk && endsOk;
+  }).sort((a, b) => (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0));
+  renderAds();
+}
+
+function adHref(ad) {
+  if (ad.product_id) return 'https://app.yuanfnb.com/shop/product/' + encodeURIComponent(ad.product_id);
+  if (!ad.link_url) return '';
+  try {
+    const url = new URL(ad.link_url);
+    return /^https?:$/.test(url.protocol) ? url.href : '';
+  } catch (e) {
+    return '';
+  }
+}
+
+function renderAds() {
+  const slider = document.getElementById('partner-ad-slider');
+  const track = document.getElementById('partner-ad-track');
+  const dots = document.getElementById('partner-ad-dots');
+  if (!slider || !track || !dots) return;
+  clearInterval(__adTimer);
+  __adTimer = null;
+  if (!__adSlides.length) {
+    slider.style.display = 'none';
+    track.innerHTML = '';
+    dots.innerHTML = '';
+    return;
+  }
+  if (__adIndex >= __adSlides.length) __adIndex = 0;
+  track.innerHTML = __adSlides.map((ad, i) => {
+    const href = adHref(ad);
+    const cta = ad.cta_label || '자세히 보기';
+    return '<article class="partner-ad-slide' + (i === __adIndex ? ' active' : '') + '" data-ad-index="' + i + '">' +
+      '<div class="partner-ad-bg" style="background-image:url(\'' + escHtml(ad.image_url || '') + '\');"></div>' +
+      '<div class="partner-ad-shade"></div>' +
+      '<div class="partner-ad-content">' +
+        '<div class="partner-ad-badge"><span></span> AD 추천 광고중</div>' +
+        (ad.tag ? '<div class="partner-ad-tag">' + escHtml(ad.tag) + '</div>' : '') +
+        '<h2>' + escHtml(ad.title || '온종일팜 추천 상품') + '</h2>' +
+        (ad.subtitle ? '<p>' + escHtml(ad.subtitle) + '</p>' : '') +
+        (href ? '<a class="partner-ad-cta" href="' + escHtml(href) + '" target="_blank" rel="noopener noreferrer">' + escHtml(cta) + ' →</a>' : '') +
+      '</div>' +
+    '</article>';
+  }).join('');
+  dots.innerHTML = __adSlides.length > 1 ? __adSlides.map((ad, i) =>
+    '<button type="button" class="' + (i === __adIndex ? 'active' : '') + '" aria-label="광고 ' + (i + 1) + '번 보기" onclick="goAdSlide(' + i + ')"></button>'
+  ).join('') : '';
+  slider.style.display = 'block';
+  if (__adSlides.length > 1) {
+    __adTimer = setInterval(function () { goAdSlide((__adIndex + 1) % __adSlides.length); }, 4000);
+  }
+}
+
+function goAdSlide(index) {
+  if (!__adSlides.length) return;
+  __adIndex = ((index % __adSlides.length) + __adSlides.length) % __adSlides.length;
+  renderAds();
 }
 
 function buildEmptyDailySeries(days) {
@@ -669,6 +747,7 @@ function countUpEl(el, target, prefix, suffix, isFloat) {
 // ── 오버뷰 실집계
 async function loadOverview() {
   if (!window.opClient) return;
+  loadAds();
   const [linkRes, convRes] = await Promise.all([
     window.opClient.from('partner_links').select('id,product_name,title,product_url,clicks,conversions,created_at').order('created_at', { ascending: false }),
     window.opClient.from('conversions').select('link_id,commission_amount,status,created_at')

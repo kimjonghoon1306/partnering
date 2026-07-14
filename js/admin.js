@@ -43,6 +43,7 @@ function showAdminPage(pageId) {
   if (topbarTitle && title) topbarTitle.textContent = title;
   if (pageId === 'commissions') loadCommissions();
   if (pageId === 'campaigns') loadCampaigns();
+  if (pageId === 'ads') loadAdsAdmin();
   if (pageId === 'partners') loadAdminPartners();
   if (pageId === 'notice') loadNoticeCenter();
   if (pageId === 'overview') loadAdminOverview();
@@ -978,7 +979,7 @@ const AUDIT_FILTERS = {
   settlement: { targets: ['settlement', 'settlements'], actions: ['pay_settlement', 'export_settlement_tax_csv'] },
   partner: { targets: ['partner'], actions: ['set_partner_status'] },
   commission: { targets: ['product_commission'], actions: ['save_commission'] },
-  campaign: { targets: ['campaign'], actions: ['create_campaign', 'update_campaign', 'delete_campaign'] },
+  campaign: { targets: ['campaign', 'partner_ad'], actions: ['create_campaign', 'update_campaign', 'delete_campaign', 'create_ad', 'update_ad', 'toggle_ad', 'delete_ad'] },
   notice: { targets: ['notice'], actions: ['notice_sent'] }
 };
 document.getElementById('audit-filters')?.addEventListener('click', e => {
@@ -1314,6 +1315,206 @@ async function deleteCampaign(id) {
   if (error) { showToast('실패: ' + error.message); return; }
   await logAdminAction('delete_campaign', 'campaign', id, { title: camp?.title || null });
   loadCampaigns(); showToast('캠페인 삭제됨');
+}
+
+// ══════════ 광고 관리 CRUD ══════════
+let __partnerAds = [];
+async function loadAdsAdmin() {
+  if (!window.opClient) return;
+  const box = document.getElementById('ad-list');
+  const { data, error } = await window.opClient.from('partner_ads')
+    .select('*')
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: false });
+  if (error) {
+    if (box) box.innerHTML = '<div class="adm-empty"><div class="ico">⚠️</div><b>광고를 불러오지 못했어요</b>' + admEsc(error.message) + '</div>';
+    return;
+  }
+  __partnerAds = data || [];
+  renderAdsAdmin();
+}
+function adStatus(ad) {
+  if (!ad.is_active) return 'off';
+  const now = Date.now();
+  const starts = ad.starts_at ? new Date(ad.starts_at).getTime() : null;
+  const ends = ad.ends_at ? new Date(ad.ends_at).getTime() : null;
+  if (starts && starts > now) return 'scheduled';
+  if (ends && ends < now) return 'expired';
+  return 'live';
+}
+function adStatusPill(ad) {
+  const st = adStatus(ad);
+  if (st === 'live') return '<span class="camp-status live">노출중</span>';
+  if (st === 'scheduled') return '<span class="camp-status scheduled">예약</span>';
+  if (st === 'expired') return '<span class="camp-status ended">종료</span>';
+  return '<span class="camp-status ended">꺼짐</span>';
+}
+function renderAdsAdmin() {
+  const box = document.getElementById('ad-list');
+  if (!box) return;
+  if (!__partnerAds.length) {
+    box.innerHTML = '<div class="adm-empty"><div class="ico">📢</div><b>등록된 광고가 없어요</b>새 광고로 파트너 추천 상품을 올려보세요</div>';
+    return;
+  }
+  box.innerHTML = __partnerAds.map(ad => {
+    const href = ad.product_id ? '온종일팜 상품 연결' : (ad.link_url || '링크 없음');
+    return '<div class="ad-admin-card' + (ad.is_active ? '' : ' inactive') + '">' +
+      '<div class="ad-admin-image" style="background-image:url(\'' + admEsc(ad.image_url || '') + '\');"></div>' +
+      '<div class="ad-admin-body">' +
+        '<div class="ad-admin-head">' + adStatusPill(ad) + '<span class="ad-admin-order">순서 ' + admEsc(ad.sort_order || 0) + '</span></div>' +
+        '<div class="ad-admin-title">' + admEsc(ad.title || '제목 없음') + '</div>' +
+        '<div class="ad-admin-sub">' + admEsc(ad.subtitle || '') + '</div>' +
+        '<div class="ad-admin-meta">' + (ad.tag ? admEsc(ad.tag) + ' · ' : '') + admEsc(href) + '<br>' + admEsc(adDateRange(ad)) + '</div>' +
+        '<div class="ad-admin-footer">' +
+          '<label class="ad-toggle"><input type="checkbox" ' + (ad.is_active ? 'checked' : '') + ' onchange="toggleAd(\'' + admEsc(ad.id) + '\',this.checked)"><span></span></label>' +
+          '<div class="camp-actions">' +
+            '<button class="camp-icon-btn" title="수정" onclick="openAdModal(\'' + admEsc(ad.id) + '\')">✏️</button>' +
+            '<button class="camp-icon-btn del" title="삭제" onclick="deleteAd(\'' + admEsc(ad.id) + '\')">🗑</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+function adDateRange(ad) {
+  const start = ad.starts_at ? String(ad.starts_at).replace('T', ' ').slice(0, 16) : '즉시';
+  const end = ad.ends_at ? String(ad.ends_at).replace('T', ' ').slice(0, 16) : '상시';
+  return start + ' ~ ' + end;
+}
+function toDatetimeLocal(value) {
+  if (!value) return '';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 16);
+}
+function fromDatetimeLocal(value) {
+  return value ? new Date(value).toISOString() : null;
+}
+function isHttpUrl(value) {
+  if (!value) return true;
+  try {
+    const url = new URL(value);
+    return /^https?:$/.test(url.protocol);
+  } catch (e) {
+    return false;
+  }
+}
+async function ensureAdProducts() {
+  await ensureCampaignPickerData();
+  const sel = document.getElementById('ad-product');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">상품 선택 안 함</option>' + __campProducts.map(p => {
+    const label = (p.name || '상품명 없음') + (p.is_active === false ? ' (비활성)' : '');
+    return '<option value="' + admEsc(p.id) + '">' + admEsc(label) + '</option>';
+  }).join('');
+}
+function bindAdPreviewEvents() {
+  ['ad-image-url','ad-tag','ad-title-input','ad-subtitle','ad-cta'].forEach(id => {
+    document.getElementById(id)?.addEventListener('input', renderAdPreview);
+  });
+}
+bindAdPreviewEvents();
+async function openAdModal(id) {
+  await ensureAdProducts();
+  const ad = id ? __partnerAds.find(x => x.id === id) : null;
+  document.getElementById('ad-modal-title').textContent = ad ? '광고 수정' : '새 광고';
+  document.getElementById('ad-id').value = ad ? ad.id : '';
+  document.getElementById('ad-image-url').value = ad ? (ad.image_url || '') : '';
+  document.getElementById('ad-tag').value = ad ? (ad.tag || '') : 'BEST';
+  document.getElementById('ad-title-input').value = ad ? (ad.title || '') : '';
+  document.getElementById('ad-subtitle').value = ad ? (ad.subtitle || '') : '';
+  document.getElementById('ad-cta').value = ad ? (ad.cta_label || '') : '자세히 보기';
+  document.getElementById('ad-product').value = ad ? (ad.product_id || '') : '';
+  document.getElementById('ad-link-url').value = ad ? (ad.link_url || '') : '';
+  document.getElementById('ad-sort').value = ad ? (Number(ad.sort_order) || 0) : 0;
+  document.getElementById('ad-start').value = ad ? toDatetimeLocal(ad.starts_at) : '';
+  document.getElementById('ad-end').value = ad ? toDatetimeLocal(ad.ends_at) : '';
+  document.getElementById('ad-active').checked = ad ? ad.is_active : true;
+  renderAdPreview();
+  openModal('ad-modal');
+}
+function renderAdPreview() {
+  const box = document.getElementById('ad-preview');
+  if (!box) return;
+  const img = document.getElementById('ad-image-url')?.value.trim() || '';
+  const tag = document.getElementById('ad-tag')?.value.trim() || 'AD';
+  const title = document.getElementById('ad-title-input')?.value.trim() || '광고 제목 미리보기';
+  const sub = document.getElementById('ad-subtitle')?.value.trim() || '파트너 대시보드에 표시될 광고 문구입니다.';
+  const cta = document.getElementById('ad-cta')?.value.trim() || '자세히 보기';
+  box.innerHTML = '<div class="ad-preview-bg" style="background-image:url(\'' + admEsc(img) + '\');"></div>' +
+    '<div class="ad-preview-shade"></div>' +
+    '<div class="ad-preview-content">' +
+      '<div class="ad-preview-badge"><span></span> AD 추천 광고중</div>' +
+      '<div class="ad-preview-tag">' + admEsc(tag) + '</div>' +
+      '<h3>' + admEsc(title) + '</h3>' +
+      '<p>' + admEsc(sub) + '</p>' +
+      '<button type="button">' + admEsc(cta) + ' →</button>' +
+    '</div>';
+}
+async function saveAd(btn) {
+  if (!window.opClient) return;
+  const id = document.getElementById('ad-id').value;
+  const imageUrl = document.getElementById('ad-image-url').value.trim();
+  const title = document.getElementById('ad-title-input').value.trim();
+  const productId = document.getElementById('ad-product').value || null;
+  const linkUrl = document.getElementById('ad-link-url').value.trim() || null;
+  const startsAt = fromDatetimeLocal(document.getElementById('ad-start').value);
+  const endsAt = fromDatetimeLocal(document.getElementById('ad-end').value);
+  if (!imageUrl) { showToast('이미지 URL을 입력하세요'); return; }
+  if (!isHttpUrl(imageUrl)) { showToast('이미지 URL은 http(s) 주소만 사용할 수 있어요'); return; }
+  if (!title) { showToast('제목을 입력하세요'); return; }
+  if (!productId && !linkUrl) { showToast('연결 상품 또는 링크 URL을 입력하세요'); return; }
+  if (linkUrl && !isHttpUrl(linkUrl)) { showToast('링크 URL은 http(s) 주소만 사용할 수 있어요'); return; }
+  if (startsAt && endsAt && new Date(endsAt).getTime() < new Date(startsAt).getTime()) { showToast('종료일시가 시작일시보다 빠릅니다'); return; }
+  const payload = {
+    tag: document.getElementById('ad-tag').value.trim() || null,
+    title,
+    subtitle: document.getElementById('ad-subtitle').value.trim() || null,
+    cta_label: document.getElementById('ad-cta').value.trim() || '자세히 보기',
+    image_url: imageUrl,
+    product_id: productId,
+    link_url: productId ? null : linkUrl,
+    sort_order: Number(document.getElementById('ad-sort').value) || 0,
+    starts_at: startsAt,
+    ends_at: endsAt,
+    is_active: document.getElementById('ad-active').checked
+  };
+  btn.disabled = true; const prev = btn.textContent; btn.textContent = '저장 중...';
+  let error;
+  let savedId = id;
+  if (id) {
+    ({ error } = await window.opClient.from('partner_ads').update(payload).eq('id', id));
+  } else {
+    const res = await window.opClient.from('partner_ads').insert(payload).select('id').single();
+    error = res.error;
+    savedId = res.data?.id || '';
+  }
+  btn.disabled = false; btn.textContent = prev;
+  if (error) { showToast('광고 저장 실패: ' + error.message); return; }
+  await logAdminAction(id ? 'update_ad' : 'create_ad', 'partner_ad', savedId, { title: payload.title, product_id: payload.product_id, sort_order: payload.sort_order, is_active: payload.is_active });
+  closeModal('ad-modal');
+  showToast('광고 저장 완료 ✅');
+  loadAdsAdmin();
+}
+async function toggleAd(id, active) {
+  if (!window.opClient) return;
+  const { error } = await window.opClient.from('partner_ads').update({ is_active: active }).eq('id', id);
+  if (error) { showToast('실패: ' + error.message); return; }
+  await logAdminAction('toggle_ad', 'partner_ad', id, { is_active: active });
+  const ad = __partnerAds.find(x => x.id === id); if (ad) ad.is_active = active;
+  renderAdsAdmin();
+  showToast(active ? '광고 활성화 ✅' : '광고 꺼짐');
+}
+async function deleteAd(id) {
+  if (!window.opClient) return;
+  if (!confirm('이 광고를 삭제할까요?')) return;
+  const ad = __partnerAds.find(x => x.id === id);
+  const { error } = await window.opClient.from('partner_ads').delete().eq('id', id);
+  if (error) { showToast('실패: ' + error.message); return; }
+  await logAdminAction('delete_ad', 'partner_ad', id, { title: ad?.title || null });
+  loadAdsAdmin();
+  showToast('광고 삭제됨');
 }
 
 // 초기 진입 시 오버뷰 로드
