@@ -1012,8 +1012,10 @@ async function convertWalletCash(btn) {
   if (error) { alert('전환 실패: ' + error.message); return; }
   const input = document.getElementById('wallet-convert-amount');
   if (input) input.value = '';
-  alert('쇼핑포인트로 전환됐어요.');
   loadWallet();
+  if (confirm('쇼핑포인트로 전환됐어요! 🎉\n온종일팜에서 바로 사용하러 갈까요?')) {
+    window.open('https://app.yuanfnb.com/shop/mypage', '_blank', 'noopener');
+  }
 }
 async function requestWalletWithdraw(btn) {
   if (!window.opClient) return;
