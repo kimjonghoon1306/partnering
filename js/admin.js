@@ -1121,24 +1121,27 @@ let __campProductSummaries = {};
 async function loadCampaigns() {
   if (!window.opClient) return;
   const box = document.getElementById('campaign-list');
-  const [campRes, catRes, cpRes] = await Promise.all([
+  const [campRes, catRes, cpRes, prodRes] = await Promise.all([
     window.opClient.from('campaigns').select('*').order('starts_at', { ascending: false }),
     window.opClient.from('categories').select('id,name,sort_order').order('sort_order', { ascending: true }),
-    window.opClient.from('campaign_products').select('campaign_id,product_id,bonus_rate,products(name)')
+    window.opClient.from('campaign_products').select('campaign_id,product_id,bonus_rate'),
+    window.opClient.from('products').select('id,name')
   ]);
   if (campRes.error) { if (box) box.innerHTML = '<div class="adm-empty"><div class="ico">⚠️</div><b>캠페인을 불러오지 못했어요</b>' + admEsc(campRes.error.message) + '</div>'; return; }
   __campaigns = campRes.data || [];
   if (!catRes.error) __campCategories = catRes.data || [];
+  // 상품명 매핑 (FK 조인 대신 별도 조회 — campaign_products↔products FK 없음)
+  const prodNameMap = {};
+  if (!prodRes.error) (prodRes.data || []).forEach(p => { prodNameMap[String(p.id)] = p.name; });
   __campProductCounts = {};
   __campProductSummaries = {};
   if (!cpRes.error) {
     (cpRes.data || []).forEach(r => {
       const campaignId = String(r.campaign_id);
       __campProductCounts[campaignId] = (__campProductCounts[campaignId] || 0) + 1;
-      const productName = r.products && !Array.isArray(r.products) ? r.products.name : '';
       if (!__campProductSummaries[campaignId]) __campProductSummaries[campaignId] = [];
       __campProductSummaries[campaignId].push({
-        name: productName || r.product_id,
+        name: prodNameMap[String(r.product_id)] || r.product_id,
         rate: r.bonus_rate
       });
     });
