@@ -244,8 +244,8 @@ function updateChart(range) {
   if (dotsG) {
     dotsG.innerHTML = points.map((p, i) =>
       `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${i === points.length-1 ? 5 : 3.5}"
-        fill="${i === points.length-1 ? '#BEFF00' : 'var(--dark3)'}"
-        stroke="#BEFF00" stroke-width="1.5"
+        fill="${i === points.length-1 ? 'var(--lime)' : 'var(--dark3)'}"
+        stroke="var(--lime)" stroke-width="1.5"
         data-val="${p.v.toLocaleString()}" data-label="${data.labels[i]}"/>`
     ).join('');
   }
@@ -280,30 +280,68 @@ const genBtnEl = document.getElementById('gen-btn');
 
 // ── 온종일팜 상품 카탈로그 (링크 받기)
 let __catalog = [];
+let __catalogCategories = [];
+let __catalogCategory = 'all';
+let __catalogVisible = 12;
+const CATALOG_PAGE_SIZE = 12;
 async function loadCatalog() {
   const grid = document.getElementById('catalog-grid');
   if (!grid || !window.opClient) return;
-  const [prodRes, commRes, linkRes] = await Promise.all([
-    window.opClient.from('products').select('id,name,retail_price,image_url,unit').eq('is_active', true).order('created_at', { ascending: false }),
+  const [prodRes, commRes, linkRes, catRes] = await Promise.all([
+    window.opClient.from('products').select('id,name,retail_price,image_url,unit,category_id').eq('is_active', true).order('created_at', { ascending: false }),
     window.opClient.from('product_commissions').select('product_id,commission_rate'),
-    window.opClient.from('partner_links').select('code,product_id')
+    window.opClient.from('partner_links').select('code,product_id'),
+    window.opClient.from('categories').select('id,name,sort_order').order('sort_order', { ascending: true })
   ]);
   if (prodRes.error) { grid.innerHTML = '<div class="catalog-empty">상품을 불러오지 못했어요.</div>'; return; }
   const rateMap = {};
   (commRes.data || []).forEach(c => { rateMap[c.product_id] = Number(c.commission_rate); });
   const myCodeMap = {};
   (linkRes.data || []).forEach(l => { if (l.product_id) myCodeMap[l.product_id] = l.code; });
-  __catalog = (prodRes.data || []).map(p => Object.assign({}, p, { rate: (rateMap[p.id] != null ? rateMap[p.id] : 0.05), myCode: myCodeMap[p.id] || null }));
-  const cnt = document.getElementById('catalog-count');
-  if (cnt) cnt.textContent = '(' + __catalog.length + ')';
-  renderCatalog(__catalog);
+  const categoryMap = {};
+  __catalogCategories = catRes.error ? [] : (catRes.data || []);
+  __catalogCategories.forEach(c => { categoryMap[String(c.id)] = c.name; });
+  __catalog = (prodRes.data || []).map(p => Object.assign({}, p, {
+    rate: (rateMap[p.id] != null ? rateMap[p.id] : 0.05),
+    myCode: myCodeMap[p.id] || null,
+    categoryName: categoryMap[String(p.category_id)] || ''
+  }));
+  renderCatalogFilters();
+  renderCatalog();
 }
-function renderCatalog(list) {
+function getCatalogFilteredList() {
+  const searchEl = document.getElementById('catalog-search');
+  const q = (searchEl?.value || '').trim().toLowerCase();
+  return __catalog.filter(function (p) {
+    const matchesCategory = __catalogCategory === 'all' || String(p.category_id || '') === __catalogCategory;
+    const matchesSearch = !q || (p.name || '').toLowerCase().includes(q);
+    return matchesCategory && matchesSearch;
+  });
+}
+function renderCatalogFilters() {
+  const wrap = document.getElementById('catalog-filters');
+  if (!wrap) return;
+  const used = {};
+  __catalog.forEach(p => { if (p.category_id) used[String(p.category_id)] = true; });
+  const cats = __catalogCategories.filter(c => used[String(c.id)]);
+  if (__catalogCategory !== 'all' && !used[__catalogCategory]) __catalogCategory = 'all';
+  wrap.innerHTML = '<button class="catalog-filter-chip' + (__catalogCategory === 'all' ? ' active' : '') + '" type="button" data-category="all">전체</button>' +
+    cats.map(c => '<button class="catalog-filter-chip' + (__catalogCategory === String(c.id) ? ' active' : '') + '" type="button" data-category="' + escHtml(c.id) + '">' + escHtml(c.name) + '</button>').join('');
+}
+function renderCatalog() {
   const grid = document.getElementById('catalog-grid');
   if (!grid) return;
-  if (!list.length) { grid.innerHTML = '<div class="catalog-empty">상품이 없어요.</div>'; return; }
+  const list = getCatalogFilteredList();
+  const visibleList = list.slice(0, __catalogVisible);
+  const cnt = document.getElementById('catalog-count');
+  if (cnt) cnt.textContent = list.length === __catalog.length ? '(' + __catalog.length + ')' : '(' + list.length + '/' + __catalog.length + ')';
+  if (!list.length) {
+    grid.innerHTML = '<div class="catalog-empty">상품이 없어요.</div>';
+    updateCatalogMore(list.length);
+    return;
+  }
   const suspended = isPartnerSuspended();
-  grid.innerHTML = list.map(function (p) {
+  grid.innerHTML = visibleList.map(function (p) {
     const price = Number(p.retail_price) || 0;
     const earn = Math.round(price * p.rate);
     const img = (p.image_url && /^https?:\/\//.test(p.image_url) && p.image_url.length > 30) ? p.image_url : '';
@@ -311,6 +349,7 @@ function renderCatalog(list) {
       '<div class="catalog-img" style="' + (img ? "background-image:url('" + escHtml(img) + "')" : '') + '">' + (img ? '' : '🛒') + '</div>' +
       '<div class="catalog-info">' +
         '<div class="catalog-name">' + escHtml(p.name) + '</div>' +
+        (p.categoryName ? '<div class="catalog-category">' + escHtml(p.categoryName) + '</div>' : '') +
         '<div class="catalog-price">₩' + price.toLocaleString() + '<span>/' + escHtml(p.unit || '개') + '</span></div>' +
         '<div class="catalog-earn">내 수익 <b>₩' + earn.toLocaleString() + '</b><span class="catalog-rate">' + Math.round(p.rate * 100) + '%</span></div>' +
         (p.myCode
@@ -320,11 +359,31 @@ function renderCatalog(list) {
       '</div>' +
     '</div>';
   }).join('');
+  updateCatalogMore(list.length);
   setActionButtonsForStatus();
 }
+function updateCatalogMore(total) {
+  const btn = document.getElementById('catalog-more');
+  if (!btn) return;
+  const remains = Math.max(total - __catalogVisible, 0);
+  btn.style.display = remains > 0 ? 'inline-flex' : 'none';
+  btn.textContent = remains > 0 ? '더 보기 (' + remains.toLocaleString() + ')' : '더 보기';
+}
 document.getElementById('catalog-search')?.addEventListener('input', function () {
-  const q = this.value.toLowerCase();
-  renderCatalog(__catalog.filter(p => (p.name || '').toLowerCase().includes(q)));
+  __catalogVisible = CATALOG_PAGE_SIZE;
+  renderCatalog();
+});
+document.getElementById('catalog-filters')?.addEventListener('click', function (e) {
+  const btn = e.target.closest('.catalog-filter-chip');
+  if (!btn) return;
+  __catalogCategory = btn.dataset.category || 'all';
+  __catalogVisible = CATALOG_PAGE_SIZE;
+  renderCatalogFilters();
+  renderCatalog();
+});
+document.getElementById('catalog-more')?.addEventListener('click', function () {
+  __catalogVisible += CATALOG_PAGE_SIZE;
+  renderCatalog();
 });
 document.getElementById('catalog-grid')?.addEventListener('click', async function (e) {
   // 복사

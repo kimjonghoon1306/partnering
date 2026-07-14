@@ -137,12 +137,12 @@
           <svg id="earnings-chart" class="svg-chart" viewBox="0 0 600 168" preserveAspectRatio="none" style="height:168px;">
             <defs>
               <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#BEFF00" stop-opacity="0.18"/>
-                <stop offset="100%" stop-color="#BEFF00" stop-opacity="0"/>
+                <stop offset="0%" stop-color="var(--lime)" stop-opacity="0.18"/>
+                <stop offset="100%" stop-color="var(--lime)" stop-opacity="0"/>
               </linearGradient>
             </defs>
             <path class="chart-area" fill="url(#areaGrad)"/>
-            <path class="chart-line" fill="none" stroke="#BEFF00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path class="chart-line" fill="none" stroke="var(--lime)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             <g class="chart-dots"></g>
             <g class="chart-x-labels"></g>
           </svg>
@@ -199,8 +199,12 @@
           </div>
           <input class="search-input" id="catalog-search" type="text" placeholder="상품 검색...">
         </div>
+        <div class="catalog-filters" id="catalog-filters"></div>
         <div class="catalog-grid" id="catalog-grid">
           <div class="catalog-empty">상품을 불러오는 중...</div>
+        </div>
+        <div class="catalog-more-wrap">
+          <button class="catalog-more" id="catalog-more" type="button">더 보기</button>
         </div>
       </div>
 
@@ -455,8 +459,8 @@
     <!-- ══════════ 페이지: 설정 ══════════ -->
     <div class="page" id="page-settings">
 
-      <!-- 3컬럼 그리드 -->
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;" class="settings-grid">
+      <!-- 설정 카드 그리드 -->
+      <div class="settings-grid">
 
         <!-- 1. 프로필 -->
         <div class="chart-card">
@@ -567,11 +571,8 @@
           </div>
         </div>
 
-        <!-- 3. 알림 + 보안 -->
-        <div style="display:flex;flex-direction:column;gap:14px;">
-
-          <!-- 알림 설정 -->
-          <div class="chart-card" style="flex:1;">
+        <!-- 3. 알림 설정 -->
+        <div class="chart-card">
             <div class="chart-card-header"><div class="chart-card-title">🔔 알림 설정</div></div>
             <div style="display:flex;flex-direction:column;gap:0;">
               <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border);">
@@ -597,8 +598,8 @@
             </div>
           </div>
 
-          <!-- 비밀번호 변경 -->
-          <div class="chart-card">
+        <!-- 4. 비밀번호 변경 -->
+        <div class="chart-card">
             <div class="chart-card-header"><div class="chart-card-title">🔒 비밀번호 변경</div></div>
             <div style="display:flex;flex-direction:column;gap:10px;">
               <div>
@@ -612,7 +613,6 @@
               <button class="btn-primary" style="width:100%;justify-content:center;" onclick="changePassword(this)">비밀번호 변경</button>
             </div>
           </div>
-        </div>
 
       </div>
 

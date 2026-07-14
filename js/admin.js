@@ -176,31 +176,68 @@ async function logAdminAction(action, targetType, targetId, detail) {
 
 // ── 상품 마진 설정
 let __admProducts = [];
+let __admCategories = [];
+let __admCommCategory = 'all';
+let __admCommVisible = 15;
+const ADM_COMM_PAGE_SIZE = 15;
 async function loadCommissions() {
   const box = document.getElementById('comm-list');
   if (!box || !window.opClient) return;
-  const [pRes, cRes] = await Promise.all([
-    window.opClient.from('products').select('id,name,retail_price,image_url,is_active').order('created_at', { ascending: false }),
-    window.opClient.from('product_commissions').select('product_id,commission_rate')
+  const [pRes, cRes, catRes] = await Promise.all([
+    window.opClient.from('products').select('id,name,retail_price,image_url,is_active,category_id').order('created_at', { ascending: false }),
+    window.opClient.from('product_commissions').select('product_id,commission_rate'),
+    window.opClient.from('categories').select('id,name,sort_order').order('sort_order', { ascending: true })
   ]);
   if (pRes.error) { box.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3);">상품을 불러오지 못했어요: ' + admEsc(pRes.error.message) + '</div>'; return; }
   const rateMap = {};
   (cRes.data || []).forEach(c => { rateMap[c.product_id] = Math.round(Number(c.commission_rate) * 100); });
-  __admProducts = (pRes.data || []).map(p => Object.assign({}, p, { rate: (rateMap[p.id] != null ? rateMap[p.id] : 5) }));
-  renderCommissions(__admProducts);
+  const categoryMap = {};
+  __admCategories = catRes.error ? [] : (catRes.data || []);
+  __admCategories.forEach(c => { categoryMap[String(c.id)] = c.name; });
+  __admProducts = (pRes.data || []).map(p => Object.assign({}, p, {
+    rate: (rateMap[p.id] != null ? rateMap[p.id] : 5),
+    categoryName: categoryMap[String(p.category_id)] || ''
+  }));
+  renderCommissionFilters();
+  renderCommissions();
 }
-function renderCommissions(list) {
+function getFilteredCommissions() {
+  const searchEl = document.getElementById('comm-search');
+  const q = (searchEl?.value || '').trim().toLowerCase();
+  return __admProducts.filter(function (p) {
+    const matchesCategory = __admCommCategory === 'all' || String(p.category_id || '') === __admCommCategory;
+    const matchesSearch = !q || (p.name || '').toLowerCase().includes(q);
+    return matchesCategory && matchesSearch;
+  });
+}
+function renderCommissionFilters() {
+  const wrap = document.getElementById('comm-category-filters');
+  if (!wrap) return;
+  const used = {};
+  __admProducts.forEach(p => { if (p.category_id) used[String(p.category_id)] = true; });
+  const cats = __admCategories.filter(c => used[String(c.id)]);
+  if (__admCommCategory !== 'all' && !used[__admCommCategory]) __admCommCategory = 'all';
+  wrap.innerHTML = '<button class="admin-filter-btn' + (__admCommCategory === 'all' ? ' active' : '') + '" type="button" data-comm-category="all">전체</button>' +
+    cats.map(c => '<button class="admin-filter-btn' + (__admCommCategory === String(c.id) ? ' active' : '') + '" type="button" data-comm-category="' + admEsc(c.id) + '">' + admEsc(c.name) + '</button>').join('');
+}
+function renderCommissions() {
   const box = document.getElementById('comm-list');
   if (!box) return;
-  if (!list.length) { box.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3);">상품이 없어요.</div>'; return; }
-  box.innerHTML = list.map(p => {
+  const list = getFilteredCommissions();
+  const visibleList = list.slice(0, __admCommVisible);
+  if (!list.length) {
+    box.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3);">상품이 없어요.</div>';
+    updateCommissionMore(list.length);
+    return;
+  }
+  box.innerHTML = visibleList.map(p => {
     const price = Number(p.retail_price) || 0;
     const img = (p.image_url && /^https?:\/\//.test(p.image_url) && p.image_url.length > 30) ? p.image_url : '';
     const earn = Math.round(price * p.rate / 100);
     return '<div class="comm-row" data-id="' + admEsc(p.id) + '">' +
       '<div class="comm-thumb" style="' + (img ? "background-image:url('" + admEsc(img) + "')" : '') + '">' + (img ? '' : '🛒') + '</div>' +
       '<div class="comm-info"><div class="comm-name">' + admEsc(p.name) + (p.is_active ? '' : ' <span style="color:var(--text3);font-size:11px;">(비활성)</span>') + '</div>' +
-        '<div class="comm-price">판매가 ₩' + price.toLocaleString() + '</div></div>' +
+        '<div class="comm-price">' + (p.categoryName ? admEsc(p.categoryName) + ' · ' : '') + '판매가 ₩' + price.toLocaleString() + '</div></div>' +
       '<div class="comm-ctrl">' +
         '<input type="range" min="0" max="30" value="' + p.rate + '" class="comm-range" oninput="onCommRange(this)">' +
         '<div class="comm-rate-box"><input type="number" min="0" max="30" step="0.5" value="' + p.rate + '" class="comm-rate-input" oninput="onCommInput(this)">%</div>' +
@@ -208,6 +245,14 @@ function renderCommissions(list) {
         '<button class="comm-save" onclick="saveCommission(this,\'' + admEsc(p.id) + '\')">저장</button>' +
       '</div></div>';
   }).join('');
+  updateCommissionMore(list.length);
+}
+function updateCommissionMore(total) {
+  const btn = document.getElementById('comm-more');
+  if (!btn) return;
+  const remains = Math.max(total - __admCommVisible, 0);
+  btn.style.display = remains > 0 ? 'inline-flex' : 'none';
+  btn.textContent = remains > 0 ? '더 보기 (' + remains.toLocaleString() + ')' : '더 보기';
 }
 // 공통: 행의 rate로 미리보기·저장버튼 갱신
 function commApply(row, rate) {
@@ -255,8 +300,20 @@ async function saveCommission(btn, pid) {
   setTimeout(() => { btn.textContent = '저장'; }, 1500);
 }
 document.getElementById('comm-search')?.addEventListener('input', function () {
-  const q = this.value.toLowerCase();
-  renderCommissions(__admProducts.filter(p => (p.name || '').toLowerCase().includes(q)));
+  __admCommVisible = ADM_COMM_PAGE_SIZE;
+  renderCommissions();
+});
+document.getElementById('comm-category-filters')?.addEventListener('click', function (e) {
+  const btn = e.target.closest('[data-comm-category]');
+  if (!btn) return;
+  __admCommCategory = btn.dataset.commCategory || 'all';
+  __admCommVisible = ADM_COMM_PAGE_SIZE;
+  renderCommissionFilters();
+  renderCommissions();
+});
+document.getElementById('comm-more')?.addEventListener('click', function () {
+  __admCommVisible += ADM_COMM_PAGE_SIZE;
+  renderCommissions();
 });
 
 // ── 파트너 목록
@@ -570,7 +627,7 @@ function drawAdminOverviewChart(convs) {
   const pts = data.map((v, i) => ({ x: PAD.l + (i / (data.length - 1)) * cW, y: PAD.t + (1 - (v - min) / (max - min)) * cH }));
   // 테마별 색 (라이트=핑크, 다크=라임)
   const cs = getComputedStyle(document.documentElement);
-  const lime = (cs.getPropertyValue('--lime') || '#BEFF00').trim();
+  const lime = (cs.getPropertyValue('--lime') || 'var(--lime)').trim();
   const dotBg = (cs.getPropertyValue('--dark3') || '#141414').trim();
   const labelCol = (cs.getPropertyValue('--text3') || 'rgba(255,255,255,0.22)').trim();
   const pathD = pts.map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
