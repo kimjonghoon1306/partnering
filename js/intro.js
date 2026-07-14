@@ -4,7 +4,7 @@
   if (!intro) return;
 
   const SEEN_KEY = 'onpartner_intro_seen';
-  const SCENE_MS = 2300;          // 씬당 노출 시간 (넉넉하게)
+  const SCENE_MS = 2100;          // 씬당 노출 시간
 
   const scenes = Array.from(intro.querySelectorAll('.intro-scene'));
   const skipBtn = document.getElementById('intro-skip');
@@ -21,20 +21,20 @@
 
   function showScene(n) {
     scenes.forEach((s, i) => s.classList.toggle('active', i === n));
-    if (n === 1) runEarnCounter();
+    if (n === 2) runEarnCounter();
   }
 
-  // SCENE 2 숫자 카운트업
+  // SCENE 2(수익) 숫자 카운트업
   function runEarnCounter() {
     if (!earnEl) return;
-    const target = 38500;
+    const target = 385000;
     let v = 0;
-    earnEl.textContent = '+₩0';
+    earnEl.textContent = '₩0';
     const t = setInterval(() => {
-      v = Math.min(v + 1500, target);
-      earnEl.textContent = '+₩' + v.toLocaleString();
+      v = Math.min(v + 12000, target);
+      earnEl.textContent = '₩' + v.toLocaleString();
       if (v >= target) clearInterval(t);
-    }, 45);
+    }, 40);
     timers.push(t);
   }
 
