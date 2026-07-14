@@ -429,9 +429,9 @@ async function loadSettle() {
   const tb = document.querySelector('#settle-table tbody');
   setTxt('settle-period', '· ' + new Date().toISOString().slice(0, 7) + ' 기준');
   const { data, error } = await window.opClient.from('conversions')
-    .select('id,commission_amount,status,partner_id,partners(name,nickname,bank_name,bank_account,bank_holder)')
+    .select('id,commission_amount,status,partner_id,partners(name,nickname,bank_name,bank_account,bank_holder,tax_type)')
     .eq('status', 'confirmed');
-  if (error) { if (tb) tb.innerHTML = '<tr><td colspan="5"><div class="adm-empty">' + admEsc(error.message) + '</div></td></tr>'; return; }
+  if (error) { if (tb) tb.innerHTML = '<tr><td colspan="7"><div class="adm-empty">' + admEsc(error.message) + '</div></td></tr>'; return; }
   const groups = {};
   (data || []).forEach(c => {
     const pid = c.partner_id;
@@ -440,14 +440,22 @@ async function loadSettle() {
   });
   const list = Object.values(groups).sort((a, b) => b.sum - a.sum);
   if (!tb) return;
-  if (!list.length) { tb.innerHTML = '<tr><td colspan="5"><div class="adm-empty"><div class="ico">💸</div><b>정산할 확정 전환이 없어요</b>전환 검수에서 확정하면 여기 나타납니다</div></td></tr>'; return; }
+  if (!list.length) { tb.innerHTML = '<tr><td colspan="7"><div class="adm-empty"><div class="ico">💸</div><b>정산할 확정 전환이 없어요</b>전환 검수에서 확정하면 여기 나타납니다</div></td></tr>'; return; }
   tb.innerHTML = list.map(g => {
     const hasBank = g.p.bank_name && g.p.bank_account;
     const bank = hasBank ? (admEsc(g.p.bank_name) + ' ' + admEsc(g.p.bank_account) + '<br><span style="font-size:11px;color:var(--text3);">' + admEsc(g.p.bank_holder || '') + '</span>') : '<span style="color:#FF4D6A;font-size:12px;">계좌 미등록</span>';
+    const isBiz = g.p.tax_type === 'business';
+    const wh = isBiz ? 0 : Math.round(g.sum * 0.033);
+    const net = Math.round(g.sum) - wh;
+    const taxCell = isBiz
+      ? '<span style="color:var(--text3);font-size:12px;">사업자<br>(세금계산서)</span>'
+      : '<span style="color:#FF4D6A;font-size:13px;">-₩' + wh.toLocaleString() + '</span><br><span style="font-size:11px;color:var(--text3);">3.3%</span>';
     return '<tr>' +
       '<td><b>' + admEsc(g.p.name || g.p.nickname || '-') + '</b></td>' +
       '<td>' + g.cnt + '건</td>' +
-      '<td style="color:var(--lime);font-weight:800;font-size:15px;">₩' + Math.round(g.sum).toLocaleString() + '</td>' +
+      '<td style="font-weight:700;">₩' + Math.round(g.sum).toLocaleString() + '</td>' +
+      '<td>' + taxCell + '</td>' +
+      '<td style="color:var(--lime);font-weight:800;font-size:15px;">₩' + net.toLocaleString() + '</td>' +
       '<td style="font-size:12px;">' + bank + '</td>' +
       '<td style="text-align:right;"><button class="comm-save" ' + (hasBank ? '' : 'disabled style="opacity:.4;cursor:not-allowed;"') + ' onclick="paySettle(\'' + admEsc(g.pid) + '\',this)">지급 처리</button></td>' +
       '</tr>';

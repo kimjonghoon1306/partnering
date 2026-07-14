@@ -602,13 +602,25 @@ async function loadSettlement() {
   if (!window.opClient) return;
   const [convRes, pRes, sRes] = await Promise.all([
     window.opClient.from('conversions').select('commission_amount,status'),
-    window.opClient.from('partners').select('bank_name,bank_account,bank_holder').maybeSingle(),
+    window.opClient.from('partners').select('bank_name,bank_account,bank_holder,tax_type').maybeSingle(),
     window.opClient.from('settlements').select('period,total_amount,status,paid_at').order('period', { ascending: false })
   ]);
   const convs = convRes.data || [];
   const pending = convs.filter(c => c.status === 'pending' || c.status === 'confirmed').reduce((s, c) => s + Number(c.commission_amount || 0), 0);
   const amtEl = document.getElementById('settle-amount');
   if (amtEl) amtEl.textContent = '₩' + Math.round(pending).toLocaleString();
+  // 원천징수(개인 3.3%) 안내
+  const taxNote = document.getElementById('settle-tax-note');
+  if (taxNote) {
+    const isBiz = pRes.data && pRes.data.tax_type === 'business';
+    if (isBiz) {
+      taxNote.innerHTML = '사업자 · 전액 지급 (세금계산서 발행)';
+    } else {
+      const wh = Math.round(pending * 0.033);
+      const net = Math.round(pending) - wh;
+      taxNote.innerHTML = '개인 · 원천징수 3.3%(-₩' + wh.toLocaleString() + ') 후 <b style="color:var(--lime);">실지급 ₩' + net.toLocaleString() + '</b>';
+    }
+  }
   const now = new Date();
   const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
   const dEl = document.getElementById('settle-nextdate');
@@ -666,6 +678,49 @@ async function loadSettings() {
   const curH = document.getElementById('set-cur-holder');
   if (cur) cur.textContent = (p.bank_name && p.bank_account) ? (p.bank_name + ' ' + maskAccount(p.bank_account)) : '미등록';
   if (curH) curH.textContent = p.bank_holder ? ('예금주: ' + p.bank_holder) : '';
+
+  // 세금 정보
+  const taxType = p.tax_type || 'individual';
+  const taxRadio = document.querySelector('input[name="tax-type"][value="' + taxType + '"]');
+  if (taxRadio) taxRadio.checked = true;
+  setVal('set-resident-no', p.resident_no);
+  setVal('set-business-no', p.business_no);
+  setVal('set-business-name', p.business_name);
+  onTaxTypeChange();
+}
+// ── 세금 정보: 개인/사업자 필드 전환
+function onTaxTypeChange() {
+  const type = document.querySelector('input[name="tax-type"]:checked')?.value || 'individual';
+  const ind = document.getElementById('tax-individual-fields');
+  const biz = document.getElementById('tax-business-fields');
+  if (ind) ind.style.display = type === 'individual' ? '' : 'none';
+  if (biz) biz.style.display = type === 'business' ? 'flex' : 'none';
+}
+async function saveTax(btn) {
+  if (!window.opClient) return;
+  const type = document.querySelector('input[name="tax-type"]:checked')?.value || 'individual';
+  const payload = { tax_type: type };
+  if (type === 'individual') {
+    const rn = (document.getElementById('set-resident-no')?.value || '').trim();
+    if (!rn) { alert('주민등록번호를 입력해주세요.'); return; }
+    payload.resident_no = rn;
+    payload.business_no = null;
+    payload.business_name = null;
+  } else {
+    const bn = (document.getElementById('set-business-no')?.value || '').trim();
+    const bname = (document.getElementById('set-business-name')?.value || '').trim();
+    if (!bn || !bname) { alert('사업자등록번호와 상호를 입력해주세요.'); return; }
+    payload.business_no = bn;
+    payload.business_name = bname;
+    payload.resident_no = null;
+  }
+  const { data: { user } } = await window.opClient.auth.getUser();
+  if (!user) { window.location.href = 'login.html'; return; }
+  const t = btn.textContent; btn.disabled = true; btn.textContent = '저장 중...';
+  const { error } = await window.opClient.from('partners').update(payload).eq('id', user.id);
+  btn.disabled = false; btn.textContent = t;
+  if (error) { alert('저장 실패: ' + error.message); return; }
+  alert('세금 정보가 저장됐어요!');
 }
 async function saveProfile(btn) {
   if (!window.opClient) return;
