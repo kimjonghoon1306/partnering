@@ -36,6 +36,7 @@ function showPage(pageId) {
   if (pageId === 'overview') loadOverview();
   if (pageId === 'earnings') loadEarnings();
   if (pageId === 'settlement') loadSettlement();
+  if (pageId === 'notifications') loadNotifications();
   if (pageId === 'settings') loadSettings();
 }
 
@@ -489,10 +490,103 @@ function setLinkBadge(n) {
   if (lb) { lb.textContent = n; lb.style.display = n ? '' : 'none'; }
 }
 
+function setNotificationBadge(n) {
+  const badge = document.getElementById('notification-badge');
+  if (badge) {
+    badge.textContent = n > 99 ? '99+' : String(n);
+    badge.style.display = n ? '' : 'none';
+  }
+}
+
+async function loadNotificationBadge() {
+  if (!window.opClient) return;
+  const { count, error } = await window.opClient
+    .from('notifications')
+    .select('id', { count: 'exact', head: true })
+    .eq('is_read', false);
+  if (!error) setNotificationBadge(count || 0);
+}
+
+function notificationMeta(type) {
+  const map = {
+    conversion_confirmed: { icon: '✅', color: '#8BE000' },
+    conversion_canceled: { icon: '↩️', color: '#FFB020' },
+    settlement_paid: { icon: '💸', color: '#8BE000' },
+    account_suspended: { icon: '⛔', color: '#FF4D6A' },
+    account_activated: { icon: '🟢', color: '#8BE000' },
+    campaign: { icon: '📣', color: '#5BB8FF' }
+  };
+  return map[type] || { icon: '🔔', color: 'var(--text2)' };
+}
+
+function relTime(v) {
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime())) return '';
+  const s = Math.max(0, Math.floor((Date.now() - d.getTime()) / 1000));
+  if (s < 60) return '방금';
+  if (s < 3600) return Math.floor(s / 60) + '분 전';
+  if (s < 86400) return Math.floor(s / 3600) + '시간 전';
+  if (s < 604800) return Math.floor(s / 86400) + '일 전';
+  return d.toISOString().slice(0, 10);
+}
+
+function renderNotifications(list) {
+  const box = document.querySelector('#page-notifications .notif-list');
+  if (!box) return;
+  if (!list.length) {
+    box.innerHTML = '<div class="notif-empty">' +
+      '<div class="notif-empty-icon">🔔</div>' +
+      '<div class="notif-title">아직 도착한 알림이 없어요</div>' +
+      '<div class="notif-sub">새 알림이 생기면 이곳에 표시됩니다.</div>' +
+      '</div>';
+    return;
+  }
+  box.innerHTML = list.map(n => {
+    const meta = notificationMeta(n.type);
+    return '<div class="notif-item' + (n.is_read ? '' : ' unread') + '">' +
+      '<div class="notif-icon" style="color:' + escHtml(meta.color) + ';">' + escHtml(meta.icon) + '</div>' +
+      '<div class="notif-body">' +
+        '<div class="notif-title">' + escHtml(n.title || '') + '</div>' +
+        '<div class="notif-sub">' + escHtml(n.body || '') + '</div>' +
+      '</div>' +
+      '<div class="notif-time">' + escHtml(relTime(n.created_at)) + '</div>' +
+      (n.is_read ? '' : '<div class="notif-dot-indicator"></div>') +
+      '</div>';
+  }).join('');
+}
+
+async function loadNotifications() {
+  if (!window.opClient) return;
+  const box = document.querySelector('#page-notifications .notif-list');
+  if (box) box.innerHTML = '<div class="notif-empty"><div class="notif-empty-icon">🔔</div><div class="notif-title">알림을 불러오는 중...</div></div>';
+  const { data, error } = await window.opClient
+    .from('notifications')
+    .select('id,type,title,body,is_read,created_at')
+    .order('created_at', { ascending: false });
+  if (error) {
+    if (box) box.innerHTML = '<div class="notif-empty"><div class="notif-empty-icon">🔔</div><div class="notif-title">알림을 불러오지 못했어요</div><div class="notif-sub">' + escHtml(error.message) + '</div></div>';
+    return;
+  }
+  const list = data || [];
+  renderNotifications(list);
+  const unreadIds = list.filter(n => !n.is_read).map(n => n.id);
+  if (unreadIds.length) {
+    setNotificationBadge(0);
+    const { error: readErr } = await window.opClient.from('notifications').update({ is_read: true }).in('id', unreadIds);
+    if (readErr) {
+      console.warn('notification read update failed:', readErr.message);
+      setNotificationBadge(unreadIds.length);
+    }
+  } else {
+    setNotificationBadge(0);
+  }
+}
+
 // ── 초기화
 document.addEventListener('DOMContentLoaded', () => {
   initNotificationToggles();
   loadPartnerHeader();
+  loadNotificationBadge();
   loadCampaignBanner();
   showPage('overview');   // → loadOverview() 실집계 호출
   updateChart('7d');

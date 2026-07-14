@@ -124,6 +124,21 @@ function showToast(msg) {
   setTimeout(() => toast.remove(), 2500);
 }
 
+async function createPartnerNotification(partnerId, type, title, body) {
+  if (!window.opClient || !partnerId) return;
+  try {
+    const { error } = await window.opClient.from('notifications').insert({
+      partner_id: partnerId,
+      type,
+      title,
+      body
+    });
+    if (error) console.warn('notification insert failed:', error.message);
+  } catch (err) {
+    console.warn('notification insert failed:', err);
+  }
+}
+
 // ── 초기화
 document.addEventListener('DOMContentLoaded', () => {
   showAdminPage('overview');
@@ -258,6 +273,14 @@ async function setPartnerStatus(id, status, btn) {
   btn.disabled = false;
   if (error) { btn.textContent = t; showToast('실패: ' + error.message); return; }
   const p = __admPartners.find(x => x.id === id); if (p) p.status = status;
+  await createPartnerNotification(
+    id,
+    status === 'suspended' ? 'account_suspended' : 'account_activated',
+    status === 'suspended' ? '계정이 정지됐어요' : '계정이 활성화됐어요',
+    status === 'suspended'
+      ? '관리자 확인으로 계정이 정지되었습니다. 링크 생성과 수익 활동이 제한됩니다.'
+      : '계정이 다시 활성화되었습니다. 파트너 활동을 이어갈 수 있어요.'
+  );
   renderAdminPartners(__admPartners);
   showToast('파트너 ' + label + ' 완료 ✅');
 }
@@ -444,6 +467,16 @@ async function reviewConv(id, status, btn) {
   const { error } = await window.opClient.from('conversions').update({ status }).eq('id', id);
   if (error) { btn.disabled = false; btn.textContent = t; showToast('실패: ' + error.message); return; }
   const c = __admConvs.find(x => x.id === id); if (c) c.status = status;
+  if (c && (status === 'confirmed' || status === 'canceled')) {
+    await createPartnerNotification(
+      c.partner_id,
+      status === 'confirmed' ? 'conversion_confirmed' : 'conversion_canceled',
+      status === 'confirmed' ? '전환이 확정됐어요' : '전환이 취소됐어요',
+      status === 'confirmed'
+        ? '구매가 확정되어 수수료가 정산 대상에 포함됩니다.'
+        : '반품·취소로 전환이 취소 처리되었습니다.'
+    );
+  }
   loadReview();
   showToast(status === 'confirmed' ? '전환 확정 ✅' : '전환 취소 처리됨');
 }
@@ -537,6 +570,12 @@ async function paySettle(pid, btn) {
   // 2) 해당 전환 settled
   const { error: cErr } = await window.opClient.from('conversions').update({ status: 'settled' }).in('id', g.ids);
   if (cErr) { showToast('전환 상태 갱신 실패: ' + cErr.message); }
+  await createPartnerNotification(
+    pid,
+    'settlement_paid',
+    '정산이 완료됐어요',
+    '₩' + net.toLocaleString() + ' 정산이 지급 처리됐습니다.'
+  );
   showToast(g.p.name + '님 정산 완료 ✅');
   loadSettle();
 }
