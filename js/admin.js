@@ -218,13 +218,16 @@ document.getElementById('comm-search')?.addEventListener('input', function () {
 
 // ── 파트너 목록
 let __admPartners = [];
+// 관리자 계정(판매 파트너 아님) — 파트너 목록에서 제외
+const OP_ADMIN_EMAILS = ['s9653@naver.com'];
 async function loadAdminPartners() {
   const tb = document.querySelector('#ap-partners table tbody');
   const titleEl = document.querySelector('#ap-partners .admin-table-title');
   if (!window.opClient) return;
   const { data, error } = await window.opClient.from('partners').select('id,name,nickname,email,channels,status,created_at').order('created_at', { ascending: false });
   if (error) { if (tb) tb.innerHTML = '<tr><td colspan="6"><div class="adm-empty">' + admEsc(error.message) + '</div></td></tr>'; return; }
-  __admPartners = data || [];
+  // 관리자 계정 제외
+  __admPartners = (data || []).filter(p => !OP_ADMIN_EMAILS.includes((p.email || '').toLowerCase()));
   if (titleEl) titleEl.textContent = '파트너 목록 (' + __admPartners.length + ')';
   renderAdminPartners(__admPartners);
 }
@@ -267,12 +270,14 @@ document.getElementById('partner-search')?.addEventListener('input', function ()
 async function loadAdminOverview() {
   if (!window.opClient) return;
   const [pRes, lRes, cRes, recentPartners, settleRes] = await Promise.all([
-    window.opClient.from('partners').select('id', { count: 'exact', head: true }),
+    window.opClient.from('partners').select('id,email'),
     window.opClient.from('partner_links').select('id', { count: 'exact', head: true }),
     window.opClient.from('conversions').select('commission_amount,order_amount,status,created_at,link_id,partner_links(title)').order('created_at', { ascending: false }),
-    window.opClient.from('partners').select('name,nickname,created_at').order('created_at', { ascending: false }).limit(5),
+    window.opClient.from('partners').select('name,nickname,email,created_at').order('created_at', { ascending: false }).limit(10),
     window.opClient.from('settlements').select('id', { count: 'exact', head: true }).eq('status', 'pending')
   ]);
+  // 관리자 계정 제외한 파트너 수
+  const partnerCount = (pRes.data || []).filter(p => !OP_ADMIN_EMAILS.includes((p.email || '').toLowerCase())).length;
   const convs = cRes.data || [];
   const now = new Date();
   const thisMonth = convs.filter(c => { const d = new Date(c.created_at); return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && c.status !== 'canceled'; });
@@ -280,7 +285,7 @@ async function loadAdminOverview() {
   const monthComm = thisMonth.reduce((s, c) => s + Number(c.commission_amount || 0), 0);
 
   const cards = document.querySelectorAll('#ap-overview .admin-card-value');
-  if (cards[0]) cards[0].textContent = (pRes.count || 0).toLocaleString();
+  if (cards[0]) cards[0].textContent = partnerCount.toLocaleString();
   if (cards[1]) cards[1].textContent = (lRes.count || 0).toLocaleString();
   if (cards[2]) cards[2].textContent = '₩' + Math.round(monthGmv).toLocaleString();
   if (cards[3]) cards[3].textContent = '₩' + Math.round(monthComm).toLocaleString();
@@ -292,7 +297,8 @@ async function loadAdminOverview() {
 
   drawAdminOverviewChart(convs);
   renderTopProducts(convs);
-  renderRecentActivity(convs, recentPartners.data || []);
+  const recentNonAdmin = (recentPartners.data || []).filter(p => !OP_ADMIN_EMAILS.includes((p.email || '').toLowerCase())).slice(0, 5);
+  renderRecentActivity(convs, recentNonAdmin);
 }
 
 // ── 월별 수수료 추이 차트 (실데이터)
