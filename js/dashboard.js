@@ -307,8 +307,23 @@ searchEl?.addEventListener('input', function() {
   });
 });
 
+// ── 사이드바 파트너 정보 (실제 가입 이름)
+async function loadPartnerHeader() {
+  if (!window.opClient) return;
+  const { data: p } = await window.opClient.from('partners').select('name,nickname').maybeSingle();
+  if (!p) return;
+  const display = p.name || p.nickname || '파트너';
+  const nameEl = document.querySelector('.user-name');
+  const avEl = document.querySelector('.user-avatar');
+  const gradeEl = document.querySelector('.user-grade');
+  if (nameEl) nameEl.textContent = display;
+  if (avEl) avEl.textContent = display.slice(0, 1);
+  if (gradeEl) gradeEl.textContent = p.nickname ? '@' + p.nickname : '🌱 파트너';
+}
+
 // ── 초기화
 document.addEventListener('DOMContentLoaded', () => {
+  loadPartnerHeader();
   showPage('overview');   // → loadOverview() 실집계 호출
   updateChart('7d');
 });
