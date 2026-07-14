@@ -499,18 +499,39 @@ async function paySettle(pid, btn) {
   if (!window.opClient) return;
   const g = window.__settleGroups && window.__settleGroups[pid];
   if (!g) return;
-  if (!confirm(g.p.name + '님에게 ₩' + Math.round(g.sum).toLocaleString() + ' 정산 지급 처리할까요?\n(' + g.cnt + '건의 전환이 정산 완료됩니다)')) return;
+  const gross = Math.round(g.sum);
+  const withholding = g.p.tax_type === 'business' ? 0 : Math.round(gross * 0.033);
+  const net = gross - withholding;
+  if (!confirm(g.p.name + '님에게 ₩' + net.toLocaleString() + ' 정산 지급 처리할까요?\n총수수료 ₩' + gross.toLocaleString() + ' / 원천징수 ₩' + withholding.toLocaleString() + '\n(' + g.cnt + '건의 전환이 정산 완료됩니다)')) return;
   btn.disabled = true; btn.textContent = '처리 중...';
   const period = new Date().toISOString().slice(0, 7);
   const bankSnap = (g.p.bank_name || '') + ' ' + (g.p.bank_account || '') + ' (' + (g.p.bank_holder || '') + ')';
   const nowIso = new Date().toISOString();
   // 1) settlement upsert (같은 달 재지급 시 누적)
-  const { data: existing } = await window.opClient.from('settlements').select('id,total_amount').eq('partner_id', pid).eq('period', period).maybeSingle();
+  const { data: existing } = await window.opClient.from('settlements').select('id,total_amount,gross_amount,withholding_amount,net_amount').eq('partner_id', pid).eq('period', period).maybeSingle();
   let sErr;
   if (existing) {
-    ({ error: sErr } = await window.opClient.from('settlements').update({ total_amount: Number(existing.total_amount) + g.sum, status: 'paid', bank_snapshot: bankSnap, paid_at: nowIso }).eq('id', existing.id));
+    ({ error: sErr } = await window.opClient.from('settlements').update({
+      total_amount: Number(existing.total_amount || 0) + net,
+      gross_amount: Number(existing.gross_amount || 0) + gross,
+      withholding_amount: Number(existing.withholding_amount || 0) + withholding,
+      net_amount: Number(existing.net_amount || 0) + net,
+      status: 'paid',
+      bank_snapshot: bankSnap,
+      paid_at: nowIso
+    }).eq('id', existing.id));
   } else {
-    ({ error: sErr } = await window.opClient.from('settlements').insert({ partner_id: pid, period, total_amount: g.sum, status: 'paid', bank_snapshot: bankSnap, paid_at: nowIso }));
+    ({ error: sErr } = await window.opClient.from('settlements').insert({
+      partner_id: pid,
+      period,
+      total_amount: net,
+      gross_amount: gross,
+      withholding_amount: withholding,
+      net_amount: net,
+      status: 'paid',
+      bank_snapshot: bankSnap,
+      paid_at: nowIso
+    }));
   }
   if (sErr) { btn.disabled = false; btn.textContent = '지급 처리'; showToast('정산 저장 실패: ' + sErr.message); return; }
   // 2) 해당 전환 settled

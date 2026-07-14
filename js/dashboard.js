@@ -90,6 +90,66 @@ function monthKey(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1); }
 function dayLabel(d) { return (d.getMonth() + 1) + '/' + d.getDate(); }
 function monthLabelFromKey(key) { return Number(key.slice(5, 7)) + '월'; }
 function formatWon(n) { return '₩' + Math.round(Number(n) || 0).toLocaleString(); }
+let __partnerStatus = 'active';
+function isPartnerSuspended() { return __partnerStatus === 'suspended'; }
+function showSuspendedNotice() {
+  let banner = document.getElementById('partner-suspended-banner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'partner-suspended-banner';
+    banner.style.cssText = 'display:none;margin:0 0 18px;padding:14px 16px;border:1px solid rgba(255,77,106,.35);background:rgba(255,77,106,.10);color:#fff;border-radius:12px;font-size:14px;line-height:1.55;';
+    const host = document.querySelector('.content') || document.querySelector('.main-content') || document.querySelector('.page');
+    if (host) host.prepend(banner);
+  }
+  banner.innerHTML = '<b style="color:#FF4D6A;">계정이 정지되었습니다.</b> 조회는 가능하지만 링크 생성, 재발급, 삭제와 전환 적립은 중단됩니다. 관리자에게 문의해주세요.';
+  banner.style.display = isPartnerSuspended() ? 'block' : 'none';
+}
+function blockIfSuspended() {
+  if (!isPartnerSuspended()) return false;
+  showSuspendedNotice();
+  alert('정지된 계정입니다. 링크 생성/재발급/삭제를 할 수 없어요.');
+  return true;
+}
+function setActionButtonsForStatus() {
+  const disabled = isPartnerSuspended();
+  document.querySelectorAll('.catalog-getlink,.catalog-regen,.link-del-btn,#gen-btn').forEach(btn => {
+    btn.disabled = disabled;
+    if (disabled) {
+      btn.style.opacity = '.45';
+      btn.style.cursor = 'not-allowed';
+      btn.title = '정지된 계정';
+    }
+  });
+}
+async function loadCampaignBanner() {
+  if (!window.opClient) return;
+  const today = new Date().toISOString().slice(0, 10);
+  const { data, error } = await window.opClient.from('campaigns')
+    .select('title,emoji,bonus_rate,starts_at,ends_at,target_type,target_value')
+    .eq('is_active', true)
+    .lte('starts_at', today)
+    .gte('ends_at', today)
+    .order('bonus_rate', { ascending: false });
+  if (error) return;
+  const campaigns = data || [];
+  let banner = document.getElementById('campaign-active-banner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'campaign-active-banner';
+    banner.style.cssText = 'display:none;margin:0 0 18px;padding:14px 16px;border:1px solid rgba(190,255,0,.28);background:linear-gradient(90deg,rgba(190,255,0,.16),rgba(190,255,0,.05));color:var(--text1,#fff);border-radius:12px;font-size:14px;line-height:1.55;';
+    const overview = document.getElementById('page-overview');
+    const links = document.getElementById('page-links');
+    if (overview) overview.prepend(banner);
+    else if (links) links.prepend(banner);
+  }
+  if (!campaigns.length) { banner.style.display = 'none'; return; }
+  banner.innerHTML = campaigns.slice(0, 3).map(c => {
+    const pct = Math.round(Number(c.bonus_rate || 0) * 1000) / 10;
+    const icon = c.emoji || '🎁';
+    return '<div><b style="color:var(--lime);">' + escHtml(icon + ' ' + c.title) + '</b> 기간 내 +' + pct + '% 추가 수수료</div>';
+  }).join('');
+  banner.style.display = 'block';
+}
 
 function buildEmptyDailySeries(days) {
   const today = new Date();
@@ -240,6 +300,7 @@ function renderCatalog(list) {
   const grid = document.getElementById('catalog-grid');
   if (!grid) return;
   if (!list.length) { grid.innerHTML = '<div class="catalog-empty">상품이 없어요.</div>'; return; }
+  const suspended = isPartnerSuspended();
   grid.innerHTML = list.map(function (p) {
     const price = Number(p.retail_price) || 0;
     const earn = Math.round(price * p.rate);
@@ -252,11 +313,12 @@ function renderCatalog(list) {
         '<div class="catalog-earn">내 수익 <b>₩' + earn.toLocaleString() + '</b><span class="catalog-rate">' + Math.round(p.rate * 100) + '%</span></div>' +
         (p.myCode
           ? '<div class="catalog-mylink"><span title="partner.yuanfnb.com/r/' + p.myCode + '">🔗 partner.yuanfnb.com/r/' + escHtml(p.myCode) + '</span><button class="catalog-copy" data-code="' + escHtml(p.myCode) + '">복사</button></div>' +
-            '<button class="catalog-regen" data-id="' + escHtml(p.id) + '">🔄 재발급</button>'
-          : '<button class="catalog-getlink btn-primary" data-id="' + escHtml(p.id) + '">🔗 링크 받기</button>') +
+            '<button class="catalog-regen" data-id="' + escHtml(p.id) + '"' + (suspended ? ' disabled title="정지된 계정" style="opacity:.45;cursor:not-allowed;"' : '') + '>🔄 재발급</button>'
+          : '<button class="catalog-getlink btn-primary" data-id="' + escHtml(p.id) + '"' + (suspended ? ' disabled title="정지된 계정" style="opacity:.45;cursor:not-allowed;"' : '') + '>🔗 링크 받기</button>') +
       '</div>' +
     '</div>';
   }).join('');
+  setActionButtonsForStatus();
 }
 document.getElementById('catalog-search')?.addEventListener('input', function () {
   const q = this.value.toLowerCase();
@@ -278,6 +340,7 @@ document.getElementById('catalog-grid')?.addEventListener('click', async functio
   const regenBtn = e.target.closest('.catalog-regen');
   const btn = getBtn || regenBtn;
   if (!btn) return;
+  if (blockIfSuspended()) return;
   const p = __catalog.find(x => x.id === btn.dataset.id);
   if (!p || !window.opClient) return;
   if (regenBtn && !confirm('재발급하면 기존 링크는 더 이상 작동하지 않아요.\n새 링크로 바꿀까요?')) return;
@@ -335,9 +398,11 @@ async function loadLinks() {
   const data = linkRes.data || [];
   if (linkRes.error) { console.warn('[온파트너] 링크 조회 오류:', linkRes.error.message); return; }
   const earningsByLink = {};
+  const convCountByLink = {};
   (convRes.data || []).forEach(c => {
     if (c.status === 'canceled' || !c.link_id) return;
     earningsByLink[c.link_id] = (earningsByLink[c.link_id] || 0) + Number(c.commission_amount || 0);
+    convCountByLink[c.link_id] = (convCountByLink[c.link_id] || 0) + 1;
   });
   if (titleEl) titleEl.textContent = '전체 링크 (' + data.length + ')';
   setLinkBadge(data.length);
@@ -356,18 +421,20 @@ async function loadLinks() {
       '<td><div class="td-url" title="' + escHtml(purl) + '">' + escHtml(purl) + '</div></td>' +
       '<td><div class="td-url">' + escHtml(shop) + '</div></td>' +
       '<td class="td-num">' + (l.clicks || 0) + '</td>' +
-      '<td class="td-num">' + (l.conversions || 0) + '</td>' +
+      '<td class="td-num">' + (convCountByLink[l.id] || 0) + '</td>' +
       '<td class="td-earn">' + formatWon(earningsByLink[l.id]) + '</td>' +
       '<td style="font-size:12px;color:var(--text3)">' + date + '</td>' +
       '<td><span class="status-pill active">● 활성</span></td>' +
-      '<td style="text-align:right;"><button class="link-del-btn" onclick="deleteLink(\'' + escHtml(l.code) + '\',this)" title="링크 삭제">🗑 삭제</button></td>' +
+      '<td style="text-align:right;"><button class="link-del-btn" onclick="deleteLink(\'' + escHtml(l.code) + '\',this)" title="' + (isPartnerSuspended() ? '정지된 계정' : '링크 삭제') + '"' + (isPartnerSuspended() ? ' disabled style="opacity:.45;cursor:not-allowed;"' : '') + '>🗑 삭제</button></td>' +
       '</tr>';
   }).join('');
+  setActionButtonsForStatus();
 }
 
 // ── 링크 삭제
 async function deleteLink(code, btn) {
   if (!window.opClient) return;
+  if (blockIfSuspended()) return;
   if (!confirm('이 링크를 삭제할까요?\n삭제하면 이 링크로는 더 이상 클릭·구매가 추적되지 않아요.')) return;
   btn.disabled = true; const t = btn.textContent; btn.textContent = '삭제 중...';
   const { error } = await window.opClient.from('partner_links').delete().eq('code', code);
@@ -399,9 +466,12 @@ async function loadPartnerHeader() {
   if (!window.opClient) return;
   const [{ data: { user } }, { data: p }, { count }] = await Promise.all([
     window.opClient.auth.getUser(),
-    window.opClient.from('partners').select('name,nickname').maybeSingle(),
+    window.opClient.from('partners').select('name,nickname,status').maybeSingle(),
     window.opClient.from('partner_links').select('id', { count: 'exact', head: true })
   ]);
+  __partnerStatus = (p && p.status) || 'active';
+  showSuspendedNotice();
+  setActionButtonsForStatus();
   const m = (user && user.user_metadata) || {};
   const name = (p && p.name) || m.name;
   const nick = (p && p.nickname) || m.nickname;
@@ -423,6 +493,7 @@ function setLinkBadge(n) {
 document.addEventListener('DOMContentLoaded', () => {
   initNotificationToggles();
   loadPartnerHeader();
+  loadCampaignBanner();
   showPage('overview');   // → loadOverview() 실집계 호출
   updateChart('7d');
 });
@@ -452,12 +523,14 @@ async function loadOverview() {
   const convs = convRes.data || [];
   const validConvs = convs.filter(c => c.status !== 'canceled');
   const earningsByLink = {};
+  const convCountByLink = {};
   validConvs.forEach(c => {
     if (!c.link_id) return;
     earningsByLink[c.link_id] = (earningsByLink[c.link_id] || 0) + Number(c.commission_amount || 0);
+    convCountByLink[c.link_id] = (convCountByLink[c.link_id] || 0) + 1;
   });
   const totalClicks = links.reduce((s, l) => s + (l.clicks || 0), 0);
-  const totalConv = validConvs.length || links.reduce((s, l) => s + (l.conversions || 0), 0);
+  const totalConv = validConvs.length;
   const revenue = validConvs.reduce((s, c) => s + Number(c.commission_amount || 0), 0);
   const rate = totalClicks ? (totalConv / totalClicks * 100) : 0;
   const vals = [revenue, totalClicks, totalConv, rate];
@@ -476,7 +549,7 @@ async function loadOverview() {
       tb.innerHTML = links.slice(0, 5).map(function (l) {
         let shop = '—'; try { shop = new URL(l.product_url).hostname; } catch (e) {}
         const name = l.product_name || l.title || '온종일팜 상품';
-        return '<tr><td><div class="td-link">' + escHtml(name) + '</div></td><td><div class="td-url">' + escHtml(shop) + '</div></td><td class="td-num">' + (l.clicks || 0) + '</td><td class="td-num">' + (l.conversions || 0) + '</td><td class="td-earn">' + formatWon(earningsByLink[l.id]) + '</td><td><span class="status-pill active">● 활성</span></td></tr>';
+        return '<tr><td><div class="td-link">' + escHtml(name) + '</div></td><td><div class="td-url">' + escHtml(shop) + '</div></td><td class="td-num">' + (l.clicks || 0) + '</td><td class="td-num">' + (convCountByLink[l.id] || 0) + '</td><td class="td-earn">' + formatWon(earningsByLink[l.id]) + '</td><td><span class="status-pill active">● 활성</span></td></tr>';
       }).join('');
     }
   }
@@ -603,22 +676,24 @@ async function loadSettlement() {
   const [convRes, pRes, sRes] = await Promise.all([
     window.opClient.from('conversions').select('commission_amount,status'),
     window.opClient.from('partners').select('bank_name,bank_account,bank_holder,tax_type').maybeSingle(),
-    window.opClient.from('settlements').select('period,total_amount,status,paid_at').order('period', { ascending: false })
+    window.opClient.from('settlements').select('period,total_amount,status,paid_at,gross_amount,withholding_amount,net_amount').order('period', { ascending: false })
   ]);
   const convs = convRes.data || [];
-  const pending = convs.filter(c => c.status === 'pending' || c.status === 'confirmed').reduce((s, c) => s + Number(c.commission_amount || 0), 0);
+  const confirmed = convs.filter(c => c.status === 'confirmed').reduce((s, c) => s + Number(c.commission_amount || 0), 0);
+  const pendingReview = convs.filter(c => c.status === 'pending').reduce((s, c) => s + Number(c.commission_amount || 0), 0);
   const amtEl = document.getElementById('settle-amount');
-  if (amtEl) amtEl.textContent = '₩' + Math.round(pending).toLocaleString();
+  if (amtEl) amtEl.textContent = '₩' + Math.round(confirmed).toLocaleString();
+  if (amtEl && amtEl.previousElementSibling) amtEl.previousElementSibling.textContent = '정산 예정액(확정)';
   // 원천징수(개인 3.3%) 안내
   const taxNote = document.getElementById('settle-tax-note');
   if (taxNote) {
     const isBiz = pRes.data && pRes.data.tax_type === 'business';
     if (isBiz) {
-      taxNote.innerHTML = '사업자 · 전액 지급 (세금계산서 발행)';
+      taxNote.innerHTML = '정산 예정액(확정) 기준 · 사업자 전액 지급<br>검수 중 ' + formatWon(pendingReview);
     } else {
-      const wh = Math.round(pending * 0.033);
-      const net = Math.round(pending) - wh;
-      taxNote.innerHTML = '개인 · 원천징수 3.3%(-₩' + wh.toLocaleString() + ') 후 <b style="color:var(--lime);">실지급 ₩' + net.toLocaleString() + '</b>';
+      const wh = Math.round(confirmed * 0.033);
+      const net = Math.round(confirmed) - wh;
+      taxNote.innerHTML = '정산 예정액(확정) 기준 · 원천징수 3.3%(-₩' + wh.toLocaleString() + ') 후 <b style="color:var(--lime);">실지급 ₩' + net.toLocaleString() + '</b><br>검수 중 ' + formatWon(pendingReview);
     }
   }
   const now = new Date();
@@ -636,9 +711,12 @@ async function loadSettlement() {
     } else {
       tb.innerHTML = settles.map(function (s) {
         const done = s.status === 'paid';
+        const gross = Number(s.gross_amount != null ? s.gross_amount : s.total_amount || 0);
+        const withholding = Number(s.withholding_amount || 0);
+        const net = Number(s.net_amount != null ? s.net_amount : s.total_amount || 0);
         return '<tr><td style="font-size:12px;">' + escHtml(s.period || '') + '</td>' +
-          '<td class="td-num">-</td><td style="font-size:12px;color:var(--text2);">-</td><td style="font-size:12px;">-</td>' +
-          '<td class="td-earn">₩' + Math.round(Number(s.total_amount || 0)).toLocaleString() + '</td>' +
+          '<td class="td-num">-</td><td style="font-size:12px;color:var(--text2);">원천 ' + (withholding ? '3.3%' : '0%') + '</td><td style="font-size:12px;">' + formatWon(gross) + '<br><span style="color:var(--text3);">-' + formatWon(withholding) + '</span></td>' +
+          '<td class="td-earn">' + formatWon(net) + '</td>' +
           '<td>' + (done ? '<span class="status-pill active">✓ 완료</span>' : '<span class="status-pill" style="background:rgba(245,158,11,0.1);color:#fbbf24;border-color:rgba(245,158,11,0.25);">⏳ 예정</span>') + '</td>' +
           '<td style="font-size:12px;color:var(--text3);">' + (s.paid_at ? String(s.paid_at).slice(0, 10).replace(/-/g, '.') : '-') + '</td></tr>';
       }).join('');

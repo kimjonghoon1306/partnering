@@ -22,10 +22,11 @@ module.exports = async (req, res) => {
 
   try {
     const headers = { apikey: SRK, Authorization: 'Bearer ' + SRK, 'Content-Type': 'application/json' };
-    const q = await fetch(SUPA + '/rest/v1/partner_links?select=id,product_url&code=eq.' + encodeURIComponent(code), { headers });
+    const q = await fetch(SUPA + '/rest/v1/partner_links?select=id,product_url,partner_id,partners(status)&code=eq.' + encodeURIComponent(code), { headers });
     const rows = await q.json();
     if (!Array.isArray(rows) || !rows.length) return go(FALLBACK);
     const link = rows[0];
+    if (link.partners && link.partners.status === 'suspended') return go(FALLBACK);
 
     // 클릭 기록 + 카운트 증가 (실패해도 리다이렉트는 진행)
     fetch(SUPA + '/rest/v1/link_clicks', {

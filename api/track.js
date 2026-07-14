@@ -54,11 +54,42 @@ module.exports = async (req, res) => {
 
   try {
     const headers = { apikey: SRK, Authorization: 'Bearer ' + SRK, 'Content-Type': 'application/json' };
-    const q = await fetch(SUPA + '/rest/v1/partner_links?select=id,partner_id,commission_rate&code=eq.' + encodeURIComponent(code), { headers });
+    const q = await fetch(SUPA + '/rest/v1/partner_links?select=id,partner_id,product_id,commission_rate,partners(status)&code=eq.' + encodeURIComponent(code), { headers });
     const rows = await q.json();
     if (!Array.isArray(rows) || !rows.length) return ok({ ok: false, reason: 'no-link' });
     const link = rows[0];
-    const rate = Number(link.commission_rate) || 0.05;
+    if (link.partners && link.partners.status === 'suspended') return ok({ ok: false, reason: 'suspended' });
+    const baseRate = Number(link.commission_rate) || 0.05;
+    let bonusRate = 0;
+    const today = new Date().toISOString().slice(0, 10);
+    const campUrl = SUPA + '/rest/v1/campaigns?select=title,bonus_rate,target_type,target_value&is_active=eq.true&starts_at=lte.' + encodeURIComponent(today) + '&ends_at=gte.' + encodeURIComponent(today);
+    const campRes = await fetch(campUrl, { headers });
+    const campaigns = campRes.ok ? await campRes.json() : [];
+    let productCategory = null;
+    const needsCategory = Array.isArray(campaigns) && campaigns.some(c => c.target_type === 'category');
+    if (needsCategory && link.product_id) {
+      const productId = encodeURIComponent(String(link.product_id));
+      for (const col of ['category_id', 'category']) {
+        const pRes = await fetch(SUPA + '/rest/v1/products?select=' + col + '&id=eq.' + productId + '&limit=1', { headers });
+        if (!pRes.ok) continue;
+        const pRows = await pRes.json();
+        if (Array.isArray(pRows) && pRows[0] && pRows[0][col] != null) {
+          productCategory = String(pRows[0][col]);
+          break;
+        }
+      }
+    }
+    if (Array.isArray(campaigns)) {
+      campaigns.forEach(c => {
+        const targetType = c.target_type || 'all';
+        const targetValue = c.target_value == null ? '' : String(c.target_value);
+        const matches = targetType === 'all' ||
+          (targetType === 'product' && link.product_id && targetValue === String(link.product_id)) ||
+          (targetType === 'category' && productCategory && targetValue === productCategory);
+        if (matches) bonusRate = Math.max(bonusRate, Number(c.bonus_rate) || 0);
+      });
+    }
+    const rate = baseRate + bonusRate;
     const commission = Math.round(amount * rate);
 
     const ins = await fetch(SUPA + '/rest/v1/conversions', {
