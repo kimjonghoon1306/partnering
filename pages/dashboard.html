@@ -533,25 +533,28 @@
               </div>
             </div>
             <div>
-              <label style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;display:block;margin-bottom:5px;">이름</label>
-              <input class="gen-input" id="set-name" type="text" value="" style="width:100%;">
+              <label style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;display:block;margin-bottom:5px;">이름 (실명)</label>
+              <input class="gen-input" id="set-name" type="text" placeholder="홍길동" style="width:100%;">
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;display:block;margin-bottom:5px;">닉네임 (활동명)</label>
+              <input class="gen-input" id="set-nick" type="text" placeholder="파트너 활동명" style="width:100%;">
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;display:block;margin-bottom:5px;">전화번호</label>
+              <input class="gen-input" id="set-phone" type="tel" placeholder="010-0000-0000" style="width:100%;">
             </div>
             <div>
               <label style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;display:block;margin-bottom:5px;">이메일</label>
               <input class="gen-input" id="set-email" type="email" value="" readonly style="width:100%;opacity:0.7;">
             </div>
             <div>
-              <label style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;display:block;margin-bottom:5px;">활동 채널</label>
-              <input class="gen-input" type="text" value="인스타그램 @kimjihyun_cook" style="width:100%;">
+              <label style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;display:block;margin-bottom:5px;">활동 채널 (쉼표로 구분)</label>
+              <input class="gen-input" id="set-channels" type="text" placeholder="인스타그램, 블로그, 유튜브" style="width:100%;">
             </div>
             <div>
-              <label style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;display:block;margin-bottom:5px;">주력 카테고리</label>
-              <select class="gen-input" style="width:100%;">
-                <option>수산·식품</option>
-                <option>뷰티·화장품</option>
-                <option>패션·의류</option>
-                <option>건강·운동</option>
-              </select>
+              <label style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;display:block;margin-bottom:5px;">주력 카테고리 (쉼표로 구분)</label>
+              <input class="gen-input" id="set-categories" type="text" placeholder="수산·건어물, 과일" style="width:100%;">
             </div>
             <button class="btn-primary" style="width:100%;justify-content:center;" onclick="saveProfile(this)">저장하기</button>
           </div>

@@ -445,7 +445,11 @@ async function loadSettings() {
   if (!p) return;
   const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
   setVal('set-name', p.name);
+  setVal('set-nick', p.nickname);
+  setVal('set-phone', p.phone);
   setVal('set-email', p.email);
+  setVal('set-channels', (p.channels || []).join(', '));
+  setVal('set-categories', (p.categories || []).join(', '));
   setVal('set-account', p.bank_account);
   setVal('set-holder', p.bank_holder);
   const bankEl = document.getElementById('set-bank');
@@ -460,14 +464,21 @@ async function loadSettings() {
 async function saveProfile(btn) {
   if (!window.opClient) return;
   const name = document.getElementById('set-name')?.value.trim();
-  if (!name) { alert('이름을 입력해주세요.'); return; }
+  const nickname = document.getElementById('set-nick')?.value.trim() || null;
+  const phone = document.getElementById('set-phone')?.value.trim() || null;
+  if (!name) { alert('이름(실명)을 입력해주세요.'); return; }
+  const splitList = (id) => (document.getElementById(id)?.value || '').split(',').map(s => s.trim()).filter(Boolean);
+  const channels = splitList('set-channels');
+  const categories = splitList('set-categories');
   const { data: { user } } = await window.opClient.auth.getUser();
   if (!user) { window.location.href = 'login.html'; return; }
   const t = btn.textContent; btn.disabled = true; btn.textContent = '저장 중...';
-  const { error } = await window.opClient.from('partners').update({ name }).eq('id', user.id);
+  const { error } = await window.opClient.from('partners')
+    .update({ name, nickname, phone, channels, categories }).eq('id', user.id);
   btn.disabled = false; btn.textContent = t;
   if (error) { alert('저장 실패: ' + error.message); return; }
   const av = document.getElementById('set-avatar'); if (av) av.textContent = name.slice(0, 1);
+  loadPartnerHeader();   // 사이드바 이름·아바타 즉시 갱신
   alert('프로필이 저장됐어요!');
 }
 async function saveBank(btn) {
