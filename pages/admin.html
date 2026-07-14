@@ -396,7 +396,7 @@
 
 <!-- 캠페인 생성/수정 모달 -->
 <div class="admin-modal-overlay" id="campaign-modal">
-  <div class="admin-modal">
+  <div class="admin-modal admin-modal-campaign">
     <div class="admin-modal-header">
       <div class="admin-modal-title" id="cm-title">새 캠페인</div>
       <button class="admin-modal-close" onclick="closeModal('campaign-modal')">✕</button>
@@ -413,9 +413,21 @@
           <select class="admin-input" id="cm-target-type" onchange="onCampTargetChange()">
             <option value="all">전체 상품</option>
             <option value="category">특정 카테고리</option>
+            <option value="product">특정 상품 선택</option>
           </select>
         </div>
-        <div style="flex:1;display:none;" id="cm-target-value-wrap"><label class="admin-label">카테고리명</label><input class="admin-input" id="cm-target-value" placeholder="예: 선물세트"></div>
+        <div style="flex:1;display:none;" id="cm-target-value-wrap"><label class="admin-label">카테고리</label><select class="admin-input" id="cm-target-value"></select></div>
+      </div>
+      <div class="campaign-product-picker" id="cm-product-wrap" style="display:none;">
+        <div class="campaign-picker-head">
+          <div>
+            <label class="admin-label">대상 상품</label>
+            <div class="campaign-selected-count" id="cm-product-count">선택 0개</div>
+          </div>
+          <select class="admin-input campaign-category-filter" id="cm-product-category" onchange="renderCampaignProductPicker()"></select>
+        </div>
+        <input class="admin-input" id="cm-product-search" placeholder="상품명 검색..." oninput="renderCampaignProductPicker()">
+        <div class="campaign-product-list" id="cm-product-list"></div>
       </div>
       <div style="margin-bottom:14px;"><label class="admin-label">추가 수수료율 (%)</label><input class="admin-input" id="cm-bonus" type="number" min="0" max="30" step="0.5" value="3"></div>
       <div style="display:flex;gap:10px;margin-bottom:16px;">

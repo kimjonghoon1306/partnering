@@ -67,21 +67,34 @@ module.exports = async (req, res) => {
     const baseRate = clampRate(link.commission_rate, 0.05, 0.30);
     let bonusRate = 0;
     const today = new Date().toISOString().slice(0, 10);
-    const campUrl = SUPA + '/rest/v1/campaigns?select=title,bonus_rate,target_type,target_value&is_active=eq.true&starts_at=lte.' + encodeURIComponent(today) + '&ends_at=gte.' + encodeURIComponent(today);
+    const campUrl = SUPA + '/rest/v1/campaigns?select=id,title,bonus_rate,target_type,target_value&is_active=eq.true&starts_at=lte.' + encodeURIComponent(today) + '&ends_at=gte.' + encodeURIComponent(today);
     const campRes = await fetch(campUrl, { headers });
     const campaigns = campRes.ok ? await campRes.json() : [];
     let productCategory = null;
+    let productCategoryName = null;
+    const productCampaignIds = {};
     const needsCategory = Array.isArray(campaigns) && campaigns.some(c => c.target_type === 'category');
+    const needsProductCampaigns = Array.isArray(campaigns) && campaigns.some(c => c.target_type === 'product');
     if (needsCategory && link.product_id) {
       const productId = encodeURIComponent(String(link.product_id));
-      for (const col of ['category_id', 'category']) {
-        const pRes = await fetch(SUPA + '/rest/v1/products?select=' + col + '&id=eq.' + productId + '&limit=1', { headers });
-        if (!pRes.ok) continue;
+      const pRes = await fetch(SUPA + '/rest/v1/products?select=category_id&id=eq.' + productId + '&limit=1', { headers });
+      if (pRes.ok) {
         const pRows = await pRes.json();
-        if (Array.isArray(pRows) && pRows[0] && pRows[0][col] != null) {
-          productCategory = String(pRows[0][col]);
-          break;
+        if (Array.isArray(pRows) && pRows[0] && pRows[0].category_id != null) productCategory = String(pRows[0].category_id);
+      }
+      if (productCategory) {
+        const cRes = await fetch(SUPA + '/rest/v1/categories?select=name&id=eq.' + encodeURIComponent(productCategory) + '&limit=1', { headers });
+        if (cRes.ok) {
+          const cRows = await cRes.json();
+          if (Array.isArray(cRows) && cRows[0] && cRows[0].name != null) productCategoryName = String(cRows[0].name);
         }
+      }
+    }
+    if (needsProductCampaigns && link.product_id) {
+      const cpRes = await fetch(SUPA + '/rest/v1/campaign_products?select=campaign_id&product_id=eq.' + encodeURIComponent(String(link.product_id)), { headers });
+      const cpRows = cpRes.ok ? await cpRes.json() : [];
+      if (Array.isArray(cpRows)) {
+        cpRows.forEach(r => { if (r.campaign_id) productCampaignIds[String(r.campaign_id)] = true; });
       }
     }
     if (Array.isArray(campaigns)) {
@@ -89,8 +102,8 @@ module.exports = async (req, res) => {
         const targetType = c.target_type || 'all';
         const targetValue = c.target_value == null ? '' : String(c.target_value);
         const matches = targetType === 'all' ||
-          (targetType === 'product' && link.product_id && targetValue === String(link.product_id)) ||
-          (targetType === 'category' && productCategory && targetValue === productCategory);
+          (targetType === 'product' && c.id && productCampaignIds[String(c.id)]) ||
+          (targetType === 'category' && productCategory && (targetValue === productCategory || targetValue === productCategoryName));
         if (matches) bonusRate = Math.max(bonusRate, clampRate(c.bonus_rate, 0, 0.30));
       });
     }

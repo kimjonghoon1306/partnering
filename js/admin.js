@@ -1092,13 +1092,97 @@ async function loadFraud() {
 
 // ══════════ 시즌 캠페인 CRUD ══════════
 let __campaigns = [];
+let __campProducts = [];
+let __campCategories = [];
+let __campSelectedProducts = new Set();
+let __campProductCounts = {};
 async function loadCampaigns() {
   if (!window.opClient) return;
   const box = document.getElementById('campaign-list');
-  const { data, error } = await window.opClient.from('campaigns').select('*').order('starts_at', { ascending: false });
-  if (error) { if (box) box.innerHTML = '<div class="adm-empty"><div class="ico">⚠️</div><b>캠페인을 불러오지 못했어요</b>' + admEsc(error.message) + '</div>'; return; }
-  __campaigns = data || [];
+  const [campRes, catRes, cpRes] = await Promise.all([
+    window.opClient.from('campaigns').select('*').order('starts_at', { ascending: false }),
+    window.opClient.from('categories').select('id,name,sort_order').order('sort_order', { ascending: true }),
+    window.opClient.from('campaign_products').select('campaign_id,product_id')
+  ]);
+  if (campRes.error) { if (box) box.innerHTML = '<div class="adm-empty"><div class="ico">⚠️</div><b>캠페인을 불러오지 못했어요</b>' + admEsc(campRes.error.message) + '</div>'; return; }
+  __campaigns = campRes.data || [];
+  if (!catRes.error) __campCategories = catRes.data || [];
+  __campProductCounts = {};
+  if (!cpRes.error) {
+    (cpRes.data || []).forEach(r => {
+      __campProductCounts[String(r.campaign_id)] = (__campProductCounts[String(r.campaign_id)] || 0) + 1;
+    });
+  }
   renderCampaigns();
+}
+async function ensureCampaignPickerData() {
+  if (!window.opClient) return;
+  const needsProducts = !__campProducts.length;
+  const needsCategories = !__campCategories.length;
+  if (!needsProducts && !needsCategories) return;
+  const [pRes, cRes] = await Promise.all([
+    needsProducts ? window.opClient.from('products').select('id,name,retail_price,image_url,category_id,is_active').order('name', { ascending: true }) : Promise.resolve({ data: __campProducts }),
+    needsCategories ? window.opClient.from('categories').select('id,name,sort_order').order('sort_order', { ascending: true }) : Promise.resolve({ data: __campCategories })
+  ]);
+  if (!pRes.error) __campProducts = pRes.data || [];
+  if (!cRes.error) __campCategories = cRes.data || [];
+}
+function renderCampaignCategorySelect(selectedValue) {
+  const sel = document.getElementById('cm-target-value');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">카테고리를 선택하세요</option>' +
+    __campCategories.map(c => '<option value="' + admEsc(c.id) + '">' + admEsc(c.name) + '</option>').join('');
+  if (selectedValue) sel.value = selectedValue;
+}
+function renderCampaignProductFilters() {
+  const sel = document.getElementById('cm-product-category');
+  if (!sel) return;
+  const used = {};
+  __campProducts.forEach(p => { if (p.category_id) used[String(p.category_id)] = true; });
+  const cats = __campCategories.filter(c => used[String(c.id)]);
+  const current = sel.value || 'all';
+  sel.innerHTML = '<option value="all">전체 카테고리</option>' +
+    cats.map(c => '<option value="' + admEsc(c.id) + '">' + admEsc(c.name) + '</option>').join('');
+  sel.value = used[current] ? current : 'all';
+}
+function updateCampaignProductCount() {
+  const el = document.getElementById('cm-product-count');
+  if (el) el.textContent = '선택 ' + __campSelectedProducts.size.toLocaleString() + '개';
+}
+function toggleCampaignProduct(productId, checked) {
+  if (checked) __campSelectedProducts.add(String(productId));
+  else __campSelectedProducts.delete(String(productId));
+  updateCampaignProductCount();
+}
+function renderCampaignProductPicker() {
+  const listEl = document.getElementById('cm-product-list');
+  if (!listEl) return;
+  const q = (document.getElementById('cm-product-search')?.value || '').trim().toLowerCase();
+  const category = document.getElementById('cm-product-category')?.value || 'all';
+  const categoryMap = {};
+  __campCategories.forEach(c => { categoryMap[String(c.id)] = c.name; });
+  const list = __campProducts.filter(p => {
+    const matchesSearch = !q || String(p.name || '').toLowerCase().includes(q);
+    const matchesCategory = category === 'all' || String(p.category_id || '') === category;
+    return matchesSearch && matchesCategory;
+  });
+  updateCampaignProductCount();
+  if (!list.length) {
+    listEl.innerHTML = '<div class="campaign-product-empty">상품이 없어요.</div>';
+    return;
+  }
+  listEl.innerHTML = list.map(p => {
+    const id = String(p.id);
+    const img = (p.image_url && /^https?:\/\//.test(p.image_url)) ? p.image_url : '';
+    const price = Number(p.retail_price || 0).toLocaleString();
+    const checked = __campSelectedProducts.has(id) ? ' checked' : '';
+    return '<label class="campaign-product-option">' +
+      '<input type="checkbox" value="' + admEsc(id) + '"' + checked + ' onchange="toggleCampaignProduct(this.value,this.checked)">' +
+      '<span class="campaign-product-thumb" style="' + (img ? "background-image:url('" + admEsc(img) + "')" : '') + '">' + (img ? '' : '🛒') + '</span>' +
+      '<span class="campaign-product-info"><span class="campaign-product-name">' + admEsc(p.name) + (p.is_active === false ? ' <em>(비활성)</em>' : '') + '</span>' +
+      '<span class="campaign-product-meta">' + (categoryMap[String(p.category_id)] ? admEsc(categoryMap[String(p.category_id)]) + ' · ' : '') + '₩' + admEsc(price) + '</span></span>' +
+    '</label>';
+  }).join('');
 }
 function campStatus(c) {
   const today = new Date().toISOString().slice(0, 10);
@@ -1117,13 +1201,16 @@ function renderCampaigns() {
   const box = document.getElementById('campaign-list');
   if (!box) return;
   if (!__campaigns.length) { box.innerHTML = '<div class="adm-empty"><div class="ico">🎁</div><b>등록된 캠페인이 없어요</b>+ 새 캠페인으로 시즌 프로모션을 만들어보세요</div>'; return; }
+  const categoryMap = {};
+  __campCategories.forEach(c => { categoryMap[String(c.id)] = c.name; });
   box.innerHTML = __campaigns.map(c => {
     const st = campStatus(c);
     const stPill = !c.is_active ? '<span class="camp-status ended">비활성</span>'
       : st === 'scheduled' ? '<span class="camp-status scheduled">예정</span>'
       : st === 'ended' ? '<span class="camp-status ended">종료</span>'
       : '<span class="camp-status live">진행중</span>';
-    const tgt = c.target_type === 'category' ? ('🎯 ' + admEsc(c.target_value || '카테고리')) : c.target_type === 'product' ? '🎯 특정 상품' : '🛒 전체 상품';
+    const categoryName = categoryMap[String(c.target_value || '')] || c.target_value || '카테고리';
+    const tgt = c.target_type === 'category' ? ('카테고리: ' + admEsc(categoryName)) : c.target_type === 'product' ? ('상품 ' + Number(__campProductCounts[String(c.id)] || 0).toLocaleString() + '개') : '전체 상품';
     return '<div class="campaign-card' + (c.is_active ? '' : ' inactive') + '">' +
       '<div class="camp-head"><span class="camp-emoji">' + admEsc(c.emoji || '🎁') + '</span><span class="camp-bonus-badge">+' + fmtRate(c.bonus_rate) + '%</span></div>' +
       '<div class="camp-title">' + admEsc(c.title) + '</div>' +
@@ -1139,20 +1226,31 @@ function renderCampaigns() {
 function onCampTargetChange() {
   const t = document.getElementById('cm-target-type').value;
   document.getElementById('cm-target-value-wrap').style.display = t === 'category' ? '' : 'none';
+  document.getElementById('cm-product-wrap').style.display = t === 'product' ? '' : 'none';
+  if (t === 'product') renderCampaignProductPicker();
 }
-function openCampaignModal(id) {
+async function openCampaignModal(id) {
+  await ensureCampaignPickerData();
   const c = id ? __campaigns.find(x => x.id === id) : null;
+  __campSelectedProducts = new Set();
   document.getElementById('cm-title').textContent = c ? '캠페인 수정' : '새 캠페인';
   document.getElementById('cm-id').value = c ? c.id : '';
   document.getElementById('cm-emoji').value = c ? (c.emoji || '🎁') : '🎁';
   document.getElementById('cm-title-input').value = c ? c.title : '';
   document.getElementById('cm-desc').value = c ? (c.description || '') : '';
   document.getElementById('cm-target-type').value = c ? c.target_type : 'all';
-  document.getElementById('cm-target-value').value = c ? (c.target_value || '') : '';
+  renderCampaignCategorySelect(c ? (c.target_value || '') : '');
+  renderCampaignProductFilters();
+  const productSearch = document.getElementById('cm-product-search');
+  if (productSearch) productSearch.value = '';
   document.getElementById('cm-bonus').value = c ? Number(c.bonus_rate) * 100 : 3;
   document.getElementById('cm-start').value = c ? c.starts_at : '';
   document.getElementById('cm-end').value = c ? c.ends_at : '';
   document.getElementById('cm-active').checked = c ? c.is_active : true;
+  if (c && c.target_type === 'product') {
+    const { data, error } = await window.opClient.from('campaign_products').select('product_id').eq('campaign_id', c.id);
+    if (!error) (data || []).forEach(r => __campSelectedProducts.add(String(r.product_id)));
+  }
   onCampTargetChange();
   openModal('campaign-modal');
 }
@@ -1166,6 +1264,8 @@ async function saveCampaign(btn) {
   if (!starts || !ends) { alert('시작일과 종료일을 입력하세요'); return; }
   if (ends < starts) { alert('종료일이 시작일보다 빠릅니다'); return; }
   const tt = document.getElementById('cm-target-type').value;
+  if (tt === 'category' && !document.getElementById('cm-target-value').value) { alert('카테고리를 선택하세요'); return; }
+  if (tt === 'product' && __campSelectedProducts.size === 0) { alert('상품을 1개 이상 선택하세요'); return; }
   const payload = {
     title,
     description: document.getElementById('cm-desc').value.trim() || null,
@@ -1186,9 +1286,18 @@ async function saveCampaign(btn) {
     error = res.error;
     savedId = res.data?.id || '';
   }
+  if (!error && savedId) {
+    const delRes = await window.opClient.from('campaign_products').delete().eq('campaign_id', savedId);
+    if (delRes.error) error = delRes.error;
+    if (!error && tt === 'product') {
+      const rows = Array.from(__campSelectedProducts).map(productId => ({ campaign_id: savedId, product_id: productId }));
+      const insRes = await window.opClient.from('campaign_products').insert(rows);
+      if (insRes.error) error = insRes.error;
+    }
+  }
   btn.disabled = false; btn.textContent = t;
   if (error) { alert('저장 실패: ' + error.message); return; }
-  await logAdminAction(id ? 'update_campaign' : 'create_campaign', 'campaign', savedId, { title: payload.title, starts_at: payload.starts_at, ends_at: payload.ends_at, bonus_rate: payload.bonus_rate, is_active: payload.is_active });
+  await logAdminAction(id ? 'update_campaign' : 'create_campaign', 'campaign', savedId, { title: payload.title, starts_at: payload.starts_at, ends_at: payload.ends_at, bonus_rate: payload.bonus_rate, is_active: payload.is_active, product_count: tt === 'product' ? __campSelectedProducts.size : 0 });
   closeModal('campaign-modal'); showToast('캠페인 저장 완료 ✅'); loadCampaigns();
 }
 async function toggleCampaign(id, active) {
