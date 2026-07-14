@@ -151,7 +151,7 @@ async function loadCampaignBanner() {
   if (!banner) {
     banner = document.createElement('div');
     banner.id = 'campaign-active-banner';
-    banner.style.cssText = 'display:none;margin:0 0 18px;padding:14px 16px;border:1px solid rgba(190,255,0,.28);background:linear-gradient(90deg,rgba(190,255,0,.16),rgba(190,255,0,.05));color:var(--text1,#fff);border-radius:12px;font-size:14px;line-height:1.55;';
+    banner.style.cssText = 'display:none;margin:0 0 18px;padding:14px 16px;border:1px solid rgba(190,255,0,.28);background:linear-gradient(90deg,rgba(190,255,0,.16),rgba(190,255,0,.05));color:var(--text);border-radius:12px;font-size:14px;line-height:1.55;';
     const overview = document.getElementById('page-overview');
     const links = document.getElementById('page-links');
     if (overview) overview.prepend(banner);
@@ -159,11 +159,9 @@ async function loadCampaignBanner() {
   }
   if (!campaigns.length) { banner.style.display = 'none'; return; }
   banner.innerHTML = campaigns.slice(0, 3).map(c => {
-    const pct = Math.round(Number(c.bonus_rate || 0) * 1000) / 10;
     const icon = c.emoji || '🎁';
     const period = (c.starts_at && c.ends_at) ? ' <span style="color:var(--text2);font-weight:600;">(' + escHtml(fmtCampaignDate(c.starts_at)) + '~' + escHtml(fmtCampaignDate(c.ends_at)) + ')</span>' : '';
-    const rateText = pct > 0 ? ' 기간 내 +' + pct + '% 추가 수수료' : ' 대상 상품 추가 수수료 진행중';
-    return '<div><b style="color:var(--lime);">' + escHtml(icon + ' ' + c.title) + '</b>' + rateText + period + '</div>';
+    return '<div style="color:var(--text);"><b style="color:var(--lime);">' + escHtml(icon + ' ' + c.title) + '</b> 대상 상품 추가 수수료 진행중' + period + '</div>';
   }).join('');
   banner.style.display = 'block';
 }
