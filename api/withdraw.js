@@ -24,7 +24,23 @@ module.exports = async (req, res) => {
     const user = await me.json();
     if (!user || !user.id) { res.statusCode = 401; res.end(JSON.stringify({ ok: false, err: '본인 확인 실패' })); return; }
 
-    // 2) service_role로 본인 계정 완전 삭제
+    // 2) 공유 Supabase 보호: 온파트너 partners row가 있는 사용자만 이 API로 탈퇴 가능
+    const partner = await fetch(SUPA + '/rest/v1/partners?select=id&id=eq.' + encodeURIComponent(user.id) + '&limit=1', {
+      headers: { apikey: SRK, Authorization: 'Bearer ' + SRK }
+    });
+    if (!partner.ok) {
+      res.statusCode = 500;
+      res.end(JSON.stringify({ ok: false, err: '파트너 확인 실패' }));
+      return;
+    }
+    const partnerRows = await partner.json();
+    if (!Array.isArray(partnerRows) || !partnerRows.length) {
+      res.statusCode = 403;
+      res.end(JSON.stringify({ ok: false, err: '온파트너 계정만 탈퇴할 수 있어요' }));
+      return;
+    }
+
+    // 3) service_role로 본인 계정 완전 삭제
     const del = await fetch(SUPA + '/auth/v1/admin/users/' + user.id, {
       method: 'DELETE',
       headers: { apikey: SRK, Authorization: 'Bearer ' + SRK }

@@ -17,7 +17,7 @@ module.exports = async (req, res) => {
   };
   const isAllowedOrigin = () => {
     const raw = req.headers.origin || req.headers.referer || '';
-    if (!raw) return true;
+    if (!raw) return false;
     try {
       const u = new URL(raw);
       return u.protocol === 'https:' && (u.hostname === 'app.yuanfnb.com' || u.hostname.endsWith('.yuanfnb.com'));
@@ -59,7 +59,12 @@ module.exports = async (req, res) => {
     if (!Array.isArray(rows) || !rows.length) return ok({ ok: false, reason: 'no-link' });
     const link = rows[0];
     if (link.partners && link.partners.status === 'suspended') return ok({ ok: false, reason: 'suspended' });
-    const baseRate = Number(link.commission_rate) || 0.05;
+    const clampRate = (v, fallback, max) => {
+      const n = Number(v);
+      if (!Number.isFinite(n) || n < 0) return fallback;
+      return Math.min(n, max);
+    };
+    const baseRate = clampRate(link.commission_rate, 0.05, 0.30);
     let bonusRate = 0;
     const today = new Date().toISOString().slice(0, 10);
     const campUrl = SUPA + '/rest/v1/campaigns?select=title,bonus_rate,target_type,target_value&is_active=eq.true&starts_at=lte.' + encodeURIComponent(today) + '&ends_at=gte.' + encodeURIComponent(today);
@@ -86,10 +91,10 @@ module.exports = async (req, res) => {
         const matches = targetType === 'all' ||
           (targetType === 'product' && link.product_id && targetValue === String(link.product_id)) ||
           (targetType === 'category' && productCategory && targetValue === productCategory);
-        if (matches) bonusRate = Math.max(bonusRate, Number(c.bonus_rate) || 0);
+        if (matches) bonusRate = Math.max(bonusRate, clampRate(c.bonus_rate, 0, 0.30));
       });
     }
-    const rate = baseRate + bonusRate;
+    const rate = Math.min(baseRate + bonusRate, 0.60);
     const commission = Math.round(amount * rate);
 
     const ins = await fetch(SUPA + '/rest/v1/conversions', {

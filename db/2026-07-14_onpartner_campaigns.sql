@@ -19,6 +19,12 @@ create table if not exists campaigns (
   created_at timestamptz not null default now()
 );
 
+alter table campaigns
+  drop constraint if exists campaigns_bonus_rate_range;
+alter table campaigns
+  add constraint campaigns_bonus_rate_range
+  check (bonus_rate >= 0 and bonus_rate <= 0.30) not valid;
+
 alter table campaigns enable row level security;
 
 -- 조회: 누구나(파트너 대시보드 노출용). write: 관리자만.

@@ -55,4 +55,31 @@ create trigger trg_op_harden_partner_link
 before insert or update on partner_links
 for each row execute function op_harden_partner_link();
 
+-- 파트너가 자신의 status를 직접 active로 되돌려 정지를 우회하지 못하게 한다.
+-- 관리자 또는 service_role만 status 변경 가능, 일반 파트너의 다른 프로필 수정은 유지한다.
+create or replace function op_harden_partner_status()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_role text := coalesce(current_setting('request.jwt.claim.role', true), '');
+begin
+  if tg_op = 'UPDATE'
+     and v_role <> 'service_role'
+     and not is_admin()
+     and new.status is distinct from old.status then
+    new.status = old.status;
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_op_harden_partner_status on partners;
+create trigger trg_op_harden_partner_status
+before update on partners
+for each row execute function op_harden_partner_status();
+
 commit;

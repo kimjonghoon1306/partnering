@@ -848,7 +848,8 @@ document.getElementById('settle-hist-search')?.addEventListener('input', functio
 });
 
 function csvEscape(v) {
-  const s = String(v == null ? '' : v);
+  let s = String(v == null ? '' : v);
+  if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
   return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
 }
 function downloadCsv(filename, rows) {
@@ -1032,6 +1033,12 @@ function campStatus(c) {
   return 'live';
 }
 function fmtRate(r) { return (Number(r) * 100).toFixed(1).replace(/\.0$/, ''); }
+function clampCampaignBonusPct(v) {
+  const n = Number(v);
+  if (!Number.isFinite(n) || n < 0) return 0;
+  if (n > 30) return 30;
+  return n;
+}
 function renderCampaigns() {
   const box = document.getElementById('campaign-list');
   if (!box) return;
@@ -1091,7 +1098,7 @@ async function saveCampaign(btn) {
     emoji: document.getElementById('cm-emoji').value || '🎁',
     target_type: tt,
     target_value: tt === 'category' ? (document.getElementById('cm-target-value').value.trim() || null) : null,
-    bonus_rate: (Number(document.getElementById('cm-bonus').value) || 0) / 100,
+    bonus_rate: clampCampaignBonusPct(document.getElementById('cm-bonus').value) / 100,
     starts_at: starts, ends_at: ends,
     is_active: document.getElementById('cm-active').checked
   };
