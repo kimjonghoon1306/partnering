@@ -675,7 +675,7 @@ td {
 tr:last-child td { border-bottom: none; }
 tr:hover td { background: rgba(255,255,255,0.02); }
 
-.td-link { font-weight: 600; color: var(--lime); font-size: 12px; }
+.td-link { font-weight: 600; color: var(--lime); font-size: 12px; white-space: nowrap; max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
 .td-url { color: var(--text2); font-size: 12px; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .td-num { font-weight: 700; }
 .td-earn { font-weight: 800; color: var(--lime); }
@@ -691,6 +691,22 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 }
 .status-pill.active { background: rgba(190,255,0,0.1); color: var(--lime); border: 1px solid var(--lime-border); }
 .status-pill.paused { background: rgba(255,255,255,0.04); color: var(--text3); border: 1px solid var(--border); }
+/* 활성 상태 깜빡이는 초록 점 (PC·모바일 공통) */
+.live-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--lime);
+  flex-shrink: 0;
+  box-shadow: 0 0 5px var(--lime);
+  animation: liveBlink 1.2s ease-in-out infinite;
+}
+@keyframes liveBlink {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.25; transform: scale(0.7); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-dot { animation: none; }
+}
 
 /* ── LINK GENERATOR PANEL ── */
 .gen-panel {

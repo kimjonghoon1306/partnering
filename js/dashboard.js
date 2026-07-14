@@ -651,7 +651,7 @@ async function loadLinks() {
       '<td class="td-num">' + (convCountByLink[l.id] || 0) + '</td>' +
       '<td class="td-earn">' + formatWon(earningsByLink[l.id]) + '</td>' +
       '<td style="font-size:12px;color:var(--text3)">' + date + '</td>' +
-      '<td><span class="status-pill active">● 활성</span></td>' +
+      '<td><span class="status-pill active"><span class="live-dot"></span>활성</span></td>' +
       '<td style="text-align:right;"><button class="link-del-btn" onclick="deleteLink(\'' + escHtml(l.code) + '\',this)" title="' + (isPartnerSuspended() ? '정지된 계정' : '링크 삭제') + '"' + (isPartnerSuspended() ? ' disabled style="opacity:.45;cursor:not-allowed;"' : '') + '>🗑 삭제</button></td>' +
       '</tr>';
   }).join('');
@@ -875,7 +875,7 @@ async function loadOverview() {
       tb.innerHTML = links.slice(0, 5).map(function (l) {
         let shop = '—'; try { shop = new URL(l.product_url).hostname; } catch (e) {}
         const name = l.product_name || l.title || '온종일팜 상품';
-        return '<tr><td><div class="td-link">' + escHtml(name) + '</div></td><td><div class="td-url">' + escHtml(shop) + '</div></td><td class="td-num">' + (l.clicks || 0) + '</td><td class="td-num">' + (convCountByLink[l.id] || 0) + '</td><td class="td-earn">' + formatWon(earningsByLink[l.id]) + '</td><td><span class="status-pill active">● 활성</span></td></tr>';
+        return '<tr><td><div class="td-link">' + escHtml(name) + '</div></td><td><div class="td-url">' + escHtml(shop) + '</div></td><td class="td-num">' + (l.clicks || 0) + '</td><td class="td-num">' + (convCountByLink[l.id] || 0) + '</td><td class="td-earn">' + formatWon(earningsByLink[l.id]) + '</td><td><span class="status-pill active"><span class="live-dot"></span>활성</span></td></tr>';
       }).join('');
     }
   }
