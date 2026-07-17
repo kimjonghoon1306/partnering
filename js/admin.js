@@ -1141,8 +1141,9 @@ async function loadCampaigns() {
   __campaigns = campRes.data || [];
   if (!catRes.error) __campCategories = catRes.data || [];
   // 상품명 매핑 (FK 조인 대신 별도 조회 — campaign_products↔products FK 없음)
+  const prodOk = !prodRes.error;   // 상품 조회 실패 시엔 orphan 판정을 하지 않음(전체 오인 방지)
   const prodNameMap = {};
-  if (!prodRes.error) (prodRes.data || []).forEach(p => { prodNameMap[String(p.id)] = p.name; });
+  if (prodOk) (prodRes.data || []).forEach(p => { prodNameMap[String(p.id)] = p.name; });
   __campProductCounts = {};
   __campProductSummaries = {};
   __campProductOrphans = {};
@@ -1150,13 +1151,13 @@ async function loadCampaigns() {
     (cpRes.data || []).forEach(r => {
       const campaignId = String(r.campaign_id);
       const pid = String(r.product_id);
-      // 온종일팜 상품이 삭제/재등록되면 id가 바뀌어 연결이 끊긴 상품(orphan)
-      const isOrphan = !Object.prototype.hasOwnProperty.call(prodNameMap, pid);
+      // 온종일팜 상품이 삭제/재등록되면 id가 바뀌어 연결이 끊긴 상품(orphan). 상품 조회 실패 시엔 판정 보류.
+      const isOrphan = prodOk && !Object.prototype.hasOwnProperty.call(prodNameMap, pid);
       __campProductCounts[campaignId] = (__campProductCounts[campaignId] || 0) + 1;
       if (isOrphan) __campProductOrphans[campaignId] = (__campProductOrphans[campaignId] || 0) + 1;
       if (!__campProductSummaries[campaignId]) __campProductSummaries[campaignId] = [];
       __campProductSummaries[campaignId].push({
-        name: isOrphan ? '(삭제된 상품)' : prodNameMap[pid],
+        name: isOrphan ? '(삭제된 상품)' : (prodNameMap[pid] || '(상품)'),
         rate: r.bonus_rate,
         orphan: isOrphan
       });

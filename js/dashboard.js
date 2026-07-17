@@ -711,12 +711,14 @@ async function deleteLink(code, btn) {
   if (!window.opClient) return;
   if (blockIfSuspended()) return;
   if (!confirm('이 링크를 삭제할까요?\n삭제하면 이 링크로는 더 이상 클릭·구매가 추적되지 않아요.')) return;
+  const uid = await currentUid();
+  if (!uid) return;
   btn.disabled = true; const t = btn.textContent; btn.textContent = '삭제 중...';
-  const { data, error } = await window.opClient.from('partner_links').delete().eq('code', code).select('id');
+  const { data, error } = await window.opClient.from('partner_links').delete().eq('code', code).eq('partner_id', uid).select('id');
   if (error) {
     btn.disabled = false; btn.textContent = t;
-    // FK 제약(전환 실적 연결) 등으로 삭제가 막힌 경우 안내
-    if (/foreign key|violates|23503/i.test(error.message || '')) {
+    // FK 제약(전환 실적 연결) 등으로 삭제가 막힌 경우 안내 (PostgREST FK 위반 코드)
+    if (error.code === '23503') {
       alert('이 링크는 판매·수익 실적이 연결돼 있어 삭제할 수 없어요.\n수익·정산 이력 보존을 위한 제한이에요.');
     } else {
       alert('삭제 실패: ' + error.message);
@@ -724,9 +726,9 @@ async function deleteLink(code, btn) {
     return;
   }
   if (!data || !data.length) {
-    // 에러는 없지만 실제로 지워진 행이 없음 = 권한(RLS) 등으로 조용히 실패
+    // 에러는 없지만 지워진 행이 없음 = 이미 삭제됐거나 내 소유가 아닌 링크
     btn.disabled = false; btn.textContent = t;
-    alert('이 링크는 삭제되지 않았어요.\n판매 실적이 연결됐거나 삭제 권한이 없을 수 있어요. 문제가 계속되면 알려주세요.');
+    alert('이 링크는 삭제되지 않았어요.\n이미 삭제됐거나 내 링크가 아닐 수 있어요.');
     return;
   }
   loadLinks();      // 목록·배지 갱신
@@ -1005,15 +1007,13 @@ async function pollNotifications() {
   if (!window.opClient || document.hidden) return;
   const uid = await currentUid();
   if (!uid) return;
-  const { data, error } = await window.opClient
-    .from('notifications')
-    .select('id,title,is_read,created_at')
-    .eq('partner_id', uid)
-    .order('created_at', { ascending: false })
-    .limit(20);
-  if (error) return;
-  const list = data || [];
-  setNotificationBadge(list.filter(function (n) { return !n.is_read; }).length);
+  const [listRes, badgeRes] = await Promise.all([
+    window.opClient.from('notifications').select('id,title,is_read,created_at').eq('partner_id', uid).order('created_at', { ascending: false }).limit(5),
+    window.opClient.from('notifications').select('id', { count: 'exact', head: true }).eq('partner_id', uid).eq('is_read', false)
+  ]);
+  if (listRes.error) return;
+  const list = listRes.data || [];
+  if (!badgeRes.error) setNotificationBadge(badgeRes.count || 0);   // 정확한 미읽음 수(20개 제한과 무관)
   const top = list[0] || null;
   // 첫 폴링(초기값 설정)이 아니고, 최상단 알림이 새로 바뀌었고 미읽음이면 토스트
   if (__lastNotifTopId !== null && top && top.id !== __lastNotifTopId && !top.is_read) {
@@ -1118,7 +1118,7 @@ async function loadNotifications() {
   const unreadIds = list.filter(n => !n.is_read).map(n => n.id);
   if (unreadIds.length) {
     setNotificationBadge(0);
-    const { error: readErr } = await window.opClient.from('notifications').update({ is_read: true }).in('id', unreadIds);
+    const { error: readErr } = await window.opClient.from('notifications').update({ is_read: true }).eq('partner_id', uid).in('id', unreadIds);
     if (readErr) {
       console.warn('notification read update failed:', readErr.message);
       setNotificationBadge(unreadIds.length);
@@ -1317,7 +1317,7 @@ function renderConvHistory() {
 }
 function csvCell(v) {
   let s = v == null ? '' : String(v);
-  if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;   // CSV 수식주입 방지
+  if (/^[\s\x00-\x1f]*[=+\-@]/.test(s)) s = "'" + s;   // 선행 공백·제어문자 뒤 수식까지 방지
   if (/[",\n\r]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
   return s;
 }
@@ -1502,8 +1502,8 @@ async function loadWallet() {
   const [accountRes, partnerRes, withdrawalsRes, ledgerRes] = await Promise.all([
     window.opClient.from('cash_accounts').select('cash_balance,point_balance').eq('user_id', user.id).maybeSingle(),
     window.opClient.from('partners').select('bank_name,bank_account,bank_holder').eq('id', user.id).maybeSingle(),
-    window.opClient.from('cash_withdrawals').select('amount,status,bank_name,bank_account,bank_holder,created_at').order('created_at', { ascending: false }).limit(20),
-    window.opClient.from('cash_ledger').select('kind,cash_delta,point_delta,cash_after,point_after,source,ref_type,ref_id,memo,created_at').order('created_at', { ascending: false }).limit(50)
+    window.opClient.from('cash_withdrawals').select('amount,status,bank_name,bank_account,bank_holder,created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(20),
+    window.opClient.from('cash_ledger').select('kind,cash_delta,point_delta,cash_after,point_after,source,ref_type,ref_id,memo,created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(50)
   ]);
   if (accountRes.error && accountRes.error.code !== 'PGRST116') console.warn('[온파트너] 캐시 계좌 로드 오류:', accountRes.error.message);
   if (partnerRes.error && partnerRes.error.code !== 'PGRST116') console.warn('[온파트너] 계좌 로드 오류:', partnerRes.error.message);
