@@ -1236,3 +1236,11 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 .notif-toast-ico { font-size:20px; flex-shrink:0; }
 .notif-toast-text { font-size:13px; font-weight:700; color:var(--text); line-height:1.4; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
 [data-theme="light"] .notif-toast { background:#fff; }
+
+/* ───────── 상세페이지 저장 버튼 ───────── */
+.catalog-viewrow { display:flex; gap:6px; }
+.catalog-viewrow .catalog-view { flex:1; margin-top:0; }
+.catalog-detail-dl { flex:1.25; display:flex; align-items:center; justify-content:center; gap:4px; background:var(--dark4,#1c1c1c); border:1px solid var(--border); color:var(--text); border-radius:var(--radius-sm); padding:9px 6px; font-size:12px; font-weight:800; cursor:pointer; font-family:var(--font); transition:all .15s; white-space:nowrap; }
+.catalog-detail-dl:hover { border-color:var(--lime-border); color:var(--lime); transform:translateY(-1px); }
+.catalog-detail-dl:active { transform:scale(.97); }
+.catalog-detail-dl:disabled { opacity:.6; cursor:wait; transform:none; }

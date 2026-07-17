@@ -523,7 +523,10 @@ function renderCatalog() {
         '<div class="catalog-earn">' + (hasCampaignBonus ? '내 예상 수익' : '내 수익') + ' <b>₩' + earn.toLocaleString() + '</b><span class="catalog-rate' + (hasCampaignBonus ? ' boosted' : '') + '">' +
           (hasCampaignBonus ? escHtml(String(basePct).replace(/\.0$/, '')) + '% → ' + escHtml(String(ratePct).replace(/\.0$/, '')) + '% <em>▲+' + escHtml(String(bonusPct).replace(/\.0$/, '')) + '%</em>' : escHtml(String(ratePct).replace(/\.0$/, '')) + '%') +
         '</span></div>' +
-        '<button class="catalog-view" data-view-product="' + escHtml(p.id) + '" type="button">🔍 상품 상세 보기</button>' +
+        '<div class="catalog-viewrow">' +
+          '<button class="catalog-view" data-view-product="' + escHtml(p.id) + '" type="button">🔍 상세 보기</button>' +
+          '<button class="catalog-detail-dl" data-detail="' + escHtml(p.id) + '" data-detail-name="' + escHtml(p.name) + '" type="button">📄 상세페이지 저장</button>' +
+        '</div>' +
         (p.myCode
           ? '<div class="catalog-mylink"><span title="partner.yuanfnb.com/r/' + p.myCode + '">🔗 partner.yuanfnb.com/r/' + escHtml(p.myCode) + '</span><button class="catalog-copy" data-code="' + escHtml(p.myCode) + '">복사</button></div>' +
             '<div class="catalog-btnrow">' +
@@ -595,6 +598,12 @@ document.getElementById('catalog-grid')?.addEventListener('click', async functio
   if (bannerBtn) {
     if (blockIfSuspended()) return;
     openBannerModal(bannerBtn.dataset.banner);
+    return;
+  }
+  // 상세페이지 저장(워터마크 얹어 다운로드)
+  const detailBtn = e.target.closest('[data-detail]');
+  if (detailBtn) {
+    downloadDetailPage(detailBtn.dataset.detail, detailBtn.dataset.detailName, detailBtn);
     return;
   }
   // 복사
@@ -930,6 +939,66 @@ document.getElementById('banner-copy')?.addEventListener('click', copyBannerText
 document.getElementById('banner-ratios')?.addEventListener('click', function (e) {
   const b = e.target.closest('.banner-ratio'); if (b) setBannerRatio(b.dataset.ratio);
 });
+
+// ───────── 상세페이지 저장 (온종일팜 상세페이지 이미지 + 유출방지 워터마크 타일) ─────────
+// 이미지 전체에 대각선으로 반복되는 워터마크를 얹어 무단 재배포를 억제
+function drawDetailWatermark(ctx, W, H) {
+  ctx.save();
+  const text = '온파트너  ·  partner.yuanfnb.com';
+  const fs = Math.max(20, Math.round(W / 24));
+  ctx.font = '800 ' + fs + 'px Pretendard, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.rotate(-Math.PI / 6);                 // 좌표계 -30도 회전
+  const diag = Math.sqrt(W * W + H * H);
+  const stepX = fs * 17;
+  const stepY = fs * 8;
+  ctx.lineWidth = Math.max(2, fs / 12);
+  for (let y = -diag; y < diag; y += stepY) {
+    for (let x = -diag; x < diag; x += stepX) {
+      ctx.strokeStyle = 'rgba(0,0,0,0.16)';   // 밝은 배경에서도 보이는 외곽선
+      ctx.strokeText(text, x, y);
+      ctx.fillStyle = 'rgba(255,255,255,0.28)';
+      ctx.fillText(text, x, y);
+    }
+  }
+  ctx.restore();
+}
+async function downloadDetailPage(productId, name, btn) {
+  if (!window.opClient) return;
+  const orig = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = '준비 중...'; }
+  try {
+    const { data, error } = await window.opClient.from('products').select('description').eq('id', productId).maybeSingle();
+    if (error) throw new Error('상품 정보를 불러오지 못했어요.');
+    const desc = (data && data.description) || '';
+    const m = desc.match(/src="(data:image\/[^"]+)"/);
+    if (!m) { alert('이 상품은 저장할 상세페이지가 아직 없어요.'); return; }
+    const img = await loadBannerImg(m[1]);
+    if (!img) throw new Error('상세페이지 이미지를 불러오지 못했어요.');
+    const cv = document.createElement('canvas');
+    cv.width = img.width; cv.height = img.height;
+    const ctx = cv.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    drawDetailWatermark(ctx, cv.width, cv.height);
+    await new Promise(function (resolve) {
+      cv.toBlob(function (blob) {
+        if (!blob) { alert('저장에 실패했어요. 다시 시도해 주세요.'); resolve(); return; }
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const safe = String(name || '상품').replace(/[^\w가-힣]+/g, '_').slice(0, 30) || '상품';
+        a.href = url; a.download = '온파트너_상세페이지_' + safe + '.jpg';
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+        resolve();
+      }, 'image/jpeg', 0.9);
+    });
+  } catch (e) {
+    alert((e && e.message) || '상세페이지 저장 중 문제가 생겼어요.');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = orig; }
+  }
+}
 
 // 추천 링크 코드: 닉네임 기반(kjhyun-3f2a). 닉네임 없거나 영숫자 아니면 랜덤.
 function makeRefCode(nick) {
