@@ -1447,3 +1447,16 @@ body {
 .pp-table th.num, .pp-table td.num { text-align: right; }
 .pp-table .lb-name { font-weight: 700; }
 .pp-table .lb-earn { color: var(--lime); font-weight: 800; }
+
+/* ── 전역 설정 폼 ── */
+.settings-form { max-width: 720px; }
+.setting-row { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 18px 0; border-bottom: 1px solid rgba(255,255,255,0.07); }
+.setting-info { min-width: 0; flex: 1; }
+.setting-name { font-size: 14px; font-weight: 700; color: #F5F5F5; margin-bottom: 4px; }
+.setting-desc { font-size: 12px; color: var(--text2); line-height: 1.5; }
+.setting-input { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.setting-input input { background: #1A1A1A; border: 1px solid rgba(255,255,255,0.1); border-radius: 9px; padding: 10px 13px; font-size: 14px; color: #F5F5F5; font-family: var(--font); outline: none; width: 120px; text-align: right; transition: border-color 0.2s; }
+.setting-input input[type="text"] { text-align: left; }
+.setting-input input:focus { border-color: rgba(190,255,0,0.4); }
+.setting-unit { font-size: 13px; color: var(--text2); font-weight: 600; }
+.settings-actions { padding-top: 22px; }

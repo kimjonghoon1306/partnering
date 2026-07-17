@@ -445,7 +445,7 @@ async function loadCatalog() {
   }
   __catalog = (prodRes.data || []).map(p => {
     const product = Object.assign({}, p, {
-      baseRate: clampCatalogRate(rateMap[p.id] != null ? rateMap[p.id] : 0.05, 0.05, 0.30),
+      baseRate: clampCatalogRate(rateMap[p.id] != null ? rateMap[p.id] : (Number(__appSettings.default_commission_rate) / 100), Number(__appSettings.default_commission_rate) / 100, 0.30),
       myCode: myCodeMap[p.id] || null,
       categoryName: categoryMap[String(p.category_id)] || ''
     });
@@ -754,6 +754,19 @@ async function deleteLink(code, btn) {
   loadCatalog();    // 카탈로그 '링크 받기' 상태 복구
 }
 function escHtml(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+// 전역 설정(app_settings) — 관리자가 정한 기본 수수료율·최소출금·정산안내·쿠키기간
+let __appSettings = { default_commission_rate: 5, min_withdrawal: 10000, settlement_notice: '매월 15일 정산 (전월 확정 수수료 기준)', cookie_days: 30 };
+async function loadAppSettings() {
+  if (!window.opClient) return;
+  try {
+    const { data, error } = await window.opClient.from('app_settings').select('key,value');
+    if (error || !data) return;
+    data.forEach(function (r) {
+      if (r.key === 'settlement_notice') { __appSettings.settlement_notice = r.value; }
+      else { const n = Number(r.value); if (!isNaN(n)) __appSettings[r.key] = n; }
+    });
+  } catch (e) {}
+}
 // 현재 로그인 사용자 id — "내 대시보드" 조회를 본인 것으로 한정(관리자 계정이면 RLS상 전체가 보이므로 명시 필터 필수)
 async function currentUid() {
   try { const { data } = await window.opClient.auth.getUser(); return data && data.user ? data.user.id : null; }
@@ -1210,6 +1223,7 @@ async function loadNotifications() {
 // ── 초기화
 document.addEventListener('DOMContentLoaded', () => {
   initNotificationToggles();
+  loadAppSettings();   // 전역 설정(기본 수수료율·최소출금·정산안내) 먼저 로드
   loadPartnerHeader();
   startNotificationPolling();   // 배지 즉시 갱신 + 45초 폴링(준실시간)
   loadCampaignBanner();
@@ -1499,6 +1513,8 @@ async function loadSettlement() {
   const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
   const dEl = document.getElementById('settle-nextdate');
   if (dEl) dEl.textContent = next.getFullYear() + '년 ' + (next.getMonth() + 1) + '월 1일';
+  // 관리자가 정한 정산 주기 안내 문구
+  if (dEl && dEl.nextElementSibling && __appSettings.settlement_notice) dEl.nextElementSibling.textContent = __appSettings.settlement_notice;
   const p = pRes.data;
   const acEl = document.getElementById('settle-account');
   if (acEl) acEl.textContent = (p && p.bank_name && p.bank_account) ? (p.bank_name + ' ' + maskAccount(p.bank_account)) : '미등록 (설정에서 등록)';
@@ -1666,6 +1682,8 @@ async function requestWalletWithdraw(btn) {
   if (!window.opClient) return;
   const amount = walletAmountInput('wallet-withdraw-amount');
   if (amount <= 0) { alert('출금할 금액을 입력해주세요.'); return; }
+  const minW = Number(__appSettings.min_withdrawal) || 0;
+  if (amount < minW) { alert('최소 출금액은 ' + minW.toLocaleString() + '원이에요.\n' + minW.toLocaleString() + '원 이상부터 출금할 수 있어요.'); return; }
   const p = __walletPartnerBank || {};
   if (!(p.bank_name && p.bank_account && p.bank_holder)) { alert('설정에서 출금 계좌를 먼저 등록해주세요.'); showPage('settings'); return; }
   const ok = confirm(formatWon(amount) + ' 출금을 신청할까요?\n' + p.bank_name + ' ' + maskAccount(p.bank_account) + ' / ' + p.bank_holder);

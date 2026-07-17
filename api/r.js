@@ -22,7 +22,13 @@ module.exports = async (req, res) => {
 
   try {
     const headers = { apikey: SRK, Authorization: 'Bearer ' + SRK, 'Content-Type': 'application/json' };
-    const q = await fetch(SUPA + '/rest/v1/partner_links?select=id,product_url,partner_id,partners(status)&code=eq.' + encodeURIComponent(code), { headers });
+    // 링크 + 전역 설정(쿠키 유효기간) 병렬 조회
+    const [q, cs] = await Promise.all([
+      fetch(SUPA + '/rest/v1/partner_links?select=id,product_url,partner_id,partners(status)&code=eq.' + encodeURIComponent(code), { headers }),
+      fetch(SUPA + '/rest/v1/app_settings?select=value&key=eq.cookie_days', { headers }).catch(() => null)
+    ]);
+    let cookieDays = 30;
+    try { const csr = cs && await cs.json(); if (Array.isArray(csr) && csr[0]) { const n = parseInt(csr[0].value, 10); if (n >= 1 && n <= 90) cookieDays = n; } } catch (e) {}
     const rows = await q.json();
     if (!Array.isArray(rows) || !rows.length) return go(FALLBACK);
     const link = rows[0];
@@ -41,10 +47,10 @@ module.exports = async (req, res) => {
       method: 'POST', headers, body: JSON.stringify({ p_link: link.id })
     }).catch(() => {});
 
-    // 30일 전환 추적 쿠키 + 온종일팜 상품으로 이동
+    // 전환 추적 쿠키(관리자 설정 유효기간) + 온종일팜 상품으로 이동
     const base = safeDest(link.product_url);
     const dest = base + (base.includes('?') ? '&' : '?') + 'op_ref=' + encodeURIComponent(code);
-    res.setHeader('Set-Cookie', 'op_ref=' + encodeURIComponent(code) + '; Max-Age=2592000; Path=/; SameSite=Lax; Secure');
+    res.setHeader('Set-Cookie', 'op_ref=' + encodeURIComponent(code) + '; Max-Age=' + (cookieDays * 86400) + '; Path=/; SameSite=Lax; Secure');
     return go(dest);
   } catch (e) {
     return go(FALLBACK);

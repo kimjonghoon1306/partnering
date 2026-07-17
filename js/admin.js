@@ -59,6 +59,7 @@ function showAdminPage(pageId) {
   if (pageId === 'leaderboard') loadLeaderboard();
   if (pageId === 'report') loadReport();
   if (pageId === 'products') loadProductPerf();
+  if (pageId === 'settings') loadGlobalSettings();
   if (pageId === 'review') loadReview();
   if (pageId === 'settle') loadSettle();
   if (pageId === 'settle-history') loadSettleHistory();
@@ -845,6 +846,42 @@ document.getElementById('pp-sort')?.addEventListener('click', function (e) {
   document.querySelectorAll('#pp-sort .lb-range-btn').forEach(function (x) { x.classList.toggle('active', x === b); });
   renderProductPerf();
 });
+
+// ── 전역 설정(app_settings)
+async function loadGlobalSettings() {
+  if (!window.opClient) return;
+  const { data, error } = await window.opClient.from('app_settings').select('key,value');
+  if (error) {
+    showToast(/relation|not exist|PGRST205/i.test(error.message) ? '전역설정 테이블이 아직 없어요(SQL 실행 필요)' : '설정 로드 실패: ' + error.message);
+    return;
+  }
+  const map = {};
+  (data || []).forEach(function (r) { map[r.key] = r.value; });
+  const setVal = function (id, v) { const el = document.getElementById(id); if (el) el.value = v; };
+  setVal('set-commission', map.default_commission_rate != null ? map.default_commission_rate : '5');
+  setVal('set-minwithdraw', map.min_withdrawal != null ? map.min_withdrawal : '10000');
+  setVal('set-settlenotice', map.settlement_notice != null ? map.settlement_notice : '매월 15일 정산 (전월 확정 수수료 기준)');
+  setVal('set-cookiedays', map.cookie_days != null ? map.cookie_days : '30');
+}
+async function saveGlobalSettings(btn) {
+  if (!window.opClient) return;
+  const comm = Math.max(0, Math.min(30, Number(document.getElementById('set-commission').value) || 0));
+  const minw = Math.max(0, Math.round(Number(document.getElementById('set-minwithdraw').value) || 0));
+  const notice = (document.getElementById('set-settlenotice').value || '').trim().slice(0, 80);
+  const cookie = Math.max(1, Math.min(90, Math.round(Number(document.getElementById('set-cookiedays').value) || 30)));
+  const rows = [
+    { key: 'default_commission_rate', value: String(comm), updated_at: new Date().toISOString() },
+    { key: 'min_withdrawal', value: String(minw), updated_at: new Date().toISOString() },
+    { key: 'settlement_notice', value: notice, updated_at: new Date().toISOString() },
+    { key: 'cookie_days', value: String(cookie), updated_at: new Date().toISOString() }
+  ];
+  const t = btn.textContent; btn.disabled = true; btn.textContent = '저장 중...';
+  const { error } = await window.opClient.from('app_settings').upsert(rows, { onConflict: 'key' });
+  btn.disabled = false; btn.textContent = t;
+  if (error) { showToast('저장 실패: ' + error.message); return; }
+  await logAdminAction('update_global_settings', 'app_settings', 'settings', { default_commission_rate: comm, min_withdrawal: minw, cookie_days: cookie });
+  showToast('전역 설정을 저장했어요');
+}
 
 // ── 관리자 오버뷰 실집계
 async function loadAdminOverview() {

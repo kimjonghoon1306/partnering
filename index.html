@@ -438,7 +438,8 @@
   <div class="footer-inner">
     <div>
       <div class="footer-logo"><span>온</span>파트너</div>
-      <div class="footer-copy">© 2026 온파트너 · 온종일팜 공식 제휴 프로그램</div>
+      <!-- 관리자 숨김 진입: 카피라이트를 5회 빠르게 클릭(일반 사용자에겐 그냥 문구) -->
+      <div class="footer-copy" id="footer-copy" style="cursor:default;user-select:none;">© 2026 온파트너 · 온종일팜 공식 제휴 프로그램</div>
     </div>
     <div class="footer-links">
       <a href="#how">서비스 소개</a>
@@ -448,12 +449,25 @@
       <a href="#" onclick="window.OnPartnerIntro?.play(); return false;">🎬 인트로 다시보기</a>
       <a href="pages/terms.html">이용약관</a>
       <a href="pages/privacy.html">개인정보처리방침</a>
-      <a href="pages/admin-login.html" title="관리자" style="opacity:0.55;font-size:16px;transition:opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.55'">⚙️</a>
     </div>
   </div>
 </footer>
 
 <script src="js/intro.js"></script>
 <script src="js/main.js"></script>
+<script>
+  // 관리자 숨김 진입: 푸터 카피라이트를 2초 안에 5번 클릭하면 관리자 로그인으로 (일반 사용자 인지 X)
+  (function () {
+    var el = document.getElementById('footer-copy');
+    if (!el) return;
+    var cnt = 0, timer = null;
+    el.addEventListener('click', function () {
+      cnt++;
+      clearTimeout(timer);
+      timer = setTimeout(function () { cnt = 0; }, 2000);
+      if (cnt >= 5) { cnt = 0; window.location.href = 'pages/admin-login.html'; }
+    });
+  })();
+</script>
 </body>
 </html>
