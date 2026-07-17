@@ -508,7 +508,10 @@ function renderCatalog() {
         '<button class="catalog-view" data-view-product="' + escHtml(p.id) + '" type="button">🔍 상품 상세 보기</button>' +
         (p.myCode
           ? '<div class="catalog-mylink"><span title="partner.yuanfnb.com/r/' + p.myCode + '">🔗 partner.yuanfnb.com/r/' + escHtml(p.myCode) + '</span><button class="catalog-copy" data-code="' + escHtml(p.myCode) + '">복사</button></div>' +
-            '<button class="catalog-regen" data-id="' + escHtml(p.id) + '"' + (suspended ? ' disabled title="정지된 계정" style="opacity:.45;cursor:not-allowed;"' : '') + '>🔄 재발급</button>'
+            '<div class="catalog-btnrow">' +
+              '<button class="catalog-banner" data-banner="' + escHtml(p.id) + '" type="button">🖼 배너 만들기</button>' +
+              '<button class="catalog-regen" data-id="' + escHtml(p.id) + '"' + (suspended ? ' disabled title="정지된 계정" style="opacity:.45;cursor:not-allowed;"' : '') + '>🔄 재발급</button>' +
+            '</div>'
           : '<button class="catalog-getlink btn-primary" data-id="' + escHtml(p.id) + '"' + (suspended ? ' disabled title="정지된 계정" style="opacity:.45;cursor:not-allowed;"' : '') + '>🔗 링크 받기</button>') +
       '</div>' +
     '</div>';
@@ -557,6 +560,13 @@ document.getElementById('catalog-grid')?.addEventListener('click', async functio
   const viewEl = e.target.closest('[data-view-product]');
   if (viewEl) {
     window.open('https://app.yuanfnb.com/shop/product/' + encodeURIComponent(viewEl.dataset.viewProduct), '_blank', 'noopener');
+    return;
+  }
+  // 배너 만들기
+  const bannerBtn = e.target.closest('[data-banner]');
+  if (bannerBtn) {
+    if (blockIfSuspended()) return;
+    openBannerModal(bannerBtn.dataset.banner);
     return;
   }
   // 복사
@@ -685,6 +695,167 @@ function resolveFarmImg(u) {
   if (u.charAt(0) === '/') return 'https://app.yuanfnb.com' + u;  // 온종일팜 도메인 기준 상대경로
   return '';
 }
+
+// ───────── 홍보 배너 생성기 ─────────
+let __bannerProduct = null;
+let __bannerRatio = 'square';
+
+function openBannerModal(productId) {
+  const p = (__catalog || []).find(x => String(x.id) === String(productId));
+  if (!p) return;
+  __bannerProduct = p;
+  __bannerRatio = 'square';
+  document.querySelectorAll('#banner-ratios .banner-ratio').forEach(b => b.classList.toggle('active', b.dataset.ratio === 'square'));
+  const ov = document.getElementById('banner-modal');
+  if (ov) { ov.style.display = 'flex'; document.body.style.overflow = 'hidden'; }
+  const ta = document.getElementById('banner-text');
+  if (ta) ta.value = buildBannerText(p);
+  renderBanner();
+}
+function closeBannerModal() {
+  const ov = document.getElementById('banner-modal');
+  if (ov) { ov.style.display = 'none'; document.body.style.overflow = ''; }
+  __bannerProduct = null;
+}
+function buildBannerText(p) {
+  const price = (Number(p.retail_price) || 0).toLocaleString();
+  const url = 'partner.yuanfnb.com/r/' + (p.myCode || '');
+  return '🍊 ' + p.name + '\n💰 ' + price + '원 · 산지직송\n\n온종일팜에서 신선하게 만나보세요 👇\n' + url;
+}
+function loadBannerImg(src) {
+  return new Promise(function (resolve) {
+    if (!src) { resolve(null); return; }
+    const im = new Image();
+    im.crossOrigin = 'anonymous';
+    im.onload = function () { resolve(im); };
+    im.onerror = function () { resolve(null); };
+    im.src = src;
+  });
+}
+function bannerCover(ctx, img, x, y, w, h) {
+  const ir = img.width / img.height, r = w / h;
+  let sw, sh, sx, sy;
+  if (ir > r) { sh = img.height; sw = sh * r; sx = (img.width - sw) / 2; sy = 0; }
+  else { sw = img.width; sh = sw / r; sx = 0; sy = (img.height - sh) / 2; }
+  ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+}
+function bannerRoundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+function bannerWrap(ctx, text, maxW, maxLines) {
+  const chars = String(text).split('');
+  const lines = [];
+  let line = '';
+  for (let i = 0; i < chars.length; i++) {
+    const test = line + chars[i];
+    if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = chars[i]; }
+    else { line = test; }
+  }
+  if (line) lines.push(line);
+  if (lines.length > maxLines) { lines.length = maxLines; lines[maxLines - 1] = lines[maxLines - 1].slice(0, -1) + '…'; }
+  return lines;
+}
+async function renderBanner() {
+  const p = __bannerProduct;
+  const cv = document.getElementById('banner-canvas');
+  if (!p || !cv) return;
+  const loading = document.getElementById('banner-loading');
+  if (loading) loading.style.display = 'flex';
+  try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch (e) {}
+  const square = __bannerRatio === 'square';
+  const W = square ? 1080 : 1200;
+  const H = square ? 1080 : 630;
+  cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = '#0b0b0b';
+  ctx.fillRect(0, 0, W, H);
+  const img = await loadBannerImg(resolveFarmImg(p.image_url));
+  const lime = '#BEFF00';
+  const price = (Number(p.retail_price) || 0).toLocaleString();
+  if (square) {
+    const imgH = 700;
+    if (img) bannerCover(ctx, img, 0, 0, W, imgH);
+    else { ctx.fillStyle = '#151515'; ctx.fillRect(0, 0, W, imgH); ctx.textAlign = 'center'; ctx.font = '120px sans-serif'; ctx.fillStyle = '#333'; ctx.fillText('🛒', W / 2, imgH / 2 + 40); }
+    const g = ctx.createLinearGradient(0, imgH - 140, 0, imgH);
+    g.addColorStop(0, 'rgba(11,11,11,0)'); g.addColorStop(1, '#0b0b0b');
+    ctx.fillStyle = g; ctx.fillRect(0, imgH - 140, W, 140);
+    const px = 64; let cy = imgH + 56;
+    ctx.textAlign = 'left';
+    ctx.fillStyle = lime; ctx.font = '700 26px Pretendard, sans-serif';
+    ctx.fillText('● 온종일팜 공식 파트너', px, cy); cy += 62;
+    ctx.fillStyle = '#fff'; ctx.font = '800 58px Pretendard, sans-serif';
+    bannerWrap(ctx, p.name, W - px * 2, 2).forEach(function (ln) { ctx.fillText(ln, px, cy); cy += 70; });
+    cy += 14;
+    ctx.fillStyle = lime; ctx.font = '900 78px Pretendard, sans-serif';
+    ctx.fillText(price + '원', px, cy);
+    const btnW = 360, btnH = 92, btnX = W - px - btnW, btnY = H - 60 - btnH;
+    ctx.fillStyle = lime; bannerRoundRect(ctx, btnX, btnY, btnW, btnH, 46); ctx.fill();
+    ctx.fillStyle = '#0b0b0b'; ctx.font = '800 34px Pretendard, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('지금 구매하기 →', btnX + btnW / 2, btnY + btnH / 2 + 12);
+    ctx.textAlign = 'left'; ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.font = '600 26px Pretendard, sans-serif';
+    ctx.fillText('온파트너', px, H - 46);
+  } else {
+    const imgW = 630;
+    if (img) bannerCover(ctx, img, 0, 0, imgW, H);
+    else { ctx.fillStyle = '#151515'; ctx.fillRect(0, 0, imgW, H); }
+    const px = imgW + 56, rw = W - px - 56; let cy = 128;
+    ctx.textAlign = 'left';
+    ctx.fillStyle = lime; ctx.font = '700 24px Pretendard, sans-serif';
+    ctx.fillText('● 온종일팜 공식 파트너', px, cy); cy += 56;
+    ctx.fillStyle = '#fff'; ctx.font = '800 52px Pretendard, sans-serif';
+    bannerWrap(ctx, p.name, rw, 3).forEach(function (ln) { ctx.fillText(ln, px, cy); cy += 64; });
+    cy += 18;
+    ctx.fillStyle = lime; ctx.font = '900 68px Pretendard, sans-serif';
+    ctx.fillText(price + '원', px, cy);
+    const btnW = 320, btnH = 82, btnX = px, btnY = H - 116;
+    ctx.fillStyle = lime; bannerRoundRect(ctx, btnX, btnY, btnW, btnH, 41); ctx.fill();
+    ctx.fillStyle = '#0b0b0b'; ctx.font = '800 32px Pretendard, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('지금 구매하기 →', btnX + btnW / 2, btnY + btnH / 2 + 11);
+    ctx.textAlign = 'left'; ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.font = '600 24px Pretendard, sans-serif';
+    ctx.fillText('온파트너', px, H - 40);
+  }
+  if (loading) loading.style.display = 'none';
+}
+function setBannerRatio(ratio) {
+  __bannerRatio = ratio;
+  document.querySelectorAll('#banner-ratios .banner-ratio').forEach(b => b.classList.toggle('active', b.dataset.ratio === ratio));
+  renderBanner();
+}
+function saveBannerImage() {
+  const cv = document.getElementById('banner-canvas');
+  const p = __bannerProduct;
+  if (!cv || !p) return;
+  cv.toBlob(function (blob) {
+    if (!blob) return;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const safe = String(p.name).replace(/[^\w가-힣]+/g, '_').slice(0, 30) || 'banner';
+    a.href = url; a.download = '온파트너_' + safe + '_' + __bannerRatio + '.png';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }, 'image/png');
+}
+function copyBannerText() {
+  const ta = document.getElementById('banner-text');
+  const btn = document.getElementById('banner-copy');
+  if (!ta) return;
+  const done = function () { if (btn) { const o = btn.textContent; btn.textContent = '복사됨!'; setTimeout(function () { btn.textContent = o; }, 1400); } };
+  if (navigator.clipboard) navigator.clipboard.writeText(ta.value).then(done).catch(function () { ta.select(); try { document.execCommand('copy'); done(); } catch (e) {} });
+  else { ta.select(); try { document.execCommand('copy'); done(); } catch (e) {} }
+}
+document.getElementById('banner-x')?.addEventListener('click', closeBannerModal);
+document.getElementById('banner-modal')?.addEventListener('click', function (e) { if (e.target === this) closeBannerModal(); });
+document.getElementById('banner-save')?.addEventListener('click', saveBannerImage);
+document.getElementById('banner-copy')?.addEventListener('click', copyBannerText);
+document.getElementById('banner-ratios')?.addEventListener('click', function (e) {
+  const b = e.target.closest('.banner-ratio'); if (b) setBannerRatio(b.dataset.ratio);
+});
 
 // 추천 링크 코드: 닉네임 기반(kjhyun-3f2a). 닉네임 없거나 영숫자 아니면 랜덤.
 function makeRefCode(nick) {

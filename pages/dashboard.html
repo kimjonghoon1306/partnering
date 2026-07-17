@@ -648,6 +648,33 @@
   </main>
 </div>
 
+<!-- 홍보 배너 생성기 모달 -->
+<div class="banner-overlay" id="banner-modal" style="display:none;">
+  <div class="banner-box">
+    <div class="banner-box-head">
+      <h3>🖼 홍보 배너 만들기</h3>
+      <button class="banner-x" id="banner-x" type="button">✕</button>
+    </div>
+    <div class="banner-ratios" id="banner-ratios">
+      <button class="banner-ratio active" data-ratio="square" type="button">📱 정사각 (SNS)</button>
+      <button class="banner-ratio" data-ratio="wide" type="button">🖥 가로형 (블로그)</button>
+    </div>
+    <div class="banner-preview">
+      <canvas id="banner-canvas" width="1080" height="1080"></canvas>
+      <div class="banner-loading" id="banner-loading">배너 만드는 중...</div>
+    </div>
+    <div class="banner-text-field">
+      <div class="banner-text-label">홍보 문구 <span>(복사해서 이미지 밑에 붙여넣으세요)</span></div>
+      <textarea id="banner-text" readonly rows="5"></textarea>
+    </div>
+    <div class="banner-actions">
+      <button class="banner-save" id="banner-save" type="button">📥 이미지 저장</button>
+      <button class="banner-copy" id="banner-copy" type="button">📋 문구 복사</button>
+    </div>
+    <div class="banner-hint">💡 저장한 이미지를 올리고, 그 아래 문구를 붙여넣으면 홍보 완성!</div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../js/config.js"></script>
 <script src="../js/db.js"></script>
