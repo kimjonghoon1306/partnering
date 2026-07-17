@@ -1018,7 +1018,7 @@ document.getElementById('settle-hist-search')?.addEventListener('input', functio
 
 function csvEscape(v) {
   let s = String(v == null ? '' : v);
-  if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+  if (/^[\s\x00-\x1f]*[=+\-@]/.test(s)) s = "'" + s;   // 선행 공백·제어문자 뒤 수식까지 방지
   return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
 }
 function downloadCsv(filename, rows) {
@@ -1061,6 +1061,74 @@ async function exportSettlementTaxCsv() {
   downloadCsv('onpartner_settlements_tax_' + new Date().toISOString().slice(0, 10) + '.csv', rows);
   await logAdminAction('export_settlement_tax_csv', 'settlements', 'csv', { row_count: Math.max(rows.length - 1, 0) });
   showToast('CSV 다운로드를 시작했어요');
+}
+
+// ── 전환 내역 전체 CSV (관리자)
+async function exportConversionsCsv() {
+  if (!window.opClient) return;
+  const [convRes, partRes, linkRes] = await Promise.all([
+    window.opClient.from('conversions').select('partner_id,link_id,order_id,order_type,order_amount,commission_rate,commission_amount,status,created_at').order('created_at', { ascending: false }),
+    window.opClient.from('partners').select('id,nickname,name'),
+    window.opClient.from('partner_links').select('id,product_name,title')
+  ]);
+  if (convRes.error) { showToast('CSV 내보내기 실패: ' + convRes.error.message); return; }
+  const pMap = {}; (partRes.data || []).forEach(p => { pMap[p.id] = p.nickname || p.name || ''; });
+  const lMap = {}; (linkRes.data || []).forEach(l => { lMap[l.id] = l.product_name || l.title || ''; });
+  const statusLabel = { pending: '검수대기', confirmed: '확정', settled: '정산완료', canceled: '취소', cancelled: '취소' };
+  const header = ['발생일', '파트너', '상품', '주문번호', '주문유형', '주문금액', '수수료율(%)', '수수료', '상태'];
+  const rows = [header].concat((convRes.data || []).map(c => [
+    admDate(c.created_at),
+    pMap[c.partner_id] || '',
+    lMap[c.link_id] || '',
+    c.order_id || '',
+    c.order_type || '',
+    Math.round(Number(c.order_amount || 0)),
+    Math.round(Number(c.commission_rate || 0) * 1000) / 10,
+    Math.round(Number(c.commission_amount || 0)),
+    statusLabel[c.status] || c.status || ''
+  ]));
+  downloadCsv('onpartner_conversions_' + new Date().toISOString().slice(0, 10) + '.csv', rows);
+  await logAdminAction('export_conversions_csv', 'conversions', 'csv', { row_count: Math.max(rows.length - 1, 0) });
+  showToast('전환 내역 CSV를 내려받았어요');
+}
+
+// ── 파트너 목록 CSV (관리자)
+async function exportPartnersCsv() {
+  if (!window.opClient) return;
+  const [partRes, convRes, linkRes] = await Promise.all([
+    window.opClient.from('partners').select('id,nickname,name,email,phone,status,channels,tax_type,bank_name,bank_account,bank_holder,created_at').order('created_at', { ascending: false }),
+    window.opClient.from('conversions').select('partner_id,commission_amount,status'),
+    window.opClient.from('partner_links').select('partner_id,clicks')
+  ]);
+  if (partRes.error) { showToast('CSV 내보내기 실패: ' + partRes.error.message); return; }
+  const earn = {}, conv = {}, clicks = {};
+  (convRes.data || []).forEach(c => {
+    if (c.status === 'canceled' || c.status === 'cancelled') return;
+    earn[c.partner_id] = (earn[c.partner_id] || 0) + Number(c.commission_amount || 0);
+    conv[c.partner_id] = (conv[c.partner_id] || 0) + 1;
+  });
+  (linkRes.data || []).forEach(l => { clicks[l.partner_id] = (clicks[l.partner_id] || 0) + (Number(l.clicks) || 0); });
+  const statusLabel = { active: '활성', paused: '정지', pending: '대기' };
+  const header = ['가입일', '닉네임', '이름', '이메일', '전화', '상태', '채널', '세금구분', '은행', '계좌', '예금주', '누적클릭', '누적전환', '누적수익'];
+  const rows = [header].concat((partRes.data || []).map(p => [
+    admDate(p.created_at),
+    p.nickname || '',
+    p.name || '',
+    p.email || '',
+    p.phone || '',
+    statusLabel[p.status] || p.status || '',
+    Array.isArray(p.channels) ? p.channels.join(' / ') : (p.channels || ''),
+    taxTypeLabel(p.tax_type),
+    p.bank_name || '',
+    p.bank_account || '',
+    p.bank_holder || '',
+    clicks[p.id] || 0,
+    conv[p.id] || 0,
+    Math.round(earn[p.id] || 0)
+  ]));
+  downloadCsv('onpartner_partners_' + new Date().toISOString().slice(0, 10) + '.csv', rows);
+  await logAdminAction('export_partners_csv', 'partners', 'csv', { row_count: Math.max(rows.length - 1, 0) });
+  showToast('파트너 목록 CSV를 내려받았어요');
 }
 
 function setTxt(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }

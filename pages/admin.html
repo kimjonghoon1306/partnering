@@ -220,6 +220,7 @@
           <div class="admin-table-title">파트너 목록</div>
           <div class="admin-table-actions">
             <input class="admin-search" id="partner-search" placeholder="이름, 이메일 검색...">
+            <button class="admin-csv-btn" onclick="exportPartnersCsv()">📥 CSV 내보내기</button>
           </div>
         </div>
         <div class="admin-table-wrap">
@@ -309,6 +310,7 @@
             <button class="admin-filter-btn" data-status="confirmed">확정</button>
             <button class="admin-filter-btn" data-status="canceled">취소</button>
             <button class="admin-filter-btn" data-status="all">전체</button>
+            <button class="admin-csv-btn" onclick="exportConversionsCsv()">📥 CSV</button>
           </div>
         </div>
         <div class="admin-table-wrap">

@@ -1420,3 +1420,14 @@ body {
 .lb-table tr.lb-top { background:var(--lime-glow); }
 .lb-table tr.lb-top .lb-name { font-weight:900; }
 .lb-empty { text-align:center; padding:40px; color:var(--text3); }
+
+/* ── 관리자 CSV 내보내기 버튼 ── */
+.admin-csv-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 7px 13px; border-radius: 9px;
+  border: 1px solid rgba(190,255,0,0.25); background: rgba(190,255,0,0.08);
+  color: var(--lime); font-size: 12px; font-weight: 800;
+  cursor: pointer; font-family: var(--font); transition: all 0.15s; white-space: nowrap;
+}
+.admin-csv-btn:hover { background: var(--lime); color: #0D0D0D; transform: translateY(-1px); }
+.admin-csv-btn:active { transform: scale(0.96); }
