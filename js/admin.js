@@ -56,6 +56,7 @@ function showAdminPage(pageId) {
   if (pageId === 'partners') loadAdminPartners();
   if (pageId === 'notice') loadNoticeCenter();
   if (pageId === 'overview') loadAdminOverview();
+  if (pageId === 'leaderboard') loadLeaderboard();
   if (pageId === 'review') loadReview();
   if (pageId === 'settle') loadSettle();
   if (pageId === 'settle-history') loadSettleHistory();
@@ -598,6 +599,71 @@ async function loadRecentNoticesFromAudit(box) {
       '</div>';
   }).join('');
 }
+
+// ── 파트너 실적 랭킹(리더보드)
+let __lbRange = 'month';
+async function loadLeaderboard() {
+  const body = document.getElementById('lb-body');
+  if (!window.opClient || !body) return;
+  const [convRes, partRes, linkRes] = await Promise.all([
+    window.opClient.from('conversions').select('partner_id,commission_amount,status,created_at'),
+    window.opClient.from('partners').select('id,nickname,name'),
+    window.opClient.from('partner_links').select('partner_id,clicks')
+  ]);
+  if (convRes.error) { body.innerHTML = '<tr><td colspan="5" class="lb-empty">불러오지 못했어요: ' + admEsc(convRes.error.message) + '</td></tr>'; return; }
+  const nameMap = {};
+  (partRes.data || []).forEach(p => { nameMap[p.id] = p.nickname || p.name || '(파트너)'; });
+  const clicksByP = {};
+  (linkRes.data || []).forEach(l => { clicksByP[l.partner_id] = (clicksByP[l.partner_id] || 0) + (Number(l.clicks) || 0); });
+  const kNow = new Date(Date.now() + 9 * 3600 * 1000);
+  const curYM = kNow.getUTCFullYear() * 12 + kNow.getUTCMonth();
+  const inMonth = function (iso) { const d = new Date(new Date(iso).getTime() + 9 * 3600 * 1000); return d.getUTCFullYear() * 12 + d.getUTCMonth() === curYM; };
+  const stat = {};
+  let totalEarn = 0, totalConv = 0;
+  (convRes.data || []).forEach(function (c) {
+    if (c.status === 'canceled' || c.status === 'cancelled') return;
+    if (__lbRange === 'month' && !inMonth(c.created_at)) return;
+    if (!stat[c.partner_id]) stat[c.partner_id] = { earn: 0, conv: 0 };
+    const amt = Number(c.commission_amount) || 0;
+    stat[c.partner_id].earn += amt; stat[c.partner_id].conv += 1;
+    totalEarn += amt; totalConv += 1;
+  });
+  const rows = Object.keys(nameMap).map(function (pid) {
+    return { name: nameMap[pid], earn: stat[pid] ? stat[pid].earn : 0, conv: stat[pid] ? stat[pid].conv : 0, clicks: clicksByP[pid] || 0 };
+  }).filter(function (r) { return r.earn > 0 || r.conv > 0 || r.clicks > 0; });
+  rows.sort(function (a, b) { return b.earn - a.earn || b.conv - a.conv || b.clicks - a.clicks; });
+  renderLeaderboard(rows, totalEarn, totalConv);
+}
+function renderLeaderboard(rows, totalEarn, totalConv) {
+  const label = __lbRange === 'month' ? '이번 달' : '전체 기간';
+  const sum = document.getElementById('lb-summary');
+  if (sum) {
+    sum.innerHTML = '<div class="lb-sum-item"><span>' + label + ' 활동 파트너</span><b>' + rows.length.toLocaleString() + '명</b></div>' +
+      '<div class="lb-sum-item"><span>' + label + ' 전환</span><b>' + (totalConv || 0).toLocaleString() + '건</b></div>' +
+      '<div class="lb-sum-item"><span>' + label + ' 총 수수료</span><b class="lime">₩' + (totalEarn || 0).toLocaleString() + '</b></div>';
+  }
+  const body = document.getElementById('lb-body');
+  if (!body) return;
+  if (!rows.length) { body.innerHTML = '<tr><td colspan="5" class="lb-empty">아직 실적이 있는 파트너가 없어요.</td></tr>'; return; }
+  const medal = ['🥇', '🥈', '🥉'];
+  body.innerHTML = rows.map(function (r, i) {
+    const rank = i < 3 ? medal[i] : (i + 1);
+    return '<tr class="' + (i < 3 ? 'lb-top' : '') + '">' +
+      '<td class="lb-rank">' + rank + '</td>' +
+      '<td class="lb-name">' + admEsc(r.name) + '</td>' +
+      '<td class="num">' + r.conv.toLocaleString() + '</td>' +
+      '<td class="num">' + r.clicks.toLocaleString() + '</td>' +
+      '<td class="num lb-earn">₩' + r.earn.toLocaleString() + '</td>' +
+      '</tr>';
+  }).join('');
+}
+document.getElementById('lb-range')?.addEventListener('click', function (e) {
+  const b = e.target.closest('.lb-range-btn');
+  if (!b) return;
+  __lbRange = b.dataset.lbRange || 'month';
+  document.querySelectorAll('#lb-range .lb-range-btn').forEach(function (x) { x.classList.toggle('active', x === b); });
+  loadLeaderboard();
+});
 
 // ── 관리자 오버뷰 실집계
 async function loadAdminOverview() {

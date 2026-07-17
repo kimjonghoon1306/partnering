@@ -27,6 +27,7 @@
     <nav class="admin-nav">
       <div class="admin-nav-label">대시보드</div>
       <a class="admin-nav-item" data-page="overview"><span class="admin-nav-icon">📊</span><span class="admin-nav-label">오버뷰</span></a>
+      <a class="admin-nav-item" data-page="leaderboard"><span class="admin-nav-icon">🏆</span><span class="admin-nav-label">파트너 실적</span></a>
 
       <div class="admin-nav-label" style="margin-top:8px;">상품</div>
       <a class="admin-nav-item" data-page="commissions"><span class="admin-nav-icon">🏷️</span><span class="admin-nav-label">상품 마진 설정</span></a>
@@ -141,6 +142,25 @@
               <div class="adm-list-val" id="ov-pend-settle">0</div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 파트너 실적 랭킹(리더보드) -->
+    <div class="admin-page" id="ap-leaderboard">
+      <div class="lb-head">
+        <div class="lb-summary" id="lb-summary"></div>
+        <div class="lb-range" id="lb-range">
+          <button class="lb-range-btn active" data-lb-range="month" type="button">이번 달</button>
+          <button class="lb-range-btn" data-lb-range="all" type="button">전체 기간</button>
+        </div>
+      </div>
+      <div class="admin-card" style="margin-top:16px;">
+        <div class="admin-table-wrap">
+          <table class="admin-table lb-table">
+            <thead><tr><th>순위</th><th>파트너</th><th class="num">전환</th><th class="num">클릭(누적)</th><th class="num">수익</th></tr></thead>
+            <tbody id="lb-body"><tr><td colspan="5" class="lb-empty">불러오는 중...</td></tr></tbody>
+          </table>
         </div>
       </div>
     </div>
