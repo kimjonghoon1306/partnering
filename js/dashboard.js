@@ -681,8 +681,23 @@ async function deleteLink(code, btn) {
   if (blockIfSuspended()) return;
   if (!confirm('이 링크를 삭제할까요?\n삭제하면 이 링크로는 더 이상 클릭·구매가 추적되지 않아요.')) return;
   btn.disabled = true; const t = btn.textContent; btn.textContent = '삭제 중...';
-  const { error } = await window.opClient.from('partner_links').delete().eq('code', code);
-  if (error) { btn.disabled = false; btn.textContent = t; alert('삭제 실패: ' + error.message); return; }
+  const { data, error } = await window.opClient.from('partner_links').delete().eq('code', code).select('id');
+  if (error) {
+    btn.disabled = false; btn.textContent = t;
+    // FK 제약(전환 실적 연결) 등으로 삭제가 막힌 경우 안내
+    if (/foreign key|violates|23503/i.test(error.message || '')) {
+      alert('이 링크는 판매·수익 실적이 연결돼 있어 삭제할 수 없어요.\n수익·정산 이력 보존을 위한 제한이에요.');
+    } else {
+      alert('삭제 실패: ' + error.message);
+    }
+    return;
+  }
+  if (!data || !data.length) {
+    // 에러는 없지만 실제로 지워진 행이 없음 = 권한(RLS) 등으로 조용히 실패
+    btn.disabled = false; btn.textContent = t;
+    alert('이 링크는 삭제되지 않았어요.\n판매 실적이 연결됐거나 삭제 권한이 없을 수 있어요. 문제가 계속되면 알려주세요.');
+    return;
+  }
   loadLinks();      // 목록·배지 갱신
   loadCatalog();    // 카탈로그 '링크 받기' 상태 복구
 }
