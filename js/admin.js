@@ -1127,6 +1127,7 @@ let __campSelectedProducts = new Set();
 let __campProductRates = {};
 let __campProductCounts = {};
 let __campProductSummaries = {};
+let __campProductOrphans = {};
 async function loadCampaigns() {
   if (!window.opClient) return;
   const box = document.getElementById('campaign-list');
@@ -1144,14 +1145,20 @@ async function loadCampaigns() {
   if (!prodRes.error) (prodRes.data || []).forEach(p => { prodNameMap[String(p.id)] = p.name; });
   __campProductCounts = {};
   __campProductSummaries = {};
+  __campProductOrphans = {};
   if (!cpRes.error) {
     (cpRes.data || []).forEach(r => {
       const campaignId = String(r.campaign_id);
+      const pid = String(r.product_id);
+      // 온종일팜 상품이 삭제/재등록되면 id가 바뀌어 연결이 끊긴 상품(orphan)
+      const isOrphan = !Object.prototype.hasOwnProperty.call(prodNameMap, pid);
       __campProductCounts[campaignId] = (__campProductCounts[campaignId] || 0) + 1;
+      if (isOrphan) __campProductOrphans[campaignId] = (__campProductOrphans[campaignId] || 0) + 1;
       if (!__campProductSummaries[campaignId]) __campProductSummaries[campaignId] = [];
       __campProductSummaries[campaignId].push({
-        name: prodNameMap[String(r.product_id)] || r.product_id,
-        rate: r.bonus_rate
+        name: isOrphan ? '(삭제된 상품)' : prodNameMap[pid],
+        rate: r.bonus_rate,
+        orphan: isOrphan
       });
     });
   }
@@ -1279,11 +1286,19 @@ function renderCampaigns() {
       : c.target_type === 'product'
         ? productSummary
         : '<span class="camp-target-strong">전체 상품 +' + fmtRate(c.bonus_rate) + '%</span>';
-    return '<div class="campaign-card' + (c.is_active ? '' : ' inactive') + '">' +
+    const orphanCount = Number(__campProductOrphans[campaignId] || 0);
+    const validCount = productCount - orphanCount;
+    const orphanWarn = (c.target_type === 'product' && orphanCount > 0)
+      ? '<div class="camp-orphan-warn">⚠️ 상품 ' + orphanCount.toLocaleString() + '개가 삭제되어 연결이 풀렸어요.' +
+        (validCount === 0 ? ' <b>지금 뱃지가 표시되지 않아요.</b>' : '') +
+        ' 수정에서 상품을 다시 선택하세요.</div>'
+      : '';
+    return '<div class="campaign-card' + (c.is_active ? '' : ' inactive') + (orphanCount > 0 ? ' has-orphan' : '') + '">' +
       '<div class="camp-head"><span class="camp-emoji">' + admEsc(c.emoji || '🎁') + '</span><span class="camp-bonus-badge">+' + fmtRate(c.bonus_rate) + '%</span></div>' +
       '<div class="camp-title">' + admEsc(c.title) + '</div>' +
       '<div class="camp-desc">' + admEsc(c.description || '') + '</div>' +
       '<div class="camp-meta">📅 ' + admEsc(c.starts_at) + ' ~ ' + admEsc(c.ends_at) + '<br>' + tgt + '</div>' +
+      orphanWarn +
       '<div class="camp-footer">' + stPill + '<div class="camp-actions">' +
         '<button class="camp-icon-btn" title="' + (c.is_active ? '비활성화' : '활성화') + '" onclick="toggleCampaign(\'' + c.id + '\',' + (!c.is_active) + ')">' + (c.is_active ? '⏸' : '▶') + '</button>' +
         '<button class="camp-icon-btn" title="수정" onclick="openCampaignModal(\'' + c.id + '\')">✏️</button>' +
@@ -1304,6 +1319,16 @@ function onCampTargetChange() {
         : '모든 온종일팜 상품에 추가 수수료가 적용됩니다.';
   }
   if (t === 'product') renderCampaignProductPicker();
+}
+function showCampaignOrphanWarn(n) {
+  const el = document.getElementById('cm-orphan-warn');
+  if (!el) return;
+  if (n > 0) {
+    el.innerHTML = '⚠️ 이 캠페인에 걸어둔 상품 <b>' + Number(n).toLocaleString() + '개</b>가 삭제되어 연결이 풀렸어요.<br>아래에서 상품을 다시 선택한 뒤 저장하면 정상 적용돼요.';
+    el.style.display = '';
+  } else {
+    el.style.display = 'none';
+  }
 }
 async function openCampaignModal(id) {
   await ensureCampaignPickerData();
@@ -1327,12 +1352,23 @@ async function openCampaignModal(id) {
   if (c && c.target_type === 'product') {
     const { data, error } = await window.opClient.from('campaign_products').select('product_id,bonus_rate').eq('campaign_id', c.id);
     if (!error) {
+      const validIds = new Set(__campProducts.map(p => String(p.id)));
+      let orphan = 0;
       (data || []).forEach(r => {
         const productId = String(r.product_id);
-        __campSelectedProducts.add(productId);
-        __campProductRates[productId] = fmtRate(r.bonus_rate);
+        if (validIds.has(productId)) {   // 현재 판매 중인 상품만 선택 유지
+          __campSelectedProducts.add(productId);
+          __campProductRates[productId] = fmtRate(r.bonus_rate);
+        } else {
+          orphan++;   // 삭제된 상품 → 선택 제외(저장하면 죽은 연결 자동 정리됨)
+        }
       });
+      showCampaignOrphanWarn(orphan);
+    } else {
+      showCampaignOrphanWarn(0);
     }
+  } else {
+    showCampaignOrphanWarn(0);
   }
   onCampTargetChange();
   openModal('campaign-modal');

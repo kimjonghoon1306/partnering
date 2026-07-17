@@ -933,7 +933,19 @@ body {
 }
 .campaign-card:hover { transform: translateY(-4px); border-color: rgba(190,255,0,0.25); box-shadow: 0 14px 36px rgba(0,0,0,0.4); }
 .campaign-card.inactive { opacity: 0.5; }
+.campaign-card.has-orphan { border-color: rgba(255,176,32,0.45); }
 [data-theme="light"] .campaign-card { background: #FFFFFF; border-color: rgba(0,0,0,0.08); box-shadow: 0 2px 12px rgba(0,0,0,0.05); }
+/* 삭제된 상품 경고 (캠페인 카드 + 편집 모달) */
+.camp-orphan-warn, .campaign-orphan-warn {
+  margin-top: 10px; padding: 9px 11px; border-radius: 8px; font-size: 12px; font-weight: 700; line-height: 1.5;
+  background: rgba(255,176,32,0.12); border: 1px solid rgba(255,176,32,0.4); color: #FFB020;
+}
+.campaign-orphan-warn { margin: 4px 0 10px; }
+.camp-orphan-warn b, .campaign-orphan-warn b { color: #FF8A3D; }
+[data-theme="light"] .camp-orphan-warn, [data-theme="light"] .campaign-orphan-warn {
+  background: rgba(214,120,0,0.1); border-color: rgba(214,120,0,0.35); color: #B45309;
+}
+[data-theme="light"] .camp-orphan-warn b, [data-theme="light"] .campaign-orphan-warn b { color: #C2410C; }
 .camp-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
 .camp-emoji { font-size: 34px; line-height: 1; }
 .camp-bonus-badge {
