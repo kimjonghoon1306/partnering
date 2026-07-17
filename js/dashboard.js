@@ -754,12 +754,12 @@ async function deleteLink(code, btn) {
   loadCatalog();    // 카탈로그 '링크 받기' 상태 복구
 }
 function escHtml(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-// 전역 설정(app_settings) — 관리자가 정한 기본 수수료율·최소출금·정산안내·쿠키기간
+// 전역 설정(op_settings) — 관리자가 정한 기본 수수료율·최소출금·정산안내·쿠키기간
 let __appSettings = { default_commission_rate: 5, min_withdrawal: 10000, settlement_notice: '매월 15일 정산 (전월 확정 수수료 기준)', cookie_days: 30 };
 async function loadAppSettings() {
   if (!window.opClient) return;
   try {
-    const { data, error } = await window.opClient.from('app_settings').select('key,value');
+    const { data, error } = await window.opClient.from('op_settings').select('key,value');
     if (error || !data) return;
     data.forEach(function (r) {
       if (r.key === 'settlement_notice') { __appSettings.settlement_notice = r.value; }

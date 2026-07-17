@@ -847,10 +847,10 @@ document.getElementById('pp-sort')?.addEventListener('click', function (e) {
   renderProductPerf();
 });
 
-// ── 전역 설정(app_settings)
+// ── 전역 설정(op_settings)
 async function loadGlobalSettings() {
   if (!window.opClient) return;
-  const { data, error } = await window.opClient.from('app_settings').select('key,value');
+  const { data, error } = await window.opClient.from('op_settings').select('key,value');
   if (error) {
     showToast(/relation|not exist|PGRST205/i.test(error.message) ? '전역설정 테이블이 아직 없어요(SQL 실행 필요)' : '설정 로드 실패: ' + error.message);
     return;
@@ -876,10 +876,10 @@ async function saveGlobalSettings(btn) {
     { key: 'cookie_days', value: String(cookie), updated_at: new Date().toISOString() }
   ];
   const t = btn.textContent; btn.disabled = true; btn.textContent = '저장 중...';
-  const { error } = await window.opClient.from('app_settings').upsert(rows, { onConflict: 'key' });
+  const { error } = await window.opClient.from('op_settings').upsert(rows, { onConflict: 'key' });
   btn.disabled = false; btn.textContent = t;
   if (error) { showToast('저장 실패: ' + error.message); return; }
-  await logAdminAction('update_global_settings', 'app_settings', 'settings', { default_commission_rate: comm, min_withdrawal: minw, cookie_days: cookie });
+  await logAdminAction('update_global_settings', 'op_settings', 'settings', { default_commission_rate: comm, min_withdrawal: minw, cookie_days: cookie });
   showToast('전역 설정을 저장했어요');
 }
 
