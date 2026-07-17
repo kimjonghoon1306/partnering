@@ -748,6 +748,29 @@ function bannerRoundRect(ctx, x, y, w, h, r) {
   ctx.arcTo(x, y, x + w, y, r);
   ctx.closePath();
 }
+// 상품 이미지 코너에 은은한 워터마크 (다운로드되는 모든 배너 공통)
+function bannerWatermark(ctx, rightX, bottomY) {
+  const label = '온파트너';
+  const fs = 26;
+  ctx.font = '800 ' + fs + 'px Pretendard, sans-serif';
+  ctx.textAlign = 'left';
+  const dotR = 5, gap = 10;
+  const tw = ctx.measureText(label).width;
+  const padX = 18, padY = 11;
+  const h = fs + padY * 2;
+  const w = padX + dotR * 2 + gap + tw + padX;
+  const x = rightX - w - 22, y = bottomY - h - 22;
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,.38)';
+  bannerRoundRect(ctx, x, y, w, h, h / 2); ctx.fill();
+  const cy = y + h / 2;
+  ctx.fillStyle = '#BEFF00';
+  ctx.beginPath(); ctx.arc(x + padX + dotR, cy, dotR, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.95)';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(label, x + padX + dotR * 2 + gap, cy + 1);
+  ctx.restore();
+}
 function bannerWrap(ctx, text, maxW, maxLines) {
   const chars = String(text).split('');
   const lines = [];
@@ -798,8 +821,7 @@ async function renderBanner() {
     ctx.fillStyle = lime; bannerRoundRect(ctx, btnX, btnY, btnW, btnH, 46); ctx.fill();
     ctx.fillStyle = '#0b0b0b'; ctx.font = '800 34px Pretendard, sans-serif'; ctx.textAlign = 'center';
     ctx.fillText('지금 구매하기 →', btnX + btnW / 2, btnY + btnH / 2 + 12);
-    ctx.textAlign = 'left'; ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.font = '600 26px Pretendard, sans-serif';
-    ctx.fillText('온파트너', px, H - 46);
+    bannerWatermark(ctx, W, imgH);
   } else {
     const imgW = 630;
     if (img) bannerCover(ctx, img, 0, 0, imgW, H);
@@ -817,8 +839,7 @@ async function renderBanner() {
     ctx.fillStyle = lime; bannerRoundRect(ctx, btnX, btnY, btnW, btnH, 41); ctx.fill();
     ctx.fillStyle = '#0b0b0b'; ctx.font = '800 32px Pretendard, sans-serif'; ctx.textAlign = 'center';
     ctx.fillText('지금 구매하기 →', btnX + btnW / 2, btnY + btnH / 2 + 11);
-    ctx.textAlign = 'left'; ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.font = '600 24px Pretendard, sans-serif';
-    ctx.fillText('온파트너', px, H - 40);
+    bannerWatermark(ctx, imgW, H);
   }
   if (loading) loading.style.display = 'none';
 }
