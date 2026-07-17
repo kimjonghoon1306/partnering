@@ -380,6 +380,8 @@ const genBtnEl = document.getElementById('gen-btn');
 let __catalog = [];
 let __catalogCategories = [];
 let __catalogCategory = 'all';
+let __catalogSort = 'latest';
+let __catalogCampOnly = false;
 let __catalogVisible = 12;
 const CATALOG_PAGE_SIZE = 12;
 function clampCatalogRate(v, fallback, max) {
@@ -459,11 +461,26 @@ async function loadCatalog() {
 function getCatalogFilteredList() {
   const searchEl = document.getElementById('catalog-search');
   const q = (searchEl?.value || '').trim().toLowerCase();
-  return __catalog.filter(function (p) {
+  const list = __catalog.filter(function (p) {
     const matchesCategory = __catalogCategory === 'all' || String(p.category_id || '') === __catalogCategory;
     const matchesSearch = !q || (p.name || '').toLowerCase().includes(q);
-    return matchesCategory && matchesSearch;
+    const matchesCamp = !__catalogCampOnly || Number(p.campaignBonusRate || 0) > 0;
+    return matchesCategory && matchesSearch && matchesCamp;
   });
+  return sortCatalogList(list);
+}
+function sortCatalogList(list) {
+  const arr = list.slice();
+  const price = function (p) { return Number(p.retail_price) || 0; };
+  const rate = function (p) { return Number(p.rate) || 0; };
+  switch (__catalogSort) {
+    case 'earn_high': arr.sort(function (a, b) { return price(b) * rate(b) - price(a) * rate(a); }); break;
+    case 'rate_high': arr.sort(function (a, b) { return rate(b) - rate(a); }); break;
+    case 'price_low': arr.sort(function (a, b) { return price(a) - price(b); }); break;
+    case 'price_high': arr.sort(function (a, b) { return price(b) - price(a); }); break;
+    // 'latest'는 __catalog 원본 순서(created_at desc) 유지
+  }
+  return arr;
 }
 function renderCatalogFilters() {
   const wrap = document.getElementById('catalog-filters');
@@ -554,6 +571,16 @@ document.getElementById('catalog-filters')?.addEventListener('click', function (
 });
 document.getElementById('catalog-more')?.addEventListener('click', function () {
   __catalogVisible += CATALOG_PAGE_SIZE;
+  renderCatalog();
+});
+document.getElementById('catalog-sort')?.addEventListener('change', function () {
+  __catalogSort = this.value || 'latest';
+  __catalogVisible = CATALOG_PAGE_SIZE;
+  renderCatalog();
+});
+document.getElementById('catalog-camp-only')?.addEventListener('change', function () {
+  __catalogCampOnly = this.checked;
+  __catalogVisible = CATALOG_PAGE_SIZE;
   renderCatalog();
 });
 document.getElementById('catalog-grid')?.addEventListener('click', async function (e) {

@@ -205,7 +205,19 @@
           </div>
           <input class="search-input" id="catalog-search" type="text" placeholder="상품 검색...">
         </div>
-        <div class="catalog-filters" id="catalog-filters"></div>
+        <div class="catalog-toolbar">
+          <div class="catalog-filters" id="catalog-filters"></div>
+          <div class="catalog-tools">
+            <label class="catalog-camp-toggle"><input type="checkbox" id="catalog-camp-only"> 🎁 캠페인만</label>
+            <select class="catalog-sort" id="catalog-sort">
+              <option value="latest">최신순</option>
+              <option value="earn_high">수익 높은순</option>
+              <option value="rate_high">수익률 높은순</option>
+              <option value="price_low">가격 낮은순</option>
+              <option value="price_high">가격 높은순</option>
+            </select>
+          </div>
+        </div>
         <div class="catalog-grid" id="catalog-grid">
           <div class="catalog-empty">상품을 불러오는 중...</div>
         </div>
