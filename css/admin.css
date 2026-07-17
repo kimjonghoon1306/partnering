@@ -1460,3 +1460,9 @@ body {
 .setting-input input:focus { border-color: rgba(190,255,0,0.4); }
 .setting-unit { font-size: 13px; color: var(--text2); font-weight: 600; }
 .settings-actions { padding-top: 22px; }
+
+/* ── 파트너 상세: 링크 삭제 버튼 ── */
+.pd-link-del { padding: 5px 11px; border-radius: 8px; border: 1px solid rgba(255,77,106,0.3); background: rgba(255,77,106,0.08); color: #FF6B6B; font-size: 12px; font-weight: 700; cursor: pointer; font-family: var(--font); transition: all 0.15s; white-space: nowrap; }
+.pd-link-del:hover { background: #FF4D6A; color: #fff; }
+.pd-link-del:active { transform: scale(0.95); }
+.pd-link-del:disabled { opacity: 0.6; cursor: wait; }

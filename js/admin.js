@@ -423,11 +423,45 @@ function renderPartnerDetail(p, links, convs, settlements, clickCount) {
         detailMetric('총 수수료', admMoney(totalCommission)) + detailMetric('정산완료액', admMoney(paidAmount)) +
       '</div></section>' +
     '</div>' +
+    '<section class="partner-detail-section partner-detail-recent"><h4>발급 링크 (' + links.length + ')</h4>' +
+      '<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>상품</th><th>링크코드</th><th class="num">클릭</th><th class="num">전환</th><th>발급일</th><th style="text-align:right;">관리</th></tr></thead><tbody>' +
+        (links.length ? links.map(function (l) {
+          return '<tr>' +
+            '<td>' + admEsc(l.product_name || l.title || '-') + '</td>' +
+            '<td style="font-family:monospace;font-size:12px;color:var(--text2);">' + admEsc(l.code) + '</td>' +
+            '<td class="num">' + Number(l.clicks || 0).toLocaleString() + '</td>' +
+            '<td class="num">' + Number(l.conversions || 0).toLocaleString() + '</td>' +
+            '<td style="font-size:12px;color:var(--text3);">' + admEsc(admDate(l.created_at)) + '</td>' +
+            '<td style="text-align:right;"><button class="pd-link-del" onclick="adminDeleteLink(\'' + admEsc(l.id) + '\',\'' + admEsc(p.id) + '\',this)">🗑 삭제</button></td>' +
+          '</tr>';
+        }).join('') : '<tr><td colspan="6"><div class="adm-empty"><b>발급한 링크가 없어요</b></div></td></tr>') +
+      '</tbody></table></div>' +
+    '</section>' +
     '<section class="partner-detail-section partner-detail-recent"><h4>최근 전환 5건</h4>' +
       '<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>발생일</th><th>상품</th><th>주문금액</th><th>수수료</th><th>상태</th></tr></thead><tbody>' +
         (recentRows || '<tr><td colspan="5"><div class="adm-empty"><b>전환 내역이 없어요</b></div></td></tr>') +
       '</tbody></table></div>' +
     '</section>';
+}
+async function adminDeleteLink(linkId, partnerId, btn) {
+  if (!window.opClient) return;
+  if (!confirm('이 링크를 완전히 삭제할까요?\n삭제하면 이 링크의 클릭·추적 기록도 함께 사라지고, 되돌릴 수 없어요.')) return;
+  btn.disabled = true; const t = btn.textContent; btn.textContent = '삭제 중...';
+  const { data, error } = await window.opClient.from('partner_links').delete().eq('id', linkId).select('id');
+  if (error) {
+    btn.disabled = false; btn.textContent = t;
+    if (error.code === '23503') { showToast('정산 기록이 연결돼 있어 삭제할 수 없어요'); }
+    else { showToast('삭제 실패: ' + error.message); }
+    return;
+  }
+  if (!data || !data.length) {
+    btn.disabled = false; btn.textContent = t;
+    showToast('삭제되지 않았어요(관리자 삭제 권한 SQL 실행 필요)');
+    return;
+  }
+  await logAdminAction('delete_partner_link', 'partner_link', linkId, { partner_id: partnerId });
+  showToast('링크를 삭제했어요');
+  openPartnerDetail(partnerId);   // 목록 새로고침
 }
 async function openPartnerDetail(partnerId) {
   if (!window.opClient) return;
@@ -436,7 +470,7 @@ async function openPartnerDetail(partnerId) {
   openModal('partner-detail-modal');
   const [pRes, lRes, cRes, sRes] = await Promise.all([
     window.opClient.from('partners').select('id,name,nickname,email,phone,channels,categories,status,bank_name,bank_account,bank_holder,tax_type,resident_no,business_no,business_name,created_at').eq('id', partnerId).single(),
-    window.opClient.from('partner_links').select('id').eq('partner_id', partnerId),
+    window.opClient.from('partner_links').select('id,code,title,product_name,clicks,conversions,created_at').eq('partner_id', partnerId).order('created_at', { ascending: false }),
     window.opClient.from('conversions').select('id,status,commission_amount,order_amount,created_at,link_id,partner_id,partner_links(title)').eq('partner_id', partnerId).order('created_at', { ascending: false }),
     window.opClient.from('settlements').select('status,total_amount,net_amount').eq('partner_id', partnerId)
   ]);
