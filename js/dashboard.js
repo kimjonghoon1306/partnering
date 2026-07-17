@@ -615,7 +615,7 @@ document.getElementById('catalog-grid')?.addEventListener('click', async functio
   if (blockIfSuspended()) return;
   const p = __catalog.find(x => x.id === btn.dataset.id);
   if (!p || !window.opClient) return;
-  if (regenBtn && !confirm('재발급하면 기존 링크는 더 이상 작동하지 않아요.\n새 링크로 바꿀까요?')) return;
+  if (regenBtn && !confirm('🔄 이 상품의 링크를 새로 발급할까요?\n\n⚠️ 이미 블로그·인스타·카톡 등에 올린 이전 링크가 있으면, 그 게시물의 링크도 전부 작동을 멈춰요.\n(그 링크로 들어오는 사람은 추적·수익이 안 생겨요)\n\n✅ 지금까지 쌓인 클릭·수익 실적은 그대로 유지돼요.\n\n계속할까요?')) return;
 
   const t = btn.textContent; btn.disabled = true; btn.textContent = regenBtn ? '재발급 중...' : '생성 중...';
   const { data: { user } } = await window.opClient.auth.getUser();
