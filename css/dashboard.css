@@ -1228,3 +1228,11 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 .catalog-sort { background:var(--dark4,#1c1c1c); border:1px solid var(--border); color:var(--text); border-radius:9px; padding:8px 12px; font-size:13px; font-weight:600; font-family:var(--font); cursor:pointer; transition:border-color .15s; }
 .catalog-sort:hover { border-color:var(--lime-border); }
 @media (max-width:560px){ .catalog-tools{ width:100%; justify-content:space-between; } .catalog-camp-toggle{ font-size:12px; } }
+
+/* ───────── 준실시간 알림 토스트 ───────── */
+.notif-toast { position:fixed; top:76px; right:20px; z-index:1100; display:flex; align-items:center; gap:10px; background:var(--dark2,#141414); border:1px solid var(--lime-border); border-radius:12px; padding:13px 16px; box-shadow:0 12px 32px rgba(0,0,0,.5); cursor:pointer; max-width:320px; transform:translateX(120%); opacity:0; transition:transform .3s ease, opacity .3s ease; }
+.notif-toast.show { transform:translateX(0); opacity:1; }
+.notif-toast:hover { border-color:var(--lime); }
+.notif-toast-ico { font-size:20px; flex-shrink:0; }
+.notif-toast-text { font-size:13px; font-weight:700; color:var(--text); line-height:1.4; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+[data-theme="light"] .notif-toast { background:#fff; }

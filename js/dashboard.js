@@ -988,11 +988,64 @@ function setNotificationBadge(n) {
 
 async function loadNotificationBadge() {
   if (!window.opClient) return;
+  const uid = await currentUid();
+  if (!uid) return;
   const { count, error } = await window.opClient
     .from('notifications')
     .select('id', { count: 'exact', head: true })
+    .eq('partner_id', uid)
     .eq('is_read', false);
   if (!error) setNotificationBadge(count || 0);
+}
+
+// ── 준실시간 알림(폴링): 새 알림 도착 시 배지 갱신 + 토스트 (새로고침 없이)
+let __lastNotifTopId = null;
+let __notifPollTimer = null;
+async function pollNotifications() {
+  if (!window.opClient || document.hidden) return;
+  const uid = await currentUid();
+  if (!uid) return;
+  const { data, error } = await window.opClient
+    .from('notifications')
+    .select('id,title,is_read,created_at')
+    .eq('partner_id', uid)
+    .order('created_at', { ascending: false })
+    .limit(20);
+  if (error) return;
+  const list = data || [];
+  setNotificationBadge(list.filter(function (n) { return !n.is_read; }).length);
+  const top = list[0] || null;
+  // 첫 폴링(초기값 설정)이 아니고, 최상단 알림이 새로 바뀌었고 미읽음이면 토스트
+  if (__lastNotifTopId !== null && top && top.id !== __lastNotifTopId && !top.is_read) {
+    showNotifToast(top.title || '새 알림이 도착했어요');
+    const np = document.getElementById('page-notifications');
+    if (np && np.classList.contains('active')) loadNotifications();
+  }
+  __lastNotifTopId = top ? top.id : null;
+}
+function startNotificationPolling() {
+  if (__notifPollTimer) return;
+  pollNotifications();
+  __notifPollTimer = setInterval(pollNotifications, 45000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) pollNotifications(); });
+}
+function showNotifToast(text) {
+  let el = document.getElementById('notif-toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'notif-toast';
+    el.className = 'notif-toast';
+    document.body.appendChild(el);
+    el.addEventListener('click', function () { showPage('notifications'); hideNotifToast(); });
+  }
+  el.innerHTML = '<span class="notif-toast-ico">🔔</span><span class="notif-toast-text">' + escHtml(text) + '</span>';
+  el.classList.add('show');
+  clearTimeout(el.__t);
+  el.__t = setTimeout(hideNotifToast, 5000);
+}
+function hideNotifToast() {
+  const el = document.getElementById('notif-toast');
+  if (el) el.classList.remove('show');
 }
 
 function notificationMeta(type) {
@@ -1049,9 +1102,12 @@ async function loadNotifications() {
   if (!window.opClient) return;
   const box = document.querySelector('#page-notifications .notif-list');
   if (box) box.innerHTML = '<div class="notif-empty"><div class="notif-empty-icon">🔔</div><div class="notif-title">알림을 불러오는 중...</div></div>';
+  const uid = await currentUid();
+  if (!uid) return;
   const { data, error } = await window.opClient
     .from('notifications')
     .select('id,type,title,body,is_read,created_at')
+    .eq('partner_id', uid)
     .order('created_at', { ascending: false });
   if (error) {
     if (box) box.innerHTML = '<div class="notif-empty"><div class="notif-empty-icon">🔔</div><div class="notif-title">알림을 불러오지 못했어요</div><div class="notif-sub">' + escHtml(error.message) + '</div></div>';
@@ -1076,7 +1132,7 @@ async function loadNotifications() {
 document.addEventListener('DOMContentLoaded', () => {
   initNotificationToggles();
   loadPartnerHeader();
-  loadNotificationBadge();
+  startNotificationPolling();   // 배지 즉시 갱신 + 45초 폴링(준실시간)
   loadCampaignBanner();
   showPage('overview');   // → loadOverview() 실집계 호출
   updateChart('7d');
