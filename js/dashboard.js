@@ -548,7 +548,17 @@ function renderCatalog() {
       if (card) {
         card.scrollIntoView({ behavior: 'smooth', block: 'center' });
         card.classList.add('catalog-card-highlight');
-        setTimeout(function () { card.classList.remove('catalog-card-highlight'); }, 2600);
+        // "👉 이 상품이에요!" 플로팅 배지로 확실히 티나게
+        const existing = card.querySelector('.ad-here-badge');
+        if (existing) existing.remove();
+        const badge = document.createElement('div');
+        badge.className = 'ad-here-badge';
+        badge.textContent = '👉 이 상품이에요!';
+        card.appendChild(badge);
+        setTimeout(function () {
+          card.classList.remove('catalog-card-highlight');
+          badge.remove();
+        }, 3200);
       }
     }, 120);
   }

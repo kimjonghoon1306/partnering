@@ -394,13 +394,33 @@ body {
 }
 /* 광고에서 넘어온 상품 카드 강조 */
 .catalog-card-highlight {
-  animation: catalogPulse 2.6s ease;
+  animation: catalogHighlight 3.2s cubic-bezier(.22,.61,.36,1);
   border-color: var(--lime) !important;
+  position: relative;
+  z-index: 3;
 }
-@keyframes catalogPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(190,255,0,0); }
-  15%, 55% { box-shadow: 0 0 0 4px var(--lime-glow), 0 12px 30px var(--lime-glow); }
+@keyframes catalogHighlight {
+  0%   { transform: scale(1);    box-shadow: 0 0 0 0 rgba(190,255,0,0); }
+  7%   { transform: scale(1.07); box-shadow: 0 0 0 6px rgba(190,255,0,.45), 0 0 44px 8px var(--lime-glow); }
+  14%  { transform: scale(1.0); }
+  21%  { transform: scale(1.045); box-shadow: 0 0 0 5px rgba(190,255,0,.4), 0 0 36px 6px var(--lime-glow); }
+  28%  { transform: scale(1.0); }
+  38%, 58%, 78% { box-shadow: 0 0 0 5px rgba(190,255,0,.5), 0 0 34px 5px var(--lime-glow); border-color: var(--lime); }
+  48%, 68%, 88% { box-shadow: 0 0 0 2px rgba(190,255,0,.15), 0 10px 26px var(--lime-glow); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(190,255,0,0); }
 }
+.ad-here-badge {
+  position: absolute; top: -15px; left: 50%; transform: translateX(-50%);
+  background: var(--lime); color: #0b0b0b; font-weight: 900; font-size: 13px;
+  padding: 6px 15px; border-radius: 20px; white-space: nowrap; z-index: 6;
+  box-shadow: 0 8px 22px rgba(190,255,0,.5); pointer-events: none;
+  animation: adHereBounce .55s ease-in-out infinite alternate;
+}
+.ad-here-badge::after {
+  content: ''; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%) rotate(45deg);
+  width: 10px; height: 10px; background: var(--lime);
+}
+@keyframes adHereBounce { from { transform: translateX(-50%) translateY(0); } to { transform: translateX(-50%) translateY(-6px); } }
 .partner-ad-dots {
   position: absolute;
   left: 30px;
