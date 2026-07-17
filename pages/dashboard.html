@@ -298,6 +298,19 @@
           <div class="chart-empty">불러오는 중...</div>
         </div>
       </div>
+
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div class="chart-card-title">전환 내역</div>
+          <button class="csv-export-btn" id="earnings-csv-btn" type="button">📥 CSV 내보내기</button>
+        </div>
+        <div class="conv-table-wrap">
+          <table class="conv-table">
+            <thead><tr><th>발생일</th><th>상품</th><th>주문번호</th><th class="num">주문금액</th><th class="num">수수료</th><th>상태</th></tr></thead>
+            <tbody id="conv-history-body"><tr><td colspan="6" class="conv-empty">불러오는 중...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
     <!-- ══════════ 페이지: 정산 내역 ══════════ -->

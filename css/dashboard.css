@@ -688,6 +688,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   border-radius: 20px;
   font-size: 11px;
   font-weight: 700;
+  white-space: nowrap;
 }
 .status-pill.active { background: rgba(190,255,0,0.1); color: var(--lime); border: 1px solid var(--lime-border); }
 .status-pill.paused { background: rgba(255,255,255,0.04); color: var(--text3); border: 1px solid var(--border); }
@@ -1198,3 +1199,22 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 .banner-copy:active { transform:scale(.97); }
 .banner-hint { margin-top:12px; font-size:12px; color:var(--text3); text-align:center; line-height:1.5; }
 [data-theme="light"] .banner-box { background:#fff; }
+
+/* ───────── 성과 리포트: 전환 내역 + CSV ───────── */
+.csv-export-btn { display:inline-flex; align-items:center; gap:5px; background:var(--lime-glow); border:1px solid var(--lime-border); color:var(--lime); border-radius:10px; padding:9px 14px; font-size:13px; font-weight:800; cursor:pointer; font-family:var(--font); transition:all .15s; }
+.csv-export-btn:hover { background:var(--lime); color:#0b0b0b; transform:translateY(-1px); }
+.csv-export-btn:active { transform:scale(.97); }
+.conv-table-wrap { overflow-x:auto; }
+.conv-table { width:100%; border-collapse:collapse; font-size:13px; }
+.conv-table th { text-align:left; padding:10px 12px; color:var(--text3); font-weight:700; font-size:12px; border-bottom:1px solid var(--border); white-space:nowrap; }
+.conv-table th.num { text-align:right; }
+.conv-table td { padding:12px; border-bottom:1px solid var(--border); vertical-align:middle; }
+.conv-table td.num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.conv-table .conv-comm { color:var(--lime); font-weight:800; }
+.conv-date { color:var(--text2); white-space:nowrap; font-size:12px; }
+.conv-oid { color:var(--text3); font-size:12px; font-family:monospace; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.conv-empty { text-align:center; padding:40px 12px; color:var(--text3); line-height:1.7; }
+.status-pill.pending { background:rgba(255,176,32,.12); color:#FFB020; border:1px solid rgba(255,176,32,.3); }
+.status-pill.confirmed { background:rgba(190,255,0,.1); color:var(--lime); border:1px solid var(--lime-border); }
+.status-pill.settled { background:rgba(90,160,255,.12); color:#5AA0FF; border:1px solid rgba(90,160,255,.3); }
+.status-pill.canceled { background:rgba(255,90,90,.1); color:#FF6B6B; border:1px solid rgba(255,90,90,.3); }

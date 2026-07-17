@@ -1180,7 +1180,80 @@ async function loadEarnings() {
   buildMonthlyEarningsData(valid);
   const active = document.querySelector('#page-earnings .period-btn.active[data-earnings-range]')?.dataset.earningsRange || '6m';
   renderMonthlyEarningsChart(active);
+  loadConvHistory();
 }
+
+// ── 전환 내역 + CSV 내보내기 (성과 리포트)
+let __convHistory = [];
+async function loadConvHistory() {
+  const body = document.getElementById('conv-history-body');
+  if (!window.opClient || !body) return;
+  const uid = await currentUid();
+  if (!uid) return;
+  const [cRes, lRes] = await Promise.all([
+    window.opClient.from('conversions').select('link_id,order_id,order_type,order_amount,commission_rate,commission_amount,status,created_at').eq('partner_id', uid).order('created_at', { ascending: false }),
+    window.opClient.from('partner_links').select('id,product_name,title').eq('partner_id', uid)
+  ]);
+  const lm = {};
+  (lRes.data || []).forEach(function (l) { lm[l.id] = l.product_name || l.title || ''; });
+  __convHistory = (cRes.data || []).map(function (c) {
+    return {
+      date: c.created_at, product: lm[c.link_id] || '(상품)', orderId: c.order_id || '',
+      orderAmount: Number(c.order_amount || 0), rate: Number(c.commission_rate || 0),
+      commission: Number(c.commission_amount || 0), status: c.status || ''
+    };
+  });
+  renderConvHistory();
+}
+function convStatusInfo(s) {
+  return ({ pending: ['검수 대기', 'pending'], confirmed: ['확정', 'confirmed'], settled: ['정산 완료', 'settled'], canceled: ['취소', 'canceled'], cancelled: ['취소', 'canceled'] })[s] || [s || '-', 'pending'];
+}
+function fmtConvDate(iso) {
+  const d = new Date(iso); if (isNaN(d)) return '';
+  const p = function (n) { return String(n).padStart(2, '0'); };
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+}
+function renderConvHistory() {
+  const body = document.getElementById('conv-history-body');
+  if (!body) return;
+  if (!__convHistory.length) {
+    body.innerHTML = '<tr><td colspan="6" class="conv-empty">아직 전환 내역이 없어요.<br>내 링크로 첫 구매가 발생하면 여기에 표시돼요.</td></tr>';
+    return;
+  }
+  body.innerHTML = __convHistory.slice(0, 100).map(function (c) {
+    const si = convStatusInfo(c.status);
+    return '<tr>' +
+      '<td class="conv-date">' + escHtml(fmtConvDate(c.date)) + '</td>' +
+      '<td>' + escHtml(c.product) + '</td>' +
+      '<td class="conv-oid">' + escHtml(c.orderId) + '</td>' +
+      '<td class="num">₩' + c.orderAmount.toLocaleString() + '</td>' +
+      '<td class="num conv-comm">₩' + c.commission.toLocaleString() + '</td>' +
+      '<td><span class="status-pill ' + si[1] + '">' + escHtml(si[0]) + '</span></td>' +
+      '</tr>';
+  }).join('');
+}
+function csvCell(v) {
+  let s = v == null ? '' : String(v);
+  if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;   // CSV 수식주입 방지
+  if (/[",\n\r]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+function exportEarningsCSV() {
+  if (!__convHistory.length) { alert('내보낼 전환 내역이 없어요.'); return; }
+  const header = ['발생일', '상품', '주문번호', '상태', '주문금액', '수수료율(%)', '수수료'];
+  const rows = __convHistory.map(function (c) {
+    return [fmtConvDate(c.date), c.product, c.orderId, convStatusInfo(c.status)[0], c.orderAmount, Math.round(c.rate * 1000) / 10, c.commission];
+  });
+  const csv = [header].concat(rows).map(function (r) { return r.map(csvCell).join(','); }).join('\r\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const d = new Date(); const p = function (n) { return String(n).padStart(2, '0'); };
+  a.href = url; a.download = '온파트너_성과리포트_' + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+}
+document.getElementById('earnings-csv-btn')?.addEventListener('click', exportEarningsCSV);
 
 function buildMonthlyEarningsData(convs) {
   monthlyEarningsData = {
