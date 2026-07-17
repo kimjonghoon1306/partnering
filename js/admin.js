@@ -58,6 +58,7 @@ function showAdminPage(pageId) {
   if (pageId === 'overview') loadAdminOverview();
   if (pageId === 'leaderboard') loadLeaderboard();
   if (pageId === 'report') loadReport();
+  if (pageId === 'products') loadProductPerf();
   if (pageId === 'review') loadReview();
   if (pageId === 'settle') loadSettle();
   if (pageId === 'settle-history') loadSettleHistory();
@@ -759,6 +760,90 @@ document.getElementById('rp-range')?.addEventListener('click', function (e) {
   __rpMonths = Number(b.dataset.rpRange) || 6;
   document.querySelectorAll('#rp-range .lb-range-btn').forEach(function (x) { x.classList.toggle('active', x === b); });
   loadReport();
+});
+
+// ── 상품별 성과 분석
+let __ppSort = 'earn';
+let __ppData = [];
+async function loadProductPerf() {
+  const body = document.getElementById('pp-body');
+  if (!window.opClient || !body) return;
+  // 링크 스냅샷(product_id·product_name)로 상품 매핑 + 링크수. 전환은 link_id로 연결.
+  const [linkRes, convRes] = await Promise.all([
+    window.opClient.from('partner_links').select('id,product_id,product_name,title,commission_rate'),
+    window.opClient.from('conversions').select('link_id,order_amount,commission_amount,status')
+  ]);
+  if (linkRes.error) { body.innerHTML = '<tr><td colspan="6" class="lb-empty">불러오지 못했어요: ' + admEsc(linkRes.error.message) + '</td></tr>'; return; }
+  const linkInfo = {};       // link_id → {pid, name}
+  const prod = {};           // pid → 집계
+  (linkRes.data || []).forEach(function (l) {
+    const pid = l.product_id || ('_' + (l.product_name || l.title || l.id));
+    linkInfo[l.id] = pid;
+    if (!prod[pid]) prod[pid] = { name: l.product_name || l.title || '(상품)', links: 0, conv: 0, gmv: 0, comm: 0 };
+    prod[pid].links += 1;
+    if (l.product_name || l.title) prod[pid].name = l.product_name || l.title;
+  });
+  (convRes.data || []).forEach(function (c) {
+    if (c.status === 'canceled' || c.status === 'cancelled') return;
+    const pid = linkInfo[c.link_id];
+    if (!pid || !prod[pid]) return;
+    prod[pid].conv += 1;
+    prod[pid].gmv += Number(c.order_amount || 0);
+    prod[pid].comm += Number(c.commission_amount || 0);
+  });
+  __ppData = Object.keys(prod).map(function (pid) {
+    const p = prod[pid];
+    p.margin = p.gmv ? (p.comm / p.gmv * 100) : 0;
+    return p;
+  });
+  renderProductPerf();
+}
+function renderProductPerf() {
+  const rows = __ppData.slice();
+  rows.sort(function (a, b) {
+    if (__ppSort === 'conv') return b.conv - a.conv || b.comm - a.comm;
+    if (__ppSort === 'links') return b.links - a.links || b.comm - a.comm;
+    return b.comm - a.comm || b.conv - a.conv;
+  });
+  const totLinks = rows.reduce((s, p) => s + p.links, 0);
+  const totConv = rows.reduce((s, p) => s + p.conv, 0);
+  const totComm = rows.reduce((s, p) => s + p.comm, 0);
+  const sum = document.getElementById('pp-summary');
+  if (sum) {
+    sum.innerHTML = '<div class="lb-sum-item"><span>홍보 중인 상품</span><b>' + rows.length.toLocaleString() + '종</b></div>' +
+      '<div class="lb-sum-item"><span>발급 링크</span><b>' + totLinks.toLocaleString() + '개</b></div>' +
+      '<div class="lb-sum-item"><span>누적 판매</span><b>' + totConv.toLocaleString() + '건</b></div>' +
+      '<div class="lb-sum-item"><span>지급 수수료</span><b class="lime">₩' + Math.round(totComm).toLocaleString() + '</b></div>';
+  }
+  const body = document.getElementById('pp-body');
+  if (!body) return;
+  if (!rows.length) { body.innerHTML = '<tr><td colspan="6" class="lb-empty">아직 홍보 중인 상품이 없어요.</td></tr>'; return; }
+  body.innerHTML = rows.map(function (p) {
+    return '<tr>' +
+      '<td class="lb-name">' + admEsc(p.name) + '</td>' +
+      '<td class="num">' + p.links.toLocaleString() + '</td>' +
+      '<td class="num">' + p.conv.toLocaleString() + '</td>' +
+      '<td class="num">₩' + Math.round(p.gmv).toLocaleString() + '</td>' +
+      '<td class="num lb-earn">₩' + Math.round(p.comm).toLocaleString() + '</td>' +
+      '<td class="num">' + (p.gmv ? p.margin.toFixed(1) + '%' : '-') + '</td>' +
+      '</tr>';
+  }).join('');
+}
+function exportProductPerfCsv() {
+  if (!__ppData.length) { showToast('내보낼 데이터가 없어요'); return; }
+  const header = ['상품', '발급링크', '판매건수', '판매액(GMV)', '지급수수료', '마진율(%)'];
+  const rows = [header].concat(__ppData.map(function (p) {
+    return [p.name, p.links, p.conv, Math.round(p.gmv), Math.round(p.comm), p.gmv ? Math.round(p.margin * 10) / 10 : 0];
+  }));
+  downloadCsv('onpartner_product_perf_' + new Date().toISOString().slice(0, 10) + '.csv', rows);
+  showToast('상품별 성과 CSV를 내려받았어요');
+}
+document.getElementById('pp-sort')?.addEventListener('click', function (e) {
+  const b = e.target.closest('.lb-range-btn');
+  if (!b) return;
+  __ppSort = b.dataset.ppSort || 'earn';
+  document.querySelectorAll('#pp-sort .lb-range-btn').forEach(function (x) { x.classList.toggle('active', x === b); });
+  renderProductPerf();
 });
 
 // ── 관리자 오버뷰 실집계

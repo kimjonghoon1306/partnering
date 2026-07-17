@@ -1442,3 +1442,8 @@ body {
 .rp-bar-label { font-size: 11px; color: var(--text2); font-weight: 600; margin-top: 8px; }
 .rp-table th.num, .rp-table td.num { text-align: right; }
 .rp-table .lb-earn { color: var(--lime); font-weight: 800; }
+
+/* ── 상품별 성과 테이블 ── */
+.pp-table th.num, .pp-table td.num { text-align: right; }
+.pp-table .lb-name { font-weight: 700; }
+.pp-table .lb-earn { color: var(--lime); font-weight: 800; }
