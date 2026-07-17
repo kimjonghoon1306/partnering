@@ -1,3 +1,12 @@
+// 온종일팜 상품 이미지 URL 정규화: 상대경로(/products/x.jpg)는 온종일팜 도메인을 붙여 절대 URL로.
+function resolveFarmImg(u) {
+  if (!u || typeof u !== 'string') return '';
+  u = u.trim();
+  if (/^https?:\/\//.test(u)) return u;          // 이미 절대 URL
+  if (u.charAt(0) === '/') return 'https://app.yuanfnb.com' + u;  // 온종일팜 도메인 기준 상대경로
+  return '';
+}
+
 // ── 관리자 인증 확인 (Supabase 세션 + is_admin)
 (async function () {
   if (!window.opClient) { window.location.href = 'admin-login.html'; return; }
@@ -252,7 +261,7 @@ function renderCommissions() {
   }
   box.innerHTML = visibleList.map(p => {
     const price = Number(p.retail_price) || 0;
-    const img = (p.image_url && /^https?:\/\//.test(p.image_url) && p.image_url.length > 30) ? p.image_url : '';
+    const img = resolveFarmImg(p.image_url);
     const earn = Math.round(price * p.rate / 100);
     return '<div class="comm-row" data-id="' + admEsc(p.id) + '">' +
       '<div class="comm-thumb" style="' + (img ? "background-image:url('" + admEsc(img) + "')" : '') + '">' + (img ? '' : '🛒') + '</div>' +
@@ -1217,7 +1226,7 @@ function renderCampaignProductPicker() {
   }
   listEl.innerHTML = list.map(p => {
     const id = String(p.id);
-    const img = (p.image_url && /^https?:\/\//.test(p.image_url)) ? p.image_url : '';
+    const img = resolveFarmImg(p.image_url);
     const price = Number(p.retail_price || 0).toLocaleString();
     const isChecked = __campSelectedProducts.has(id);
     const checked = isChecked ? ' checked' : '';
@@ -1521,8 +1530,8 @@ function onAdProductChange() {
   const imgEl = document.getElementById('ad-image-url');
   const titleEl = document.getElementById('ad-title-input');
   // 이미지 칸이 비어있으면 상품 이미지 자동 입력 (기존 입력값은 존중)
-  if (imgEl && !imgEl.value.trim() && p.image_url && /^https?:\/\//.test(p.image_url)) {
-    imgEl.value = p.image_url;
+  if (imgEl && !imgEl.value.trim() && resolveFarmImg(p.image_url)) {
+    imgEl.value = resolveFarmImg(p.image_url);
   }
   // 제목이 비어있으면 상품명 자동 입력
   if (titleEl && !titleEl.value.trim() && p.name) {
@@ -1575,8 +1584,8 @@ async function saveAd(btn) {
   let imageUrl = document.getElementById('ad-image-url').value.trim();
   if (!imageUrl && productId) {
     const p = (__campProducts || []).find(x => String(x.id) === String(productId));
-    if (p && p.image_url && /^https?:\/\//.test(p.image_url)) {
-      imageUrl = p.image_url;
+    if (p && resolveFarmImg(p.image_url)) {
+      imageUrl = resolveFarmImg(p.image_url);
       const imgEl = document.getElementById('ad-image-url'); if (imgEl) imgEl.value = imageUrl;
     }
   }

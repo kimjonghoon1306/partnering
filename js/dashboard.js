@@ -494,7 +494,7 @@ function renderCatalog() {
     const ratePct = Math.round((Number(p.rate) || 0) * 1000) / 10;
     const bonusPct = Math.round((Number(p.campaignBonusRate) || 0) * 1000) / 10;
     const hasCampaignBonus = bonusPct > 0;
-    const img = (p.image_url && /^https?:\/\//.test(p.image_url) && p.image_url.length > 30) ? p.image_url : '';
+    const img = resolveFarmImg(p.image_url);
     return '<div class="catalog-card" data-pid="' + escHtml(p.id) + '">' +
       '<div class="catalog-img" style="' + (img ? "background-image:url('" + escHtml(img) + "')" : '') + '">' + (img ? '' : '🛒') + '</div>' +
       '<div class="catalog-info">' +
@@ -585,7 +585,7 @@ document.getElementById('catalog-grid')?.addEventListener('click', async functio
     const r = await window.opClient.from('partner_links').insert({
       partner_id: user.id, code: code,
       product_url: 'https://app.yuanfnb.com/shop/product/' + p.id,
-      product_id: p.id, product_name: p.name, product_image: p.image_url || null,
+      product_id: p.id, product_name: p.name, product_image: resolveFarmImg(p.image_url) || null,
       product_price: Number(p.retail_price) || 0, commission_rate: p.rate, title: p.name
     });
     error = r.error;
@@ -670,6 +670,14 @@ async function deleteLink(code, btn) {
   loadCatalog();    // 카탈로그 '링크 받기' 상태 복구
 }
 function escHtml(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+// 온종일팜 상품 이미지 URL 정규화: 상대경로(/products/x.jpg)는 온종일팜 도메인을 붙여 절대 URL로.
+function resolveFarmImg(u) {
+  if (!u || typeof u !== 'string') return '';
+  u = u.trim();
+  if (/^https?:\/\//.test(u)) return u;          // 이미 절대 URL
+  if (u.charAt(0) === '/') return 'https://app.yuanfnb.com' + u;  // 온종일팜 도메인 기준 상대경로
+  return '';
+}
 
 // 추천 링크 코드: 닉네임 기반(kjhyun-3f2a). 닉네임 없거나 영숫자 아니면 랜덤.
 function makeRefCode(nick) {
