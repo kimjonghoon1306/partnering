@@ -28,6 +28,7 @@
       <div class="admin-nav-label">대시보드</div>
       <a class="admin-nav-item" data-page="overview"><span class="admin-nav-icon">📊</span><span class="admin-nav-label">오버뷰</span></a>
       <a class="admin-nav-item" data-page="leaderboard"><span class="admin-nav-icon">🏆</span><span class="admin-nav-label">파트너 실적</span></a>
+      <a class="admin-nav-item" data-page="report"><span class="admin-nav-icon">📈</span><span class="admin-nav-label">기간별 리포트</span></a>
 
       <div class="admin-nav-label" style="margin-top:8px;">상품</div>
       <a class="admin-nav-item" data-page="commissions"><span class="admin-nav-icon">🏷️</span><span class="admin-nav-label">상품 마진 설정</span></a>
@@ -160,6 +161,33 @@
           <table class="admin-table lb-table">
             <thead><tr><th>순위</th><th>파트너</th><th class="num">전환</th><th class="num">클릭(누적)</th><th class="num">수익</th></tr></thead>
             <tbody id="lb-body"><tr><td colspan="5" class="lb-empty">불러오는 중...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 기간별 성과 리포트 -->
+    <div class="admin-page" id="ap-report">
+      <div class="lb-head">
+        <div class="lb-summary" id="rp-summary"></div>
+        <div class="lb-range" id="rp-range">
+          <button class="lb-range-btn active" data-rp-range="6" type="button">최근 6개월</button>
+          <button class="lb-range-btn" data-rp-range="12" type="button">최근 12개월</button>
+        </div>
+      </div>
+      <div class="admin-card" style="margin-top:16px;">
+        <div class="admin-table-title" style="margin-bottom:14px;">월별 수수료 추이</div>
+        <div class="rp-chart" id="rp-chart"><div class="lb-empty">불러오는 중...</div></div>
+      </div>
+      <div class="admin-card" style="margin-top:16px;">
+        <div class="admin-table-header" style="padding:0 0 14px;">
+          <div class="admin-table-title">월별 상세</div>
+          <button class="admin-csv-btn" onclick="exportReportCsv()">📥 CSV</button>
+        </div>
+        <div class="admin-table-wrap">
+          <table class="admin-table rp-table">
+            <thead><tr><th>월</th><th class="num">클릭</th><th class="num">전환</th><th class="num">전환율</th><th class="num">주문액(GMV)</th><th class="num">수수료</th></tr></thead>
+            <tbody id="rp-body"><tr><td colspan="6" class="lb-empty">불러오는 중...</td></tr></tbody>
           </table>
         </div>
       </div>

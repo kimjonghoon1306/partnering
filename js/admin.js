@@ -57,6 +57,7 @@ function showAdminPage(pageId) {
   if (pageId === 'notice') loadNoticeCenter();
   if (pageId === 'overview') loadAdminOverview();
   if (pageId === 'leaderboard') loadLeaderboard();
+  if (pageId === 'report') loadReport();
   if (pageId === 'review') loadReview();
   if (pageId === 'settle') loadSettle();
   if (pageId === 'settle-history') loadSettleHistory();
@@ -663,6 +664,101 @@ document.getElementById('lb-range')?.addEventListener('click', function (e) {
   __lbRange = b.dataset.lbRange || 'month';
   document.querySelectorAll('#lb-range .lb-range-btn').forEach(function (x) { x.classList.toggle('active', x === b); });
   loadLeaderboard();
+});
+
+// ── 기간별 성과 리포트(월별 추이)
+let __rpMonths = 6;
+let __rpData = [];
+function rpMonthKey(iso) {
+  const d = new Date(new Date(iso).getTime() + 9 * 3600 * 1000);   // KST
+  return d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0');
+}
+async function loadReport() {
+  const body = document.getElementById('rp-body');
+  if (!window.opClient || !body) return;
+  const [convRes, clickRes] = await Promise.all([
+    window.opClient.from('conversions').select('order_amount,commission_amount,status,created_at'),
+    window.opClient.from('link_clicks').select('clicked_at')
+  ]);
+  if (convRes.error) { body.innerHTML = '<tr><td colspan="6" class="lb-empty">불러오지 못했어요: ' + admEsc(convRes.error.message) + '</td></tr>'; return; }
+  // 최근 N개월 버킷 생성
+  const buckets = [];
+  const byKey = {};
+  const kNow = new Date(Date.now() + 9 * 3600 * 1000);
+  for (let i = __rpMonths - 1; i >= 0; i--) {
+    const d = new Date(Date.UTC(kNow.getUTCFullYear(), kNow.getUTCMonth() - i, 1));
+    const key = d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0');
+    const b = { key: key, label: (d.getUTCMonth() + 1) + '월', gmv: 0, comm: 0, conv: 0, clicks: 0 };
+    buckets.push(b); byKey[key] = b;
+  }
+  (convRes.data || []).forEach(function (c) {
+    if (c.status === 'canceled' || c.status === 'cancelled') return;
+    const b = byKey[rpMonthKey(c.created_at)];
+    if (!b) return;
+    b.gmv += Number(c.order_amount || 0);
+    b.comm += Number(c.commission_amount || 0);
+    b.conv += 1;
+  });
+  if (!clickRes.error) (clickRes.data || []).forEach(function (c) {
+    const b = byKey[rpMonthKey(c.clicked_at)];
+    if (b) b.clicks += 1;
+  });
+  __rpData = buckets;
+  renderReport(buckets);
+}
+function renderReport(buckets) {
+  const totalGmv = buckets.reduce((s, b) => s + b.gmv, 0);
+  const totalComm = buckets.reduce((s, b) => s + b.comm, 0);
+  const totalConv = buckets.reduce((s, b) => s + b.conv, 0);
+  const totalClicks = buckets.reduce((s, b) => s + b.clicks, 0);
+  const cvr = totalClicks ? (totalConv / totalClicks * 100) : 0;
+  const sum = document.getElementById('rp-summary');
+  if (sum) {
+    sum.innerHTML = '<div class="lb-sum-item"><span>기간 주문액(GMV)</span><b>₩' + Math.round(totalGmv).toLocaleString() + '</b></div>' +
+      '<div class="lb-sum-item"><span>기간 수수료</span><b class="lime">₩' + Math.round(totalComm).toLocaleString() + '</b></div>' +
+      '<div class="lb-sum-item"><span>전환</span><b>' + totalConv.toLocaleString() + '건</b></div>' +
+      '<div class="lb-sum-item"><span>평균 전환율</span><b>' + cvr.toFixed(1) + '%</b></div>';
+  }
+  // 막대 차트
+  const chart = document.getElementById('rp-chart');
+  if (chart) {
+    const max = Math.max.apply(null, buckets.map(b => b.comm).concat([1]));
+    chart.innerHTML = '<div class="rp-bars">' + buckets.map(function (b) {
+      const h = Math.max(2, Math.round(b.comm / max * 100));
+      return '<div class="rp-bar-item"><div class="rp-bar-val">' + (b.comm ? '₩' + Math.round(b.comm).toLocaleString() : '') + '</div>' +
+        '<div class="rp-bar-track"><div class="rp-bar-fill" style="height:' + h + '%;"></div></div>' +
+        '<div class="rp-bar-label">' + admEsc(b.label) + '</div></div>';
+    }).join('') + '</div>';
+  }
+  const body = document.getElementById('rp-body');
+  if (!body) return;
+  body.innerHTML = buckets.map(function (b) {
+    const cvr = b.clicks ? (b.conv / b.clicks * 100).toFixed(1) + '%' : '-';
+    return '<tr>' +
+      '<td><b>' + admEsc(b.key) + '</b></td>' +
+      '<td class="num">' + b.clicks.toLocaleString() + '</td>' +
+      '<td class="num">' + b.conv.toLocaleString() + '</td>' +
+      '<td class="num">' + cvr + '</td>' +
+      '<td class="num">₩' + Math.round(b.gmv).toLocaleString() + '</td>' +
+      '<td class="num lb-earn">₩' + Math.round(b.comm).toLocaleString() + '</td>' +
+      '</tr>';
+  }).join('');
+}
+function exportReportCsv() {
+  if (!__rpData.length) { showToast('내보낼 데이터가 없어요'); return; }
+  const header = ['월', '클릭', '전환', '전환율(%)', '주문액(GMV)', '수수료'];
+  const rows = [header].concat(__rpData.map(function (b) {
+    return [b.key, b.clicks, b.conv, b.clicks ? Math.round(b.conv / b.clicks * 1000) / 10 : 0, Math.round(b.gmv), Math.round(b.comm)];
+  }));
+  downloadCsv('onpartner_report_' + new Date().toISOString().slice(0, 10) + '.csv', rows);
+  showToast('기간별 리포트 CSV를 내려받았어요');
+}
+document.getElementById('rp-range')?.addEventListener('click', function (e) {
+  const b = e.target.closest('.lb-range-btn');
+  if (!b) return;
+  __rpMonths = Number(b.dataset.rpRange) || 6;
+  document.querySelectorAll('#rp-range .lb-range-btn').forEach(function (x) { x.classList.toggle('active', x === b); });
+  loadReport();
 });
 
 // ── 관리자 오버뷰 실집계

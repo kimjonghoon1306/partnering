@@ -1431,3 +1431,14 @@ body {
 }
 .admin-csv-btn:hover { background: var(--lime); color: #0D0D0D; transform: translateY(-1px); }
 .admin-csv-btn:active { transform: scale(0.96); }
+
+/* ── 기간별 리포트 막대 차트 ── */
+.rp-chart { min-height: 180px; }
+.rp-bars { display: flex; align-items: flex-end; gap: 10px; height: 200px; padding-top: 20px; }
+.rp-bar-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; min-width: 0; }
+.rp-bar-val { font-size: 10px; font-weight: 700; color: var(--lime); margin-bottom: 5px; white-space: nowrap; }
+.rp-bar-track { width: 100%; max-width: 46px; flex: 1; display: flex; align-items: flex-end; }
+.rp-bar-fill { width: 100%; background: linear-gradient(180deg, var(--lime), rgba(190,255,0,0.35)); border-radius: 6px 6px 0 0; min-height: 2px; transition: height 0.5s cubic-bezier(.22,.61,.36,1); }
+.rp-bar-label { font-size: 11px; color: var(--text2); font-weight: 600; margin-top: 8px; }
+.rp-table th.num, .rp-table td.num { text-align: right; }
+.rp-table .lb-earn { color: var(--lime); font-weight: 800; }
