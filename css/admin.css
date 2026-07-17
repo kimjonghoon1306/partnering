@@ -1466,3 +1466,8 @@ body {
 .pd-link-del:hover { background: #FF4D6A; color: #fff; }
 .pd-link-del:active { transform: scale(0.95); }
 .pd-link-del:disabled { opacity: 0.6; cursor: wait; }
+
+/* ── 파트너 삭제 버튼(정지보다 강조) ── */
+.admin-action-btn.danger { border-color: rgba(255,77,106,0.5); color: #FF4D6A; font-weight: 700; }
+.admin-action-btn.danger:hover { background: #FF4D6A; color: #fff; border-color: #FF4D6A; }
+.admin-action-btn.danger:active { transform: scale(0.95); }

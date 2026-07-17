@@ -380,7 +380,8 @@ function renderAdminPartners(list) {
         '<button class="admin-action-btn" onclick="openPartnerDetail(\'' + admEsc(p.id) + '\')">상세</button> ' +
         (suspended
           ? '<button class="admin-action-btn approve" onclick="setPartnerStatus(\'' + admEsc(p.id) + '\',\'active\',this)">활성화</button>'
-          : '<button class="admin-action-btn reject" onclick="setPartnerStatus(\'' + admEsc(p.id) + '\',\'suspended\',this)">정지</button>') +
+          : '<button class="admin-action-btn reject" onclick="setPartnerStatus(\'' + admEsc(p.id) + '\',\'suspended\',this)">정지</button>') + ' ' +
+        '<button class="admin-action-btn danger" onclick="adminDeletePartner(\'' + admEsc(p.id) + '\',\'' + admEsc(p.name || p.nickname || '') + '\',this)">삭제</button>' +
       '</td></tr>';
   }).join('');
 }
@@ -504,6 +505,27 @@ async function setPartnerStatus(id, status, btn) {
   renderAdminPartners(__admPartners);
   if (document.getElementById('ap-fraud')?.classList.contains('active')) loadFraud();
   showToast('파트너 ' + label + ' 완료 ✅');
+}
+async function adminDeletePartner(id, name, btn) {
+  if (!window.opClient) return;
+  const who = name ? ('"' + name + '" ') : '';
+  if (!confirm('파트너 ' + who + '를 완전히 삭제할까요?\n\n삭제하면 온파트너에서 제거되고 발급 링크·클릭·전환·정산·수익 기록이 모두 사라져요.\n(온종일팜 계정 자체는 유지됩니다)\n\n되돌릴 수 없어요.')) return;
+  btn.disabled = true; const t = btn.textContent; btn.textContent = '삭제 중...';
+  const { data, error } = await window.opClient.from('partners').delete().eq('id', id).select('id');
+  if (error) {
+    btn.disabled = false; btn.textContent = t;
+    showToast('삭제 실패: ' + error.message);
+    return;
+  }
+  if (!data || !data.length) {
+    btn.disabled = false; btn.textContent = t;
+    showToast('삭제되지 않았어요(관리자 삭제 권한 SQL 실행 필요)');
+    return;
+  }
+  await logAdminAction('delete_partner', 'partner', id, { name: name });
+  __admPartners = __admPartners.filter(x => x.id !== id);
+  renderAdminPartners(__admPartners);
+  showToast('파트너를 삭제했어요');
 }
 document.getElementById('partner-search')?.addEventListener('input', function () {
   const q = this.value.toLowerCase();
