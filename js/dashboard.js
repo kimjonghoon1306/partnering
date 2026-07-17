@@ -413,10 +413,11 @@ async function loadCatalog() {
   const grid = document.getElementById('catalog-grid');
   if (!grid || !window.opClient) return;
   const today = todayKST();
+  const uid = await currentUid();
   const [prodRes, commRes, linkRes, catRes, campRes, cpRes] = await Promise.all([
     window.opClient.from('products').select('id,name,retail_price,image_url,unit,category_id').eq('is_active', true).order('created_at', { ascending: false }),
     window.opClient.from('product_commissions').select('product_id,commission_rate'),
-    window.opClient.from('partner_links').select('code,product_id'),
+    window.opClient.from('partner_links').select('code,product_id').eq('partner_id', uid || '00000000-0000-0000-0000-000000000000'),
     window.opClient.from('categories').select('id,name,sort_order').order('sort_order', { ascending: true }),
     window.opClient.from('campaigns')
       .select('id,bonus_rate,target_type,target_value,ends_at')
@@ -592,7 +593,7 @@ document.getElementById('catalog-grid')?.addEventListener('click', async functio
   const t = btn.textContent; btn.disabled = true; btn.textContent = regenBtn ? '재발급 중...' : '생성 중...';
   const { data: { user } } = await window.opClient.auth.getUser();
   if (!user) { window.location.href = 'login.html'; return; }
-  const { data: prof } = await window.opClient.from('partners').select('nickname').maybeSingle();
+  const { data: prof } = await window.opClient.from('partners').select('nickname').eq('id', user.id).maybeSingle();
   const code = makeRefCode(prof && prof.nickname);
   let error;
   if (regenBtn) {
@@ -631,13 +632,16 @@ document.getElementById('linktoast-x')?.addEventListener('click', function () {
 // ── 내 링크 목록 (실데이터)
 async function loadLinks() {
   if (!window.opClient) return;
+  const uid = await currentUid();
+  if (!uid) return;
   const tbody = document.querySelector('#links-table tbody');
   const titleEl = document.querySelector('#page-links .table-title');
   const [linkRes, convRes] = await Promise.all([
     window.opClient.from('partner_links')
       .select('id,code,product_url,title,clicks,conversions,created_at')
+      .eq('partner_id', uid)
       .order('created_at', { ascending: false }),
-    window.opClient.from('conversions').select('link_id,commission_amount,status')
+    window.opClient.from('conversions').select('link_id,commission_amount,status').eq('partner_id', uid)
   ]);
   const data = linkRes.data || [];
   if (linkRes.error) { console.warn('[온파트너] 링크 조회 오류:', linkRes.error.message); return; }
@@ -702,6 +706,11 @@ async function deleteLink(code, btn) {
   loadCatalog();    // 카탈로그 '링크 받기' 상태 복구
 }
 function escHtml(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+// 현재 로그인 사용자 id — "내 대시보드" 조회를 본인 것으로 한정(관리자 계정이면 RLS상 전체가 보이므로 명시 필터 필수)
+async function currentUid() {
+  try { const { data } = await window.opClient.auth.getUser(); return data && data.user ? data.user.id : null; }
+  catch (e) { return null; }
+}
 // 온종일팜 상품 이미지 URL 정규화: 상대경로(/products/x.jpg)는 온종일팜 도메인을 붙여 절대 URL로.
 function resolveFarmImg(u) {
   if (!u || typeof u !== 'string') return '';
@@ -913,10 +922,11 @@ searchEl?.addEventListener('input', function() {
 // ── 사이드바 파트너 정보 (실제 가입 이름)
 async function loadPartnerHeader() {
   if (!window.opClient) return;
-  const [{ data: { user } }, { data: p }, { count }] = await Promise.all([
-    window.opClient.auth.getUser(),
-    window.opClient.from('partners').select('name,nickname,status').maybeSingle(),
-    window.opClient.from('partner_links').select('id', { count: 'exact', head: true })
+  const { data: { user } } = await window.opClient.auth.getUser();
+  if (!user) return;
+  const [{ data: p }, { count }] = await Promise.all([
+    window.opClient.from('partners').select('name,nickname,status').eq('id', user.id).maybeSingle(),
+    window.opClient.from('partner_links').select('id', { count: 'exact', head: true }).eq('partner_id', user.id)
   ]);
   __partnerStatus = (p && p.status) || 'active';
   showSuspendedNotice();
@@ -1063,9 +1073,11 @@ function countUpEl(el, target, prefix, suffix, isFloat) {
 async function loadOverview() {
   if (!window.opClient) return;
   loadAds();
+  const uid = await currentUid();
+  if (!uid) return;
   const [linkRes, convRes] = await Promise.all([
-    window.opClient.from('partner_links').select('id,product_name,title,product_url,clicks,conversions,created_at').order('created_at', { ascending: false }),
-    window.opClient.from('conversions').select('link_id,commission_amount,status,created_at')
+    window.opClient.from('partner_links').select('id,product_name,title,product_url,clicks,conversions,created_at').eq('partner_id', uid).order('created_at', { ascending: false }),
+    window.opClient.from('conversions').select('link_id,commission_amount,status,created_at').eq('partner_id', uid)
   ]);
   const links = linkRes.data || [];
   const convs = convRes.data || [];
@@ -1145,7 +1157,9 @@ function renderTopProducts(links, convs) {
 // ── 수익현황 실집계
 async function loadEarnings() {
   if (!window.opClient) return;
-  const { data } = await window.opClient.from('conversions').select('commission_amount,status,created_at');
+  const uid = await currentUid();
+  if (!uid) return;
+  const { data } = await window.opClient.from('conversions').select('commission_amount,status,created_at').eq('partner_id', uid);
   const convs = data || [];
   const now = new Date();
   const curYM = now.getFullYear() * 12 + now.getMonth();
@@ -1221,10 +1235,12 @@ function renderMonthlyEarningsChart(range) {
 function maskAccount(a) { a = String(a || ''); return a.length > 4 ? '***-**-' + a.slice(-4) : a; }
 async function loadSettlement() {
   if (!window.opClient) return;
+  const uid = await currentUid();
+  if (!uid) return;
   const [convRes, pRes, sRes] = await Promise.all([
-    window.opClient.from('conversions').select('commission_amount,status'),
-    window.opClient.from('partners').select('bank_name,bank_account,bank_holder,tax_type').maybeSingle(),
-    window.opClient.from('settlements').select('period,total_amount,status,paid_at,gross_amount,withholding_amount,net_amount').order('period', { ascending: false })
+    window.opClient.from('conversions').select('commission_amount,status').eq('partner_id', uid),
+    window.opClient.from('partners').select('bank_name,bank_account,bank_holder,tax_type').eq('id', uid).maybeSingle(),
+    window.opClient.from('settlements').select('period,total_amount,status,paid_at,gross_amount,withholding_amount,net_amount').eq('partner_id', uid).order('period', { ascending: false })
   ]);
   const convs = convRes.data || [];
   const confirmed = convs.filter(c => c.status === 'confirmed').reduce((s, c) => s + Number(c.commission_amount || 0), 0);
@@ -1439,7 +1455,8 @@ async function loadSettings() {
   initNotificationToggles();
   if (!window.opClient) return;
   const { data: { user } } = await window.opClient.auth.getUser();
-  let { data: p, error } = await window.opClient.from('partners').select('*').maybeSingle();
+  if (!user) return;
+  let { data: p, error } = await window.opClient.from('partners').select('*').eq('id', user.id).maybeSingle();
   if (error) console.warn('[온파트너] 설정 로드 오류:', error.message);
   if (!p && user) {
     window.location.href = 'signup.html?mode=partner-register';
