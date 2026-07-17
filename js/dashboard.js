@@ -496,7 +496,7 @@ function renderCatalog() {
     const hasCampaignBonus = bonusPct > 0;
     const img = resolveFarmImg(p.image_url);
     return '<div class="catalog-card" data-pid="' + escHtml(p.id) + '">' +
-      '<div class="catalog-img" style="' + (img ? "background-image:url('" + escHtml(img) + "')" : '') + '">' + (img ? '' : '🛒') + '</div>' +
+      '<div class="catalog-img" data-view-product="' + escHtml(p.id) + '" title="상품 상세 보기" style="' + (img ? "background-image:url('" + escHtml(img) + "')" : '') + '">' + (img ? '' : '🛒') + '</div>' +
       '<div class="catalog-info">' +
         '<div class="catalog-name">' + escHtml(p.name) + '</div>' +
         (p.categoryName ? '<div class="catalog-category">' + escHtml(p.categoryName) + '</div>' : '') +
@@ -505,6 +505,7 @@ function renderCatalog() {
         '<div class="catalog-earn">' + (hasCampaignBonus ? '내 예상 수익' : '내 수익') + ' <b>₩' + earn.toLocaleString() + '</b><span class="catalog-rate' + (hasCampaignBonus ? ' boosted' : '') + '">' +
           (hasCampaignBonus ? escHtml(String(basePct).replace(/\.0$/, '')) + '% → ' + escHtml(String(ratePct).replace(/\.0$/, '')) + '% <em>▲+' + escHtml(String(bonusPct).replace(/\.0$/, '')) + '%</em>' : escHtml(String(ratePct).replace(/\.0$/, '')) + '%') +
         '</span></div>' +
+        '<button class="catalog-view" data-view-product="' + escHtml(p.id) + '" type="button">🔍 상품 상세 보기</button>' +
         (p.myCode
           ? '<div class="catalog-mylink"><span title="partner.yuanfnb.com/r/' + p.myCode + '">🔗 partner.yuanfnb.com/r/' + escHtml(p.myCode) + '</span><button class="catalog-copy" data-code="' + escHtml(p.myCode) + '">복사</button></div>' +
             '<button class="catalog-regen" data-id="' + escHtml(p.id) + '"' + (suspended ? ' disabled title="정지된 계정" style="opacity:.45;cursor:not-allowed;"' : '') + '>🔄 재발급</button>'
@@ -552,6 +553,12 @@ document.getElementById('catalog-more')?.addEventListener('click', function () {
   renderCatalog();
 });
 document.getElementById('catalog-grid')?.addEventListener('click', async function (e) {
+  // 상품 상세 보기 (이미지/버튼) → 온종일팜 실제 상품 페이지 새 탭
+  const viewEl = e.target.closest('[data-view-product]');
+  if (viewEl) {
+    window.open('https://app.yuanfnb.com/shop/product/' + encodeURIComponent(viewEl.dataset.viewProduct), '_blank', 'noopener');
+    return;
+  }
   // 복사
   const copyBtn = e.target.closest('.catalog-copy');
   if (copyBtn) {
