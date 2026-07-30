@@ -1,0 +1,16 @@
+{
+  "name": "온파트너 — 온종일팜 공식 파트너스",
+  "short_name": "온파트너",
+  "description": "링크 하나로 온종일 수익. 온종일팜 상품을 추천하고 수수료를 받는 제휴마케팅 플랫폼.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#080808",
+  "theme_color": "#BEFF00",
+  "icons": [
+    { "src": "/assets/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -3,6 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- PWA (크롬 앱 설치) -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#BEFF00">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="온파트너">
 <meta name="description" content="온파트너 — 링크 하나로 온종일 수익. 온종일팜 상품 링크를 공유하고 구매 수수료를 받는 제휴마케팅 플랫폼.">
 <title>온파트너 — 링크 하나로 온종일 수익</title>
 
@@ -23,10 +30,10 @@
 
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="css/variables.css?v=20260730d">
-<link rel="stylesheet" href="css/reset.css?v=20260730d">
-<link rel="stylesheet" href="css/main.css?v=20260730d">
-<link rel="stylesheet" href="css/intro.css?v=20260730d">
+<link rel="stylesheet" href="css/variables.css?v=20260730e">
+<link rel="stylesheet" href="css/reset.css?v=20260730e">
+<link rel="stylesheet" href="css/main.css?v=20260730e">
+<link rel="stylesheet" href="css/intro.css?v=20260730e">
 </head>
 <body>
 
@@ -457,8 +464,8 @@
   </div>
 </footer>
 
-<script src="js/intro.js?v=20260730d"></script>
-<script src="js/main.js?v=20260730d"></script>
+<script src="js/intro.js?v=20260730e"></script>
+<script src="js/main.js?v=20260730e"></script>
 <script>
   // 관리자 숨김 진입: 푸터 카피라이트를 2초 안에 5번 클릭하면 관리자 로그인으로 (일반 사용자 인지 X)
   (function () {
@@ -472,6 +479,52 @@
       if (cnt >= 5) { cnt = 0; window.location.href = 'pages/admin-login.html'; }
     });
   })();
+</script>
+
+<!-- ══════════ PWA: 업데이트 배너 + 서비스워커 ══════════ -->
+<div class="pwa-update" id="pwaUpdate">
+  <span class="pwa-update-txt">🎉 새 버전이 나왔어요</span>
+  <button class="pwa-update-btn" id="pwaUpdateBtn">업데이트하세요</button>
+</div>
+<style>
+  .pwa-update{position:fixed;left:50%;bottom:20px;transform:translateX(-50%) translateY(160%);
+    z-index:99999;display:flex;align-items:center;gap:14px;padding:11px 12px 11px 20px;
+    background:#0f0f0f;color:#fff;border-radius:999px;font-weight:700;font-size:15px;
+    box-shadow:0 12px 34px rgba(0,0,0,.45);border:1px solid rgba(190,255,0,.35);
+    transition:transform .45s cubic-bezier(.2,1.25,.3,1);max-width:calc(100vw - 32px);}
+  .pwa-update.show{transform:translateX(-50%) translateY(0);}
+  .pwa-update-txt{white-space:nowrap;}
+  .pwa-update-btn{background:#BEFF00;color:#0A0A0A;border:none;border-radius:999px;
+    padding:10px 20px;font-weight:800;font-size:14px;cursor:pointer;flex-shrink:0;
+    transition:transform .15s;}
+  .pwa-update-btn:active{transform:scale(.94);}
+</style>
+<script>
+(function(){
+  if(!('serviceWorker' in navigator)) return;
+  var refreshing=false;
+  navigator.serviceWorker.addEventListener('controllerchange',function(){
+    if(refreshing) return; refreshing=true; window.location.reload();
+  });
+  function showUpdate(reg){
+    var el=document.getElementById('pwaUpdate'); if(!el) return;
+    el.classList.add('show');
+    document.getElementById('pwaUpdateBtn').onclick=function(){
+      if(reg.waiting) reg.waiting.postMessage('skipWaiting'); else window.location.reload();
+    };
+  }
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('/sw.js').then(function(reg){
+      if(reg.waiting && navigator.serviceWorker.controller) showUpdate(reg);
+      reg.addEventListener('updatefound',function(){
+        var nw=reg.installing; if(!nw) return;
+        nw.addEventListener('statechange',function(){
+          if(nw.state==='installed' && navigator.serviceWorker.controller) showUpdate(reg);
+        });
+      });
+    }).catch(function(){});
+  });
+})();
 </script>
 </body>
 </html>
