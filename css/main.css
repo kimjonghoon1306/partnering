@@ -206,69 +206,34 @@ nav {
 /* ── HERO ── */
 .hero {
   position: relative;
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
   text-align: center;
-  padding: 100px 24px 56px;
+  padding: 92px 24px 64px;
   overflow: hidden;
   z-index: 1;
 }
 
-/* 대문 배경 홍보영상 */
+/* 대문 상단 홍보영상 배너 (배경 아님 — 영상 위, 글자 아래로 분리) */
 .hero-video {
-  position: absolute;
-  inset: 0;
+  position: relative;
   width: 100%;
-  height: 100%;
+  max-width: 1080px;
+  aspect-ratio: 16 / 9;
+  max-height: 520px;
   object-fit: cover;
-  z-index: -2;
-  opacity: 0.92;
+  border-radius: 20px;
+  box-shadow: 0 20px 50px rgba(0,0,0,.28);
+  margin-bottom: 44px;
+  opacity: 1;
 }
-.hero-video-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  /* 상단은 영상 선명, 하단(글자 영역)만 진하게 어둡게 */
-  background: linear-gradient(180deg,
-    rgba(8,8,8,0.10) 0%,
-    rgba(8,8,8,0.04) 26%,
-    rgba(8,8,8,0.30) 52%,
-    rgba(8,8,8,0.82) 78%,
-    rgba(8,8,8,0.97) 100%);
-}
-[data-theme="light"] .hero-video { opacity: 0.95; }
-[data-theme="light"] .hero-video-overlay {
-  background: linear-gradient(180deg,
-    rgba(255,255,255,0.10) 0%,
-    rgba(255,255,255,0.04) 26%,
-    rgba(255,255,255,0.35) 52%,
-    rgba(255,255,255,0.85) 78%,
-    rgba(255,255,255,0.98) 100%);
-}
+.hero-video-overlay { display: none; }
 
-/* 모바일: 영상을 상단 배너(16:9)로, 글자는 그 아래 — 배경으로 깔면 세로화면서 삐져나감 */
 @media (max-width: 768px) {
-  .hero {
-    min-height: auto;
-    justify-content: flex-start;
-    padding: 84px 18px 48px;
-  }
-  .hero-video {
-    position: relative;
-    width: 100%;
-    height: auto;
-    aspect-ratio: 16 / 9;
-    object-fit: cover;
-    opacity: 1;
-    border-radius: 16px;
-    margin-bottom: 24px;
-    box-shadow: 0 12px 30px rgba(0,0,0,.32);
-  }
-  .hero-video-overlay { display: none; }
+  .hero { padding: 80px 16px 48px; }
+  .hero-video { border-radius: 14px; margin-bottom: 26px; box-shadow: 0 10px 26px rgba(0,0,0,.3); }
   .hero-glow { display: none; }
 }
 
@@ -310,9 +275,9 @@ nav {
 }
 
 .hero h1 {
-  font-size: clamp(44px, 8vw, 88px);
+  font-size: clamp(26px, 7.4vw, 88px);
   font-weight: 900;
-  line-height: 1.0;
+  line-height: 1.12;
   letter-spacing: -2px;
   margin-bottom: 24px;
   animation: fadeUp 0.6s 0.1s ease both;
