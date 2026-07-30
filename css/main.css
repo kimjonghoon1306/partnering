@@ -703,7 +703,12 @@ footer {
 @media (max-width: 480px) {
   .hero-actions { flex-direction: column; align-items: stretch; }
   .hero-actions a { justify-content: center; }
-  .hero-cards { flex-direction: column; align-items: center; }
+  /* 카드 3개 가로 나란히 (아이콘 위·글자 아래) */
+  .hero-cards { flex-wrap: nowrap; gap: 8px; margin-top: 40px; }
+  .float-card { flex: 1; min-width: 0; flex-direction: column; align-items: center; text-align: center; gap: 7px; padding: 12px 6px; }
+  .float-icon { width: 34px; height: 34px; font-size: 16px; }
+  .float-text strong { font-size: 13px; }
+  .float-text span { font-size: 10px; }
   .cta-actions { flex-direction: column; align-items: center; }
   .cta-actions .btn-primary { width: 100%; justify-content: center; max-width: 320px; }
   /* 통계 2x2 그리드로 정리 (세로 1줄이 밋밋 → 2열 균형) */
