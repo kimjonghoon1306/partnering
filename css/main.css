@@ -250,6 +250,28 @@ nav {
     rgba(255,255,255,0.98) 100%);
 }
 
+/* 모바일: 영상을 상단 배너(16:9)로, 글자는 그 아래 — 배경으로 깔면 세로화면서 삐져나감 */
+@media (max-width: 768px) {
+  .hero {
+    min-height: auto;
+    justify-content: flex-start;
+    padding: 84px 18px 48px;
+  }
+  .hero-video {
+    position: relative;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    opacity: 1;
+    border-radius: 16px;
+    margin-bottom: 24px;
+    box-shadow: 0 12px 30px rgba(0,0,0,.32);
+  }
+  .hero-video-overlay { display: none; }
+  .hero-glow { display: none; }
+}
+
 .hero-glow {
   position: absolute;
   width: 700px;
