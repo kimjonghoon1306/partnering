@@ -706,9 +706,12 @@ footer {
   .hero-cards { flex-direction: column; align-items: center; }
   .cta-actions { flex-direction: column; align-items: center; }
   .cta-actions .btn-primary { width: 100%; justify-content: center; max-width: 320px; }
-  /* 통계를 세로 1줄로 (모바일에서 2개씩 가로로 붙던 것) */
-  .stats-bar { flex-direction: column; gap: 0; }
-  .stat-item { min-width: 100%; width: 100%; }
+  /* 통계 2x2 그리드로 정리 (세로 1줄이 밋밋 → 2열 균형) */
+  .stats-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 0; padding: 20px 12px; }
+  .stat-item { min-width: 0; width: 100%; padding: 14px 8px;
+    border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  .stat-item:nth-child(2n) { border-right: none; }
+  .stat-item:nth-last-child(-n+2) { border-bottom: none; }
 }
 
 /* ── 라이트 모드 텍스트 오버라이드 ── */
