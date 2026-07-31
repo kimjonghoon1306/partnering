@@ -10,9 +10,12 @@ create table if not exists partners (
   id uuid primary key references auth.users(id) on delete cascade,
   email text not null,
   name text not null,
+  nickname text,                            -- 파트너 활동명
   phone text,
-  channel text,                 -- 주 활동 채널(인스타/블로그/유튜브 등)
-  bank_name text,               -- 정산 계좌
+  channels text[] not null default '{}',    -- 주요 채널(인스타/유튜브/블로그 등, 복수)
+  categories text[] not null default '{}',  -- 관심 카테고리(복수)
+  follower_scale text,                      -- 팔로워/구독자 규모
+  bank_name text,                           -- 정산 계좌
   bank_account text,
   bank_holder text,
   status text not null default 'active' check (status in ('active','suspended')),

@@ -640,19 +640,23 @@ document.getElementById('catalog-grid')?.addEventListener('click', async functio
   const { data: { user } } = await window.opClient.auth.getUser();
   if (!user) { window.location.href = 'login.html'; return; }
   const { data: prof } = await window.opClient.from('partners').select('nickname').eq('id', user.id).maybeSingle();
-  const code = makeRefCode(prof && prof.nickname);
-  let error;
-  if (regenBtn) {
-    const r = await window.opClient.from('partner_links').update({ code: code }).eq('partner_id', user.id).eq('product_id', p.id);
+  // 추천코드는 partner_links.code UNIQUE 제약으로 고유 보장. 극히 드문 충돌(23505) 시 새 코드로 자동 재발급.
+  let error, code;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    code = makeRefCode(prof && prof.nickname);
+    let r;
+    if (regenBtn) {
+      r = await window.opClient.from('partner_links').update({ code: code }).eq('partner_id', user.id).eq('product_id', p.id);
+    } else {
+      r = await window.opClient.from('partner_links').insert({
+        partner_id: user.id, code: code,
+        product_url: 'https://app.yuanfnb.com/shop/product/' + p.id,
+        product_id: p.id, product_name: p.name, product_image: resolveFarmImg(p.image_url) || null,
+        product_price: Number(p.retail_price) || 0, commission_rate: p.rate, title: p.name
+      });
+    }
     error = r.error;
-  } else {
-    const r = await window.opClient.from('partner_links').insert({
-      partner_id: user.id, code: code,
-      product_url: 'https://app.yuanfnb.com/shop/product/' + p.id,
-      product_id: p.id, product_name: p.name, product_image: resolveFarmImg(p.image_url) || null,
-      product_price: Number(p.retail_price) || 0, commission_rate: p.rate, title: p.name
-    });
-    error = r.error;
+    if (!error || error.code !== '23505') break; // 성공 or 코드충돌 외 에러 → 중단
   }
   btn.disabled = false; btn.textContent = t;
   if (error) { alert('링크 처리 실패: ' + error.message); return; }

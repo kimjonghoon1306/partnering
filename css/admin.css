@@ -170,15 +170,22 @@ body {
 
 .admin-hamburger {
   display: none;
-  width: 34px; height: 34px;
-  border-radius: 8px;
-  background: none;
-  border: 1px solid rgba(255,255,255,0.08);
+  height: 40px;
+  padding: 0 14px;
+  gap: 7px;
+  border-radius: 10px;
+  background: rgba(190,255,0,0.12);
+  border: 1px solid rgba(190,255,0,0.45);
   align-items: center; justify-content: center;
   cursor: pointer;
-  font-size: 17px;
-  color: #F5F5F5;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--lime);
+  transition: transform .12s, background .15s;
+  -webkit-tap-highlight-color: transparent;
 }
+.admin-hamburger .admin-hamburger-label { font-size: 15px; font-weight: 800; }
+.admin-hamburger:active { transform: scale(0.94); background: rgba(190,255,0,0.22); }
 
 /* ── ADMIN PAGE ── */
 .admin-page { padding: 24px; flex: 1; display: none; min-width: 0; max-width: 100%; }
@@ -698,12 +705,12 @@ body {
     white-space: nowrap;
   }
   .admin-topbar-right { gap: 6px; }
-  .admin-icon-btn,
-  .admin-hamburger {
+  .admin-icon-btn {
     width: 40px;
     height: 40px;
     min-width: 40px;
   }
+  .admin-hamburger { height: 40px; padding: 0 12px; }
   .admin-page { padding: 12px; }
   .admin-table-header { padding: 14px 16px; }
   .admin-table th,
