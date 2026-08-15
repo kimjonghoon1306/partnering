@@ -451,7 +451,7 @@ async function loadCatalog() {
   const [prodRes, commRes, linkRes, catRes, campRes, cpRes] = await Promise.all([
     window.opClient.from('products').select('id,name,retail_price,image_url,unit,category_id').eq('is_active', true).order('created_at', { ascending: false }),
     window.opClient.from('product_commissions').select('product_id,commission_rate'),
-    window.opClient.from('partner_links').select('code,product_id').eq('partner_id', uid || '00000000-0000-0000-0000-000000000000'),
+    window.opClient.from('partner_links').select('code,product_id,product_url').eq('partner_id', uid || '00000000-0000-0000-0000-000000000000'),
     window.opClient.from('categories').select('id,name,sort_order').order('sort_order', { ascending: true }),
     window.opClient.from('campaigns')
       .select('id,bonus_rate,target_type,target_value,ends_at')
@@ -464,7 +464,14 @@ async function loadCatalog() {
   const rateMap = {};
   (commRes.data || []).forEach(c => { rateMap[c.product_id] = Number(c.commission_rate); });
   const myCodeMap = {};
-  (linkRes.data || []).forEach(l => { if (l.product_id) myCodeMap[l.product_id] = l.code; });
+  (linkRes.data || []).forEach(l => {
+    let productId = l.product_id;
+    if (!productId && l.product_url) {
+      const match = String(l.product_url).match(/\/shop\/product\/([^/?#]+)/);
+      if (match) productId = decodeURIComponent(match[1]);
+    }
+    if (productId) myCodeMap[String(productId)] = l.code;
+  });
   const categoryMap = {};
   __catalogCategories = catRes.error ? [] : (catRes.data || []);
   __catalogCategories.forEach(c => { categoryMap[String(c.id)] = c.name; });
@@ -563,7 +570,7 @@ function renderCatalog() {
           ? '<div class="catalog-mylink"><span title="partner.yuanfnb.com/r/' + p.myCode + '">🔗 partner.yuanfnb.com/r/' + escHtml(p.myCode) + '</span><button class="catalog-copy" data-code="' + escHtml(p.myCode) + '">복사</button></div>' +
             '<div class="catalog-btnrow">' +
               '<button class="catalog-banner" data-banner="' + escHtml(p.id) + '" type="button">🖼 배너 만들기</button>' +
-              '<button class="catalog-regen" data-id="' + escHtml(p.id) + '"' + (suspended ? ' disabled title="정지된 계정" style="opacity:.45;cursor:not-allowed;"' : '') + '>🔄 재발급</button>' +
+              '<button class="catalog-regen" data-id="' + escHtml(p.id) + '"' + (suspended ? ' disabled title="정지된 계정" style="opacity:.45;cursor:not-allowed;"' : '') + '>🔄 링크 재발급</button>' +
             '</div>'
           : '<button class="catalog-getlink btn-primary" data-id="' + escHtml(p.id) + '"' + (suspended ? ' disabled title="정지된 계정" style="opacity:.45;cursor:not-allowed;"' : '') + '>🔗 이 상품 링크 만들기</button>') +
       '</div>' +
@@ -678,7 +685,7 @@ document.getElementById('catalog-grid')?.addEventListener('click', async functio
     code = makeRefCode(prof && prof.nickname);
     let r;
     if (regenBtn) {
-      r = await window.opClient.from('partner_links').update({ code: code }).eq('partner_id', user.id).eq('product_id', p.id);
+      r = await window.opClient.from('partner_links').update({ code: code, product_id:p.id, product_url:'https://app.yuanfnb.com/shop/product/'+p.id, product_name:p.name, product_image:resolveFarmImg(p.image_url)||null, product_price:Number(p.retail_price)||0, commission_rate:p.rate, title:p.name }).eq('partner_id', user.id).eq('code', p.myCode);
     } else {
       r = await window.opClient.from('partner_links').insert({
         partner_id: user.id, code: code,
@@ -1042,7 +1049,7 @@ async function downloadDetailPage(productId, name, btn) {
   const orig = btn ? btn.textContent : '';
   if (btn) { btn.disabled = true; btn.textContent = '준비 중...'; }
   try {
-    const { data, error } = await window.opClient.from('products').select('image_url,description').eq('id', productId).maybeSingle();
+    const { data, error } = await window.opClient.from('products').select('description').eq('id', productId).maybeSingle();
     if (error) throw new Error('상품 정보를 불러오지 못했어요.');
     const desc = (data && data.description) || '';
     const srcs = [];
@@ -1053,8 +1060,6 @@ async function downloadDetailPage(productId, name, btn) {
       if (src && !srcs.includes(src)) srcs.push(src);
     }
     if (!srcs.length) { alert('이 상품은 저장할 상세페이지 이미지가 아직 없어요.'); return; }
-    const mainSrc = resolveFarmImg((data && data.image_url) || '');
-    const mainImg = mainSrc ? await loadBannerImg(mainSrc) : null;
     const detailImgs = (await Promise.all(srcs.map(loadBannerImg))).filter(Boolean);
     if (!detailImgs.length) throw new Error('상세페이지 이미지를 불러오지 못했어요.');
     const safe = String(name || '상품').replace(/[^\w가-힣]+/g, '_').slice(0, 30) || '상품';
@@ -1071,14 +1076,27 @@ async function downloadDetailPage(productId, name, btn) {
         }, 'image/jpeg', 0.92);
       });
     }
-    if (mainImg) {
-      const mainCv = document.createElement('canvas');
-      mainCv.width = mainImg.naturalWidth || mainImg.width; mainCv.height = mainImg.naturalHeight || mainImg.height;
-      const mainCtx = mainCv.getContext('2d');
-      mainCtx.drawImage(mainImg, 0, 0, mainCv.width, mainCv.height);
-      drawDetailWatermark(mainCtx, mainCv.width, mainCv.height);
-      await saveCanvas(mainCv, '온파트너_대표이미지_' + safe + '.jpg');
-      await new Promise(function (resolve) { setTimeout(resolve, 280); });
+    let renderedDetail = null;
+    if (window.html2canvas) {
+      const host = document.createElement('div');
+      host.style.cssText = 'position:fixed;left:-10000px;top:0;width:860px;background:#fff;color:#111;overflow:hidden;z-index:-1;';
+      host.innerHTML = desc;
+      document.body.appendChild(host);
+      await Promise.all(Array.from(host.querySelectorAll('img')).map(function (img) {
+        if (img.complete) return Promise.resolve();
+        return new Promise(function (resolve) { img.onload = img.onerror = resolve; setTimeout(resolve, 8000); });
+      }));
+      if (host.scrollHeight > 0 && host.scrollHeight <= 30000) {
+        try { renderedDetail = await window.html2canvas(host, { backgroundColor:'#ffffff', scale:1, useCORS:true, allowTaint:false, logging:false, width:860, windowWidth:860 }); } catch (e) {}
+      }
+      host.remove();
+    }
+    if (renderedDetail) {
+      const renderedCtx = renderedDetail.getContext('2d');
+      drawDetailWatermark(renderedCtx, renderedDetail.width, renderedDetail.height);
+      const saved = await saveCanvas(renderedDetail, '온파트너_상세페이지_' + safe + '.jpg');
+      if (!saved) alert('상세페이지 저장에 실패했어요. 다시 시도해 주세요.');
+      return;
     }
     let detailW = Math.max.apply(null, detailImgs.map(function (img) { return img.naturalWidth || img.width; }));
     let heights = detailImgs.map(function (img) {
