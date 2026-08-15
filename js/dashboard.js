@@ -565,7 +565,7 @@ function renderCatalog() {
               '<button class="catalog-banner" data-banner="' + escHtml(p.id) + '" type="button">🖼 배너 만들기</button>' +
               '<button class="catalog-regen" data-id="' + escHtml(p.id) + '"' + (suspended ? ' disabled title="정지된 계정" style="opacity:.45;cursor:not-allowed;"' : '') + '>🔄 재발급</button>' +
             '</div>'
-          : '<button class="catalog-getlink btn-primary" data-id="' + escHtml(p.id) + '"' + (suspended ? ' disabled title="정지된 계정" style="opacity:.45;cursor:not-allowed;"' : '') + '>🔗 링크 받기</button>') +
+          : '<button class="catalog-getlink btn-primary" data-id="' + escHtml(p.id) + '"' + (suspended ? ' disabled title="정지된 계정" style="opacity:.45;cursor:not-allowed;"' : '') + '>🔗 이 상품 링크 만들기</button>') +
       '</div>' +
     '</div>';
   }).join('');

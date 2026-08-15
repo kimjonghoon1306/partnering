@@ -638,6 +638,7 @@ body {
 
 /* ── LINKS TABLE ── */
 .link-workspace-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;padding:5px;border:1px solid var(--border);border-radius:14px;background:var(--dark3)}.link-workspace-tab{min-height:43px;border:0;border-radius:10px;background:transparent;color:var(--text2);font-family:var(--font);font-size:13px;font-weight:850;cursor:pointer}.link-workspace-tab.active{background:var(--lime);color:var(--dark);box-shadow:0 4px 16px rgba(190,255,0,.18)}.link-workspace-section{display:none}.link-workspace-section.active{display:block}
+.link-create-guide{display:flex;align-items:center;justify-content:center;gap:9px;margin-bottom:14px;padding:11px;border:1px solid var(--lime-border);border-radius:12px;background:var(--lime-glow);color:var(--text2);font-size:11px}.link-create-guide b{color:var(--lime)}
 .table-card {
   background: var(--dark3);
   border: 1px solid var(--border);
@@ -1069,6 +1070,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 @media (max-width: 560px) {
   .link-workspace-tabs{position:sticky;top:64px;z-index:20;margin:-2px 0 12px;padding:4px;background:rgba(20,20,20,.96);backdrop-filter:blur(12px)}
   .link-workspace-tab{min-height:40px;padding:7px 4px;font-size:12px}
+  .link-create-guide{justify-content:flex-start;gap:5px;padding:9px 10px;overflow-x:auto;white-space:nowrap;font-size:10px}
   .catalog-head { align-items:stretch; gap:12px; margin-bottom:12px; }
   .catalog-title { font-size:17px; }
   .catalog-sub { font-size:12px; line-height:1.45; }
