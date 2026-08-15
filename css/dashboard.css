@@ -1029,7 +1029,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 .catalog-view:hover { border-color:var(--lime-border); color:var(--lime); background:var(--lime-glow); transform:translateY(-1px); }
 .catalog-view:active { transform:scale(.97); }
 .catalog-btnrow { display:flex; gap:6px; margin-top:2px; }
-.catalog-btnrow .catalog-regen { margin-top:0; flex:1; }
+.catalog-btnrow .catalog-regen,.catalog-btnrow .catalog-getlink { margin-top:0; flex:1; width:auto; }
 .catalog-banner { flex:1; display:flex; align-items:center; justify-content:center; gap:4px; background:var(--lime-glow); border:1px solid var(--lime-border); color:var(--lime); border-radius:var(--radius-sm); padding:9px; font-size:13px; font-weight:800; cursor:pointer; font-family:var(--font); transition:all .15s; }
 .catalog-banner:hover { background:var(--lime); color:#0b0b0b; transform:translateY(-1px); }
 .catalog-banner:active { transform:scale(.97); }

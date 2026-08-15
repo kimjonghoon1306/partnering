@@ -451,7 +451,7 @@ async function loadCatalog() {
   const [prodRes, commRes, linkRes, catRes, campRes, cpRes] = await Promise.all([
     window.opClient.from('products').select('id,name,retail_price,image_url,unit,category_id').eq('is_active', true).order('created_at', { ascending: false }),
     window.opClient.from('product_commissions').select('product_id,commission_rate'),
-    window.opClient.from('partner_links').select('code,product_id,product_url').eq('partner_id', uid || '00000000-0000-0000-0000-000000000000'),
+    window.opClient.from('partner_links').select('code,product_id,product_url,product_name,title').eq('partner_id', uid || '00000000-0000-0000-0000-000000000000'),
     window.opClient.from('categories').select('id,name,sort_order').order('sort_order', { ascending: true }),
     window.opClient.from('campaigns')
       .select('id,bonus_rate,target_type,target_value,ends_at')
@@ -464,6 +464,7 @@ async function loadCatalog() {
   const rateMap = {};
   (commRes.data || []).forEach(c => { rateMap[c.product_id] = Number(c.commission_rate); });
   const myCodeMap = {};
+  const myCodeNameMap = {};
   (linkRes.data || []).forEach(l => {
     let productId = l.product_id;
     if (!productId && l.product_url) {
@@ -471,6 +472,8 @@ async function loadCatalog() {
       if (match) productId = decodeURIComponent(match[1]);
     }
     if (productId) myCodeMap[String(productId)] = l.code;
+    const legacyName = String(l.product_name || l.title || '').trim().toLowerCase();
+    if (legacyName) myCodeNameMap[legacyName] = l.code;
   });
   const categoryMap = {};
   __catalogCategories = catRes.error ? [] : (catRes.data || []);
@@ -485,7 +488,9 @@ async function loadCatalog() {
   __catalog = (prodRes.data || []).map(p => {
     const product = Object.assign({}, p, {
       baseRate: clampCatalogRate(rateMap[p.id] != null ? rateMap[p.id] : (Number(__appSettings.default_commission_rate) / 100), Number(__appSettings.default_commission_rate) / 100, 0.30),
-      myCode: myCodeMap[p.id] || null,
+      // 오래된 링크는 product_id가 비어 있을 수 있어 상품명까지 대조한다.
+      // 따라서 기존·신규 상품 모두 같은 카드 액션(배너/발급·재발급)을 유지한다.
+      myCode: myCodeMap[String(p.id)] || myCodeNameMap[String(p.name || '').trim().toLowerCase()] || null,
       categoryName: categoryMap[String(p.category_id)] || ''
     });
     const camp = getCatalogCampaignBonus(product, campaigns, productCampaignRates);
@@ -572,7 +577,10 @@ function renderCatalog() {
               '<button class="catalog-banner" data-banner="' + escHtml(p.id) + '" type="button">🖼 배너 만들기</button>' +
               '<button class="catalog-regen" data-id="' + escHtml(p.id) + '"' + (suspended ? ' disabled title="정지된 계정" style="opacity:.45;cursor:not-allowed;"' : '') + '>🔄 링크 재발급</button>' +
             '</div>'
-          : '<button class="catalog-getlink btn-primary" data-id="' + escHtml(p.id) + '"' + (suspended ? ' disabled title="정지된 계정" style="opacity:.45;cursor:not-allowed;"' : '') + '>🔗 이 상품 링크 만들기</button>') +
+          : '<div class="catalog-btnrow">' +
+              '<button class="catalog-banner" data-banner="' + escHtml(p.id) + '" type="button">🖼 배너 만들기</button>' +
+              '<button class="catalog-getlink btn-primary" data-id="' + escHtml(p.id) + '"' + (suspended ? ' disabled title="정지된 계정" style="opacity:.45;cursor:not-allowed;"' : '') + '>🔗 링크 발급</button>' +
+            '</div>') +
       '</div>' +
     '</div>';
   }).join('');
@@ -874,6 +882,14 @@ function loadBannerImg(src) {
     im.src = src;
   });
 }
+function withFreshAssetVersion(src, stamp) {
+  if (!src || /^(data:|blob:)/i.test(src)) return src;
+  try {
+    const url = new URL(src, 'https://app.yuanfnb.com');
+    url.searchParams.set('_op_fresh', String(stamp || Date.now()));
+    return url.href;
+  } catch (e) { return src; }
+}
 function bannerCover(ctx, img, x, y, w, h) {
   const ir = img.width / img.height, r = w / h;
   let sw, sh, sx, sy;
@@ -1049,6 +1065,7 @@ async function downloadDetailPage(productId, name, btn) {
   const orig = btn ? btn.textContent : '';
   if (btn) { btn.disabled = true; btn.textContent = '준비 중...'; }
   try {
+    // 저장할 때마다 온종일팜 DB를 다시 조회한다. 로컬에 상세 HTML을 보관하지 않는다.
     const { data, error } = await window.opClient.from('products').select('description').eq('id', productId).maybeSingle();
     if (error) throw new Error('상품 정보를 불러오지 못했어요.');
     const desc = (data && data.description) || '';
@@ -1060,7 +1077,8 @@ async function downloadDetailPage(productId, name, btn) {
       if (src && !srcs.includes(src)) srcs.push(src);
     }
     if (!srcs.length) { alert('이 상품은 저장할 상세페이지 이미지가 아직 없어요.'); return; }
-    const detailImgs = (await Promise.all(srcs.map(loadBannerImg))).filter(Boolean);
+    const freshStamp = Date.now();
+    const detailImgs = (await Promise.all(srcs.map(function (src) { return loadBannerImg(withFreshAssetVersion(src, freshStamp)); }))).filter(Boolean);
     if (!detailImgs.length) throw new Error('상세페이지 이미지를 불러오지 못했어요.');
     const safe = String(name || '상품').replace(/[^\w가-힣]+/g, '_').slice(0, 30) || '상품';
     function saveCanvas(cv, filename) {
@@ -1082,6 +1100,10 @@ async function downloadDetailPage(productId, name, btn) {
       host.style.cssText = 'position:fixed;left:-10000px;top:0;width:860px;background:#fff;color:#111;overflow:hidden;z-index:-1;';
       host.innerHTML = desc;
       document.body.appendChild(host);
+      Array.from(host.querySelectorAll('img')).forEach(function (img) {
+        img.crossOrigin = 'anonymous';
+        img.src = withFreshAssetVersion(img.getAttribute('src') || img.src, freshStamp);
+      });
       await Promise.all(Array.from(host.querySelectorAll('img')).map(function (img) {
         if (img.complete) return Promise.resolve();
         return new Promise(function (resolve) { img.onload = img.onerror = resolve; setTimeout(resolve, 8000); });
