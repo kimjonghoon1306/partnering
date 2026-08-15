@@ -389,8 +389,28 @@ function renderAdminPartners(list) {
 function openPartnerDashboard(partnerId) {
   const partner = __admPartners.find(function (p) { return p.id === partnerId; });
   const label = partner ? (partner.name || partner.nickname || partner.email || '회원') : '회원';
+  localStorage.setItem('op-admin-last-partner-dashboard', partnerId);
   logAdminAction('view_partner_dashboard', 'partner', partnerId, { name: label });
   window.open('dashboard.html?admin_view=' + encodeURIComponent(partnerId), '_blank', 'noopener');
+}
+
+async function openMemberDashboardFromAdmin() {
+  if (!window.opClient) return;
+  const savedId = localStorage.getItem('op-admin-last-partner-dashboard');
+  const { data, error } = await window.opClient
+    .from('partners')
+    .select('id,name,nickname,email,status,created_at')
+    .order('created_at', { ascending: false });
+  if (error) { showToast('회원 대시보드를 불러오지 못했어요.'); return; }
+  const members = (data || []).filter(function (p) {
+    return !OP_ADMIN_EMAILS.includes((p.email || '').toLowerCase());
+  });
+  const partner = members.find(function (p) { return p.id === savedId; })
+    || members.find(function (p) { return p.status !== 'suspended'; })
+    || members[0];
+  if (!partner) { showToast('먼저 가입한 온파트너 회원이 필요해요.'); return; }
+  __admPartners = members;
+  openPartnerDashboard(partner.id);
 }
 function detailField(label, value) {
   return '<div class="partner-detail-field"><span>' + admEsc(label) + '</span><b>' + admEsc(value || '-') + '</b></div>';

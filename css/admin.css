@@ -147,6 +147,22 @@ body {
 }
 .admin-topbar-title { font-size: 15px; font-weight: 700; color: #F5F5F5; min-width: 0; }
 .admin-topbar-right { display: flex; align-items: center; gap: 8px; }
+.admin-member-dashboard-btn {
+  height: 36px;
+  padding: 0 13px;
+  border-radius: 9px;
+  border: 1px solid rgba(79,195,247,.42);
+  background: rgba(79,195,247,.11);
+  color: #72d2ff;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.admin-member-dashboard-btn:hover { background: rgba(79,195,247,.2); transform: translateY(-1px); }
 .admin-icon-btn {
   width: 34px; height: 34px;
   border-radius: 8px;
@@ -712,6 +728,8 @@ body {
     white-space: nowrap;
   }
   .admin-topbar-right { gap: 6px; }
+  .admin-member-dashboard-btn { width: 40px; padding: 0; justify-content: center; }
+  .admin-member-dashboard-btn b { display: none; }
   .admin-icon-btn {
     width: 40px;
     height: 40px;
