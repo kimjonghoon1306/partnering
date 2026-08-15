@@ -25,6 +25,7 @@ const SERVICE_BENEFITS = {
 };
 function openServiceBenefit(key) {
   const data = SERVICE_BENEFITS[key]; if (!data) return;
+  document.getElementById('service-benefit-modal').dataset.service = key;
   document.getElementById('service-benefit-kicker').textContent = data.kicker;
   document.getElementById('service-benefit-title').textContent = data.title;
   document.getElementById('service-benefit-hook').textContent = data.hook;

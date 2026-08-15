@@ -985,6 +985,12 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 [data-theme="light"] .service-guide-card em{color:#a90f49}
 [data-theme="light"] .service-benefit-backdrop{background:rgba(15,23,42,.66)}
 [data-theme="light"] .service-benefit-dialog{background:#fff!important;color:#111827!important;border-color:#d5dde5}
+[data-theme="light"] .service-benefit-modal[data-service="publy"] .service-benefit-dialog{border:2px solid #00a96b!important;background:linear-gradient(180deg,#ecfff7 0,#fff 115px)!important;box-shadow:0 26px 80px rgba(0,116,83,.26),0 0 0 6px rgba(0,223,145,.1)}
+[data-theme="light"] .service-benefit-modal[data-service="publy"] .service-benefit-kicker{display:inline-flex;padding:6px 10px;border:1px solid #6bd9b0;border-radius:999px;background:#d9fff0;color:#056441}
+[data-theme="light"] .service-benefit-modal[data-service="publy"] .service-benefit-item{border-color:#b8ddd0;border-left:4px solid #00a96b;background:#f7fffb!important}
+[data-theme="light"] .service-benefit-modal[data-service="publy"] .service-benefit-spotlight{border:2px solid #168bb7;background:linear-gradient(135deg,#e4f7ff,#eafff4);box-shadow:0 9px 24px rgba(22,139,183,.13)}
+[data-theme="light"] .service-benefit-modal[data-service="publy"] .service-benefit-flow{border:1px solid #e38aae;background:#fff0f6;color:#941044}
+[data-theme="light"] .service-benefit-modal[data-service="publy"] .service-benefit-cta{background:linear-gradient(135deg,#00b875,#008d62);color:#fff;box-shadow:0 9px 22px rgba(0,151,101,.28)}
 [data-theme="light"] .service-benefit-dialog h2,[data-theme="light"] .service-benefit-item b{color:#111827!important}
 [data-theme="light"] .service-benefit-hook,[data-theme="light"] .service-benefit-item span{color:#40505e!important}
 [data-theme="light"] .service-benefit-item{background:#f4f7f9!important;border-color:#d7e0e7}
