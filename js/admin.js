@@ -377,6 +377,7 @@ function renderAdminPartners(list) {
       '<td>' + (suspended ? '<span class="status-pill paused">정지</span>' : '<span class="status-pill active">● 활성</span>') + '</td>' +
       '<td style="font-size:12px;color:var(--text3);">' + admEsc(String(p.created_at || '').slice(0, 10)) + '</td>' +
       '<td style="text-align:right;">' +
+        '<button class="admin-action-btn dashboard" onclick="openPartnerDashboard(\'' + admEsc(p.id) + '\')">📊 대시보드</button> ' +
         '<button class="admin-action-btn" onclick="openPartnerDetail(\'' + admEsc(p.id) + '\')">상세</button> ' +
         (suspended
           ? '<button class="admin-action-btn approve" onclick="setPartnerStatus(\'' + admEsc(p.id) + '\',\'active\',this)">활성화</button>'
@@ -384,6 +385,12 @@ function renderAdminPartners(list) {
         '<button class="admin-action-btn danger" onclick="adminDeletePartner(\'' + admEsc(p.id) + '\',\'' + admEsc(p.name || p.nickname || '') + '\',this)">삭제</button>' +
       '</td></tr>';
   }).join('');
+}
+function openPartnerDashboard(partnerId) {
+  const partner = __admPartners.find(function (p) { return p.id === partnerId; });
+  const label = partner ? (partner.name || partner.nickname || partner.email || '회원') : '회원';
+  logAdminAction('view_partner_dashboard', 'partner', partnerId, { name: label });
+  window.open('dashboard.html?admin_view=' + encodeURIComponent(partnerId), '_blank', 'noopener');
 }
 function detailField(label, value) {
   return '<div class="partner-detail-field"><span>' + admEsc(label) + '</span><b>' + admEsc(value || '-') + '</b></div>';
@@ -406,6 +413,8 @@ function renderPartnerDetail(p, links, convs, settlements, clickCount) {
     return '<tr><td>' + admEsc(admDate(c.created_at)) + '</td><td>' + admEsc(prod) + '</td><td>' + admMoney(c.order_amount) + '</td><td style="color:var(--lime);font-weight:700;">' + admMoney(c.commission_amount) + '</td><td>' + reviewStatusPill(c.status) + '</td></tr>';
   }).join('');
   body.innerHTML =
+    '<div class="partner-dashboard-entry"><div><b>📊 회원 대시보드</b><span>이 회원에게 보이는 실적·링크·수익 화면을 관리자 조회 모드로 확인합니다.</span></div>' +
+      '<button class="admin-action-btn dashboard" onclick="openPartnerDashboard(\'' + admEsc(p.id) + '\')">대시보드 열기 →</button></div>' +
     '<div class="partner-detail-grid">' +
       '<section class="partner-detail-section"><h4>프로필</h4>' +
         detailField('이름', p.name) + detailField('닉네임', p.nickname) + detailField('이메일', p.email) + detailField('전화', p.phone) +

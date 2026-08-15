@@ -23,6 +23,7 @@ const navItems = document.querySelectorAll('.nav-item[data-page]');
 const pages = document.querySelectorAll('.page');
 
 function showPage(pageId) {
+  if (window.__opAdminView && pageId === 'settings') return;
   pages.forEach(p => p.classList.remove('active'));
   navItems.forEach(n => n.classList.remove('active'));
   const targetPage = document.getElementById('page-' + pageId);
@@ -120,6 +121,10 @@ function showSuspendedNotice() {
   banner.style.display = isPartnerSuspended() ? 'block' : 'none';
 }
 function blockIfSuspended() {
+  if (window.__opAdminView) {
+    alert('관리자 조회 모드에서는 회원 데이터를 변경할 수 없어요.');
+    return true;
+  }
   if (!isPartnerSuspended()) return false;
   showSuspendedNotice();
   alert('정지된 계정입니다. 링크 생성/재발급/삭제를 할 수 없어요.');
@@ -773,7 +778,11 @@ async function loadAppSettings() {
 }
 // 현재 로그인 사용자 id — "내 대시보드" 조회를 본인 것으로 한정(관리자 계정이면 RLS상 전체가 보이므로 명시 필터 필수)
 async function currentUid() {
-  try { const { data } = await window.opClient.auth.getUser(); return data && data.user ? data.user.id : null; }
+  try {
+    if (window.__opDashboardReady) await window.__opDashboardReady;
+    if (window.__opAdminView) return window.__opAdminView.partnerId;
+    const { data } = await window.opClient.auth.getUser(); return data && data.user ? data.user.id : null;
+  }
   catch (e) { return null; }
 }
 // 온종일팜 상품 이미지 URL 정규화: 상대경로(/products/x.jpg)는 온종일팜 도메인을 붙여 절대 URL로.
@@ -1047,11 +1056,12 @@ searchEl?.addEventListener('input', function() {
 // ── 사이드바 파트너 정보 (실제 가입 이름)
 async function loadPartnerHeader() {
   if (!window.opClient) return;
+  const uid = await currentUid();
+  if (!uid) return;
   const { data: { user } } = await window.opClient.auth.getUser();
-  if (!user) return;
   const [{ data: p }, { count }] = await Promise.all([
-    window.opClient.from('partners').select('name,nickname,status').eq('id', user.id).maybeSingle(),
-    window.opClient.from('partner_links').select('id', { count: 'exact', head: true }).eq('partner_id', user.id)
+    window.opClient.from('partners').select('name,nickname,status').eq('id', uid).maybeSingle(),
+    window.opClient.from('partner_links').select('id', { count: 'exact', head: true }).eq('partner_id', uid)
   ]);
   __partnerStatus = (p && p.status) || 'active';
   showSuspendedNotice();
@@ -1213,6 +1223,7 @@ async function loadNotifications() {
   renderNotifications(list);
   const unreadIds = list.filter(n => !n.is_read).map(n => n.id);
   if (unreadIds.length) {
+    if (window.__opAdminView) { setNotificationBadge(unreadIds.length); return; }
     setNotificationBadge(0);
     const { error: readErr } = await window.opClient.from('notifications').update({ is_read: true }).eq('partner_id', uid).in('id', unreadIds);
     if (readErr) {
@@ -1225,7 +1236,8 @@ async function loadNotifications() {
 }
 
 // ── 초기화
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  if (window.__opDashboardReady) await window.__opDashboardReady;
   initNotificationToggles();
   loadAppSettings();   // 전역 설정(기본 수수료율·최소출금·정산안내) 먼저 로드
   loadPartnerHeader();
@@ -1596,13 +1608,13 @@ function walletDelta(cashDelta, pointDelta) {
 }
 async function loadWallet() {
   if (!window.opClient) return;
-  const { data: { user } } = await window.opClient.auth.getUser();
-  if (!user) { window.location.href = 'login.html'; return; }
+  const uid = await currentUid();
+  if (!uid) { window.location.href = 'login.html'; return; }
   const [accountRes, partnerRes, withdrawalsRes, ledgerRes] = await Promise.all([
-    window.opClient.from('cash_accounts').select('cash_balance,point_balance').eq('user_id', user.id).maybeSingle(),
-    window.opClient.from('partners').select('bank_name,bank_account,bank_holder').eq('id', user.id).maybeSingle(),
-    window.opClient.from('cash_withdrawals').select('amount,status,bank_name,bank_account,bank_holder,created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(20),
-    window.opClient.from('cash_ledger').select('kind,cash_delta,point_delta,cash_after,point_after,source,ref_type,ref_id,memo,created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(50)
+    window.opClient.from('cash_accounts').select('cash_balance,point_balance').eq('user_id', uid).maybeSingle(),
+    window.opClient.from('partners').select('bank_name,bank_account,bank_holder').eq('id', uid).maybeSingle(),
+    window.opClient.from('cash_withdrawals').select('amount,status,bank_name,bank_account,bank_holder,created_at').eq('user_id', uid).order('created_at', { ascending: false }).limit(20),
+    window.opClient.from('cash_ledger').select('kind,cash_delta,point_delta,cash_after,point_after,source,ref_type,ref_id,memo,created_at').eq('user_id', uid).order('created_at', { ascending: false }).limit(50)
   ]);
   if (accountRes.error && accountRes.error.code !== 'PGRST116') console.warn('[온파트너] 캐시 계좌 로드 오류:', accountRes.error.message);
   if (partnerRes.error && partnerRes.error.code !== 'PGRST116') console.warn('[온파트너] 계좌 로드 오류:', partnerRes.error.message);
@@ -1669,6 +1681,7 @@ function renderWalletLedger(list) {
 }
 async function convertWalletCash(btn) {
   if (!window.opClient) return;
+  if (window.__opAdminView) { alert('관리자 조회 모드에서는 캐시를 전환할 수 없어요.'); return; }
   const amount = walletAmountInput('wallet-convert-amount');
   if (amount <= 0) { alert('전환할 금액을 입력해주세요.'); return; }
   const t = btn.textContent; btn.disabled = true; btn.textContent = '전환 중...';
@@ -1684,6 +1697,7 @@ async function convertWalletCash(btn) {
 }
 async function requestWalletWithdraw(btn) {
   if (!window.opClient) return;
+  if (window.__opAdminView) { alert('관리자 조회 모드에서는 출금을 신청할 수 없어요.'); return; }
   const amount = walletAmountInput('wallet-withdraw-amount');
   if (amount <= 0) { alert('출금할 금액을 입력해주세요.'); return; }
   const minW = Number(__appSettings.min_withdrawal) || 0;

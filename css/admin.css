@@ -370,6 +370,13 @@ body {
 .admin-action-btn.reject:hover { background: rgba(255,77,106,0.08); }
 .admin-action-btn.pay { border-color: rgba(79,195,247,0.3); color: #4FC3F7; }
 .admin-action-btn.pay:hover { background: rgba(79,195,247,0.08); }
+.admin-action-btn.dashboard { border-color: rgba(79,195,247,.42); color:#4FC3F7; font-weight:800; }
+.admin-action-btn.dashboard:hover { background:rgba(79,195,247,.12); }
+.partner-dashboard-entry { display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:14px;padding:14px 16px;border:1px solid rgba(79,195,247,.28);border-radius:12px;background:linear-gradient(135deg,rgba(79,195,247,.10),rgba(79,195,247,.03)); }
+.partner-dashboard-entry div { display:flex;flex-direction:column;gap:4px; }
+.partner-dashboard-entry b { color:#4FC3F7;font-size:14px; }
+.partner-dashboard-entry span { color:var(--text2);font-size:12px;line-height:1.5; }
+@media (max-width:640px) { .partner-dashboard-entry { align-items:stretch;flex-direction:column; } .partner-dashboard-entry button { width:100%; } }
 
 /* ── ADMIN SECTION TITLE ── */
 .admin-section-title {

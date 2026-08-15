@@ -8,9 +8,14 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="../css/variables.css?v=20260731c">
 <link rel="stylesheet" href="../css/reset.css?v=20260731c">
-<link rel="stylesheet" href="../css/dashboard.css?v=20260731c">
+<link rel="stylesheet" href="../css/dashboard.css?v=20260816a">
 </head>
 <body>
+
+<div class="admin-view-banner" id="admin-view-banner" hidden>
+  <div><b>관리자 조회 모드</b><span id="admin-view-member">회원 대시보드를 확인하고 있습니다.</span></div>
+  <a href="admin.html#partners">관리자 페이지로 돌아가기 →</a>
+</div>
 
 <div class="dash-wrap">
 
@@ -92,6 +97,18 @@
 
     <!-- ══════════ 페이지: 오버뷰 ══════════ -->
     <div class="page" id="page-overview">
+
+      <section class="partner-service-guide" aria-label="온종일 서비스 안내">
+        <a class="service-guide-card farm" href="https://app.yuanfnb.com" target="_blank" rel="noopener">
+          <span class="service-guide-icon">🌱</span><span><b>온종일팜</b><small>신선한 상품을 고르고 파트너 링크로 수익을 만들어보세요.</small></span><em>상품 보러가기 →</em>
+        </a>
+        <div class="service-guide-card trial">
+          <span class="service-guide-icon">🎁</span><span><b>온종일 체험단</b><small>상품과 매장을 직접 체험하고 콘텐츠의 가치와 영향력을 키워보세요.</small></span><em>곧 출시됩니다</em>
+        </div>
+        <a class="service-guide-card publy" href="https://publy.blogautopro.com" target="_blank" rel="noopener">
+          <span class="service-guide-icon">P</span><span><b>퍼블리</b><small>AI 글쓰기부터 블로그 발행·이웃 소통까지, 홍보 작업을 한곳에서 더 빠르게.</small></span><em>퍼블리 시작하기 →</em>
+        </a>
+      </section>
 
       <!-- 파트너 추천 광고 -->
       <section class="partner-ad-slider" id="partner-ad-slider" style="display:none;" aria-label="추천 광고">
@@ -398,7 +415,7 @@
       </div>
 
       <div class="chart-row" style="align-items:start;">
-        <div class="chart-card">
+        <div class="chart-card" id="wallet-convert-card">
           <div class="chart-card-header"><div class="chart-card-title">캐시 → 쇼핑포인트 전환</div></div>
           <div style="display:flex;flex-direction:column;gap:12px;">
             <div style="font-size:12px;color:var(--text2);line-height:1.7;background:var(--dark4);border-radius:var(--radius-sm);padding:10px 12px;">
@@ -418,7 +435,7 @@
           </div>
         </div>
 
-        <div class="chart-card">
+        <div class="chart-card" id="wallet-withdraw-card">
           <div class="chart-card-header"><div class="chart-card-title">출금 신청</div></div>
           <div style="display:flex;flex-direction:column;gap:12px;">
             <div style="background:rgba(190,255,0,0.06);border:1px solid var(--lime-border);border-radius:var(--radius);padding:14px 16px;">
@@ -704,13 +721,28 @@
 <script src="../js/config.js?v=20260731c"></script>
 <script src="../js/db.js?v=20260731c"></script>
 <script>
-  // 세션 가드: 로그인 안 했으면 로그인 페이지로
-  (async function () {
+  // 세션 가드 + 관리자가 선택한 회원의 대시보드를 안전한 조회 모드로 엽니다.
+  window.__opDashboardReady = (async function () {
     if (!window.opClient) return;
     document.body.style.visibility = 'hidden';
     const { data: { session } } = await window.opClient.auth.getSession();
     if (!session) { window.location.replace('login.html'); return; }
     window.__opSession = session;
+    const requestedPartnerId = new URLSearchParams(window.location.search).get('admin_view');
+    if (requestedPartnerId) {
+      const { data: isAdmin } = await window.opClient.rpc('is_admin');
+      if (!isAdmin) { window.location.replace('dashboard.html'); return; }
+      const { data: viewedPartner } = await window.opClient.from('partners').select('id,name,nickname,email,status').eq('id', requestedPartnerId).maybeSingle();
+      if (!viewedPartner) { window.location.replace('admin.html#partners'); return; }
+      window.__opAdminView = { partnerId: requestedPartnerId, partner: viewedPartner };
+      document.documentElement.classList.add('admin-view-mode');
+      const banner = document.getElementById('admin-view-banner');
+      const member = document.getElementById('admin-view-member');
+      if (member) member.textContent = (viewedPartner.name || viewedPartner.nickname || '회원') + ' · ' + (viewedPartner.email || '');
+      if (banner) banner.hidden = false;
+      document.body.style.visibility = '';
+      return;
+    }
     const partner = await opGetPartner(session.user);
     if (!partner) {
       window.location.replace('signup.html?mode=partner-register');
@@ -723,6 +755,6 @@
     window.location.href = 'login.html';
   }
 </script>
-<script src="../js/dashboard.js?v=20260731c"></script>
+<script src="../js/dashboard.js?v=20260816a"></script>
 </body>
 </html>
