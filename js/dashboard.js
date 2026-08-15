@@ -1042,30 +1042,66 @@ async function downloadDetailPage(productId, name, btn) {
   const orig = btn ? btn.textContent : '';
   if (btn) { btn.disabled = true; btn.textContent = '준비 중...'; }
   try {
-    const { data, error } = await window.opClient.from('products').select('description').eq('id', productId).maybeSingle();
+    const { data, error } = await window.opClient.from('products').select('image_url,description').eq('id', productId).maybeSingle();
     if (error) throw new Error('상품 정보를 불러오지 못했어요.');
     const desc = (data && data.description) || '';
-    const m = desc.match(/src="(data:image\/[^"]+)"/);
-    if (!m) { alert('이 상품은 저장할 상세페이지가 아직 없어요.'); return; }
-    const img = await loadBannerImg(m[1]);
-    if (!img) throw new Error('상세페이지 이미지를 불러오지 못했어요.');
-    const cv = document.createElement('canvas');
-    cv.width = img.width; cv.height = img.height;
-    const ctx = cv.getContext('2d');
-    ctx.drawImage(img, 0, 0);
-    drawDetailWatermark(ctx, cv.width, cv.height);
-    await new Promise(function (resolve) {
-      cv.toBlob(function (blob) {
-        if (!blob) { alert('저장에 실패했어요. 다시 시도해 주세요.'); resolve(); return; }
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        const safe = String(name || '상품').replace(/[^\w가-힣]+/g, '_').slice(0, 30) || '상품';
-        a.href = url; a.download = '온파트너_상세페이지_' + safe + '.jpg';
-        document.body.appendChild(a); a.click(); a.remove();
-        setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
-        resolve();
-      }, 'image/jpeg', 0.9);
+    const srcs = [];
+    const imgPattern = /<img[^>]+src=["']([^"']+)["']/gi;
+    let match;
+    while ((match = imgPattern.exec(desc))) {
+      const src = String(match[1] || '').trim();
+      if (src && !srcs.includes(src)) srcs.push(src);
+    }
+    if (!srcs.length) { alert('이 상품은 저장할 상세페이지 이미지가 아직 없어요.'); return; }
+    const mainSrc = resolveFarmImg((data && data.image_url) || '');
+    const mainImg = mainSrc ? await loadBannerImg(mainSrc) : null;
+    const detailImgs = (await Promise.all(srcs.map(loadBannerImg))).filter(Boolean);
+    if (!detailImgs.length) throw new Error('상세페이지 이미지를 불러오지 못했어요.');
+    const safe = String(name || '상품').replace(/[^\w가-힣]+/g, '_').slice(0, 30) || '상품';
+    function saveCanvas(cv, filename) {
+      return new Promise(function (resolve) {
+        cv.toBlob(function (blob) {
+          if (!blob) { resolve(false); return; }
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url; a.download = filename;
+          document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(function () { URL.revokeObjectURL(url); }, 1800);
+          resolve(true);
+        }, 'image/jpeg', 0.92);
+      });
+    }
+    if (mainImg) {
+      const mainCv = document.createElement('canvas');
+      mainCv.width = mainImg.naturalWidth || mainImg.width; mainCv.height = mainImg.naturalHeight || mainImg.height;
+      const mainCtx = mainCv.getContext('2d');
+      mainCtx.drawImage(mainImg, 0, 0, mainCv.width, mainCv.height);
+      drawDetailWatermark(mainCtx, mainCv.width, mainCv.height);
+      await saveCanvas(mainCv, '온파트너_대표이미지_' + safe + '.jpg');
+      await new Promise(function (resolve) { setTimeout(resolve, 280); });
+    }
+    let detailW = Math.max.apply(null, detailImgs.map(function (img) { return img.naturalWidth || img.width; }));
+    let heights = detailImgs.map(function (img) {
+      const w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+      return Math.max(1, Math.round(h * detailW / w));
     });
+    const originalTotalH = heights.reduce(function (sum, h) { return sum + h; }, 0);
+    if (originalTotalH > 30000) {
+      const scale = 30000 / originalTotalH;
+      detailW = Math.max(1, Math.round(detailW * scale));
+      heights = detailImgs.map(function (img) {
+        const w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+        return Math.max(1, Math.round(h * detailW / w));
+      });
+    }
+    const detailCv = document.createElement('canvas');
+    detailCv.width = detailW; detailCv.height = heights.reduce(function (sum, h) { return sum + h; }, 0);
+    const detailCtx = detailCv.getContext('2d');
+    let y = 0;
+    detailImgs.forEach(function (img, i) { detailCtx.drawImage(img, 0, y, detailW, heights[i]); y += heights[i]; });
+    drawDetailWatermark(detailCtx, detailCv.width, detailCv.height);
+    const saved = await saveCanvas(detailCv, '온파트너_상세페이지_' + safe + '.jpg');
+    if (!saved) alert('상세페이지 저장에 실패했어요. 다시 시도해 주세요.');
   } catch (e) {
     alert((e && e.message) || '상세페이지 저장 중 문제가 생겼어요.');
   } finally {
