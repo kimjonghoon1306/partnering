@@ -56,14 +56,14 @@
   --border-hover: rgba(0, 0, 0, 0.16);
 
   --text:  #0A0A0A;
-  --text2: rgba(0, 0, 0, 0.52);
-  --text3: rgba(0, 0, 0, 0.28);
+  --text2: #44515D;
+  --text3: #687580;
 
   --shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
 
   /* 라이트 모드에서 lime → 핑크 (가독성) */
-  --lime:        #FF2D78;
-  --lime-dim:    #E6216A;
+  --lime:        #C91458;
+  --lime-dim:    #A90F49;
   --lime-glow:   rgba(255, 45, 120, 0.12);
   --lime-border: rgba(255, 45, 120, 0.25);
   --shadow-lime: 0 12px 40px rgba(255, 45, 120, 0.25);

@@ -980,6 +980,23 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 [data-theme="light"] .page { background: var(--bg); }
 [data-theme="light"] .gen-input { background: var(--dark4); color: var(--text); }
 [data-theme="light"] .link-input { background: var(--dark4); color: var(--text); }
+[data-theme="light"] .service-guide-card{background:#fff;color:#111827;border-color:#cbd5df}
+[data-theme="light"] .service-guide-card small{color:#465563}
+[data-theme="light"] .service-guide-card em{color:#a90f49}
+[data-theme="light"] .service-benefit-backdrop{background:rgba(15,23,42,.66)}
+[data-theme="light"] .service-benefit-dialog{background:#fff!important;color:#111827!important;border-color:#d5dde5}
+[data-theme="light"] .service-benefit-dialog h2,[data-theme="light"] .service-benefit-item b{color:#111827!important}
+[data-theme="light"] .service-benefit-hook,[data-theme="light"] .service-benefit-item span{color:#40505e!important}
+[data-theme="light"] .service-benefit-item{background:#f4f7f9!important;border-color:#d7e0e7}
+[data-theme="light"] .service-benefit-flow{background:#fff0f5;color:#9d1046}
+[data-theme="light"] .service-benefit-close{width:38px;height:38px;border:1px solid #cbd5df;border-radius:10px;background:#f3f5f7;color:#111827}
+[data-theme="light"] .service-coming{color:#a90f49;border-color:#d783a5;background:#fff4f8}
+[data-theme="light"] .link-workspace-tabs{background:#eef1f4;border-color:#cbd5df}
+[data-theme="light"] .link-workspace-tab{color:#253442}
+[data-theme="light"] .link-workspace-tab:hover{background:#fff;color:#111827}
+[data-theme="light"] .link-workspace-tab.active{background:#c91458;color:#fff;box-shadow:0 4px 14px rgba(169,15,73,.22)}
+[data-theme="light"] .link-workspace-tab span{color:inherit}
+[data-theme="light"] .catalog-card,[data-theme="light"] #links-table tr{color:#111827}
 
 /* ── 라이트 모드 SVG 차트 색상 오버라이드 ── */
 [data-theme="light"] .chart-line { stroke: #FF2D78 !important; }
