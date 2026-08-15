@@ -21,7 +21,7 @@ initTheme();
 const SERVICE_BENEFITS = {
   farm: { kicker:'ONJONGIL FARM', title:'온종일팜 알아보기', hook:'잘 팔리는 상품을 찾아 헤매지 마세요. 산지 상품을 고르고 내 추천 링크로 연결하면 콘텐츠가 실제 구매로 이어집니다.', items:[['신선한 상품 소싱','제철 먹거리와 산지 상품을 한곳에서 찾습니다.'],['수익 링크와 바로 연결','고른 상품을 온파트너 추천 링크로 만들어 판매 성과를 추적합니다.'],['쇼핑포인트 활용','온파트너 캐시를 쇼핑포인트로 바꿔 직접 구매에도 사용할 수 있습니다.']], flow:'상품 선택 → 온파트너 링크 발급 → SNS·블로그 홍보 → 온종일팜 구매 전환', cta:'온종일팜 이용하기', url:'https://app.yuanfnb.com' },
   trial: { kicker:'COMING SOON', title:'온종일 체험단 알아보기', hook:'좋아하는 상품과 매장을 먼저 경험하고, 진짜 경험이 담긴 리뷰로 콘텐츠의 신뢰도와 영향력을 함께 키워보세요.', items:[['상품·매장 직접 체험','관심 있는 캠페인을 골라 실제 경험을 콘텐츠로 만듭니다.'],['리뷰 소재 확보','사진과 경험이 쌓여 블로그·SNS 콘텐츠가 더 풍성해집니다.'],['크리에이터 성장','꾸준한 리뷰 활동으로 포트폴리오와 협업 기회를 넓힙니다.']], flow:'캠페인 발견 → 체험 신청 → 상품·매장 경험 → 진정성 있는 리뷰 발행', cta:'신청하기', coming:true },
-  publy: { kicker:'DESKTOP · LAPTOP APP', title:'퍼블리 알아보기', hook:'상품 하나를 검색에 강한 블로그 글로 바꾸고, 반복되는 글쓰기와 발행 업무는 자동화하세요.', items:[['네이버 블로그 최적화 AI 글쓰기','키워드·질문형 소제목·SEO 구조를 반영해 글을 완성합니다.'],['설치형 자동 발행','데스크탑·노트북 앱이 네이버·티스토리 발행을 대신 처리합니다.'],['관계·소통 자동화','서이추·공감·댓글·인스타 DM 업무를 한곳에서 관리합니다.']], flow:'온파트너 상품 링크 준비 → 퍼블리 글 생성 → PC 앱 자동 발행 → 검색 유입과 구매 연결', cta:'퍼블리 시작하기', url:'https://publy.blogautopro.com' }
+  publy: { kicker:'모바일은 미리보기 · 진짜 자동화는 PC에서', title:'글 한 편에 쓰던 시간을, 판매를 만드는 시간으로', hook:'상품을 고르고도 글쓰기·이미지 정리·발행·이웃 소통에 지쳤다면 퍼블리가 그 반복을 줄여드립니다. 네이버 검색을 고려한 글부터 발행 이후의 관계 관리까지 한 화면에서 이어보세요.', items:[['온파트너 링크가 홍보글로','추천 상품 링크를 넣고 상품 소개와 구매 흐름이 자연스럽게 이어지는 콘텐츠를 준비합니다.'],['네이버 블로그 최적화 AI 글쓰기','키워드·질문형 소제목·읽기 좋은 구조를 반영해 막막한 첫 문장부터 긴 본문까지 빠르게 완성합니다.'],['데스크탑·노트북 설치형 자동 발행','PC 앱이 네이버·티스토리 발행 작업을 돕고, 준비한 글과 이미지를 실제 블로그 운영으로 연결합니다.'],['발행 후 성장 업무까지 한곳에서','서이추·공감·댓글·인스타 DM을 관리해 글을 쓰는 데서 끝나지 않고 노출과 관계를 꾸준히 쌓습니다.']], spotlightTitle:'지금 데스크탑이나 노트북으로 확인하세요', spotlight:'모바일에서는 퍼블리에 어떤 기능이 있는지 먼저 살펴볼 수 있습니다. 하지만 자동 글쓰기부터 PC 설치형 발행과 소통 관리까지 이어지는 편리함은 실제 데스크탑·노트북에서 확인해야 제대로 체감할 수 있어요. 데스크탑이나 노트북으로 회원가입하시면 자세한 사용 방법과 기능별 안내를 확인할 수 있습니다.', result:'상품 링크 준비 → 퍼블리 AI 글 완성 → PC 앱 발행 → 서이추·공감·댓글 관리 → 검색 유입과 구매 기회 확대', flow:'오늘 모바일에서 기능 확인 → 지금 PC로 접속 → 무료 회원가입 → 사용설명서 확인 → 첫 자동화 시작', cta:'PC에서 회원가입하고 사용법 확인하기', url:'https://publy.blogautopro.com' }
 };
 function openServiceBenefit(key) {
   const data = SERVICE_BENEFITS[key]; if (!data) return;
@@ -29,6 +29,8 @@ function openServiceBenefit(key) {
   document.getElementById('service-benefit-title').textContent = data.title;
   document.getElementById('service-benefit-hook').textContent = data.hook;
   document.getElementById('service-benefit-list').innerHTML = data.items.map(x => '<div class="service-benefit-item"><b>✓ '+escHtml(x[0])+'</b><span>'+escHtml(x[1])+'</span></div>').join('');
+  var spotlight = document.getElementById('service-benefit-spotlight');
+  if (spotlight) { spotlight.hidden = !data.spotlight; spotlight.innerHTML = data.spotlight ? '<b>💻 '+escHtml(data.spotlightTitle)+'</b><span>'+escHtml(data.spotlight)+'</span>'+(data.result?'<em>'+escHtml(data.result)+'</em>':'') : ''; }
   document.getElementById('service-benefit-flow').textContent = data.flow;
   document.getElementById('service-benefit-footer').innerHTML = data.coming ? '<span class="service-benefit-cta" aria-disabled="true">신청하기</span><span class="service-coming">곧 출시됩니다</span>' : '<a class="service-benefit-cta" href="'+data.url+'" target="_blank" rel="noopener">'+data.cta+' →</a>';
   document.getElementById('service-benefit-modal').hidden = false;
