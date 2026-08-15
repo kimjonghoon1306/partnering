@@ -18,6 +18,24 @@ function toggleTheme() {
 document.getElementById('theme-btn')?.addEventListener('click', toggleTheme);
 initTheme();
 
+const SERVICE_BENEFITS = {
+  farm: { kicker:'ONJONGIL FARM', title:'온종일팜 알아보기', hook:'잘 팔리는 상품을 찾아 헤매지 마세요. 산지 상품을 고르고 내 추천 링크로 연결하면 콘텐츠가 실제 구매로 이어집니다.', items:[['신선한 상품 소싱','제철 먹거리와 산지 상품을 한곳에서 찾습니다.'],['수익 링크와 바로 연결','고른 상품을 온파트너 추천 링크로 만들어 판매 성과를 추적합니다.'],['쇼핑포인트 활용','온파트너 캐시를 쇼핑포인트로 바꿔 직접 구매에도 사용할 수 있습니다.']], flow:'상품 선택 → 온파트너 링크 발급 → SNS·블로그 홍보 → 온종일팜 구매 전환', cta:'온종일팜 이용하기', url:'https://app.yuanfnb.com' },
+  trial: { kicker:'COMING SOON', title:'온종일 체험단 알아보기', hook:'좋아하는 상품과 매장을 먼저 경험하고, 진짜 경험이 담긴 리뷰로 콘텐츠의 신뢰도와 영향력을 함께 키워보세요.', items:[['상품·매장 직접 체험','관심 있는 캠페인을 골라 실제 경험을 콘텐츠로 만듭니다.'],['리뷰 소재 확보','사진과 경험이 쌓여 블로그·SNS 콘텐츠가 더 풍성해집니다.'],['크리에이터 성장','꾸준한 리뷰 활동으로 포트폴리오와 협업 기회를 넓힙니다.']], flow:'캠페인 발견 → 체험 신청 → 상품·매장 경험 → 진정성 있는 리뷰 발행', cta:'신청하기', coming:true },
+  publy: { kicker:'DESKTOP · LAPTOP APP', title:'퍼블리 알아보기', hook:'상품 하나를 검색에 강한 블로그 글로 바꾸고, 반복되는 글쓰기와 발행 업무는 자동화하세요.', items:[['네이버 블로그 최적화 AI 글쓰기','키워드·질문형 소제목·SEO 구조를 반영해 글을 완성합니다.'],['설치형 자동 발행','데스크탑·노트북 앱이 네이버·티스토리 발행을 대신 처리합니다.'],['관계·소통 자동화','서이추·공감·댓글·인스타 DM 업무를 한곳에서 관리합니다.']], flow:'온파트너 상품 링크 준비 → 퍼블리 글 생성 → PC 앱 자동 발행 → 검색 유입과 구매 연결', cta:'퍼블리 시작하기', url:'https://publy.blogautopro.com' }
+};
+function openServiceBenefit(key) {
+  const data = SERVICE_BENEFITS[key]; if (!data) return;
+  document.getElementById('service-benefit-kicker').textContent = data.kicker;
+  document.getElementById('service-benefit-title').textContent = data.title;
+  document.getElementById('service-benefit-hook').textContent = data.hook;
+  document.getElementById('service-benefit-list').innerHTML = data.items.map(x => '<div class="service-benefit-item"><b>✓ '+escHtml(x[0])+'</b><span>'+escHtml(x[1])+'</span></div>').join('');
+  document.getElementById('service-benefit-flow').textContent = data.flow;
+  document.getElementById('service-benefit-footer').innerHTML = data.coming ? '<span class="service-benefit-cta" aria-disabled="true">신청하기</span><span class="service-coming">곧 출시됩니다</span>' : '<a class="service-benefit-cta" href="'+data.url+'" target="_blank" rel="noopener">'+data.cta+' →</a>';
+  document.getElementById('service-benefit-modal').hidden = false;
+  document.body.style.overflow = 'hidden';
+}
+function closeServiceBenefit(){ const modal=document.getElementById('service-benefit-modal'); if(modal) modal.hidden=true; document.body.style.overflow=''; }
+
 // ── 사이드바 네비게이션
 const navItems = document.querySelectorAll('.nav-item[data-page]');
 const pages = document.querySelectorAll('.page');
@@ -40,6 +58,15 @@ function showPage(pageId) {
   if (pageId === 'wallet') loadWallet();
   if (pageId === 'notifications') loadNotifications();
   if (pageId === 'settings') loadSettings();
+}
+
+function setLinkWorkspace(mode) {
+  const products = mode !== 'mine';
+  document.getElementById('link-workspace-products')?.classList.toggle('active', products);
+  document.getElementById('link-workspace-mine')?.classList.toggle('active', !products);
+  document.getElementById('link-tab-products')?.classList.toggle('active', products);
+  document.getElementById('link-tab-mine')?.classList.toggle('active', !products);
+  if (!products) loadLinks();
 }
 
 navItems.forEach(item => {
@@ -708,6 +735,8 @@ async function loadLinks() {
     convCountByLink[c.link_id] = (convCountByLink[c.link_id] || 0) + 1;
   });
   if (titleEl) titleEl.textContent = '전체 링크 (' + data.length + ')';
+  const mineTabCount = document.getElementById('mine-link-tab-count');
+  if (mineTabCount) mineTabCount.textContent = '(' + data.length + ')';
   setLinkBadge(data.length);
   if (!tbody) return;
   if (!data.length) {
@@ -720,18 +749,26 @@ async function loadLinks() {
     const purl = 'partner.yuanfnb.com/r/' + l.code;
     const date = (l.created_at || '').slice(0, 10).replace(/-/g, '.');
     return '<tr>' +
-      '<td><div class="td-link">' + escHtml(name) + '</div></td>' +
-      '<td><div class="td-url" title="' + escHtml(purl) + '">' + escHtml(purl) + '</div></td>' +
-      '<td><div class="td-url">' + escHtml(shop) + '</div></td>' +
-      '<td class="td-num">' + (l.clicks || 0) + '</td>' +
-      '<td class="td-num">' + (convCountByLink[l.id] || 0) + '</td>' +
-      '<td class="td-earn">' + formatWon(earningsByLink[l.id]) + '</td>' +
-      '<td style="font-size:12px;color:var(--text3)">' + date + '</td>' +
-      '<td><span class="status-pill active"><span class="live-dot"></span>활성</span></td>' +
-      '<td style="text-align:right;"><button class="link-del-btn" onclick="deleteLink(\'' + escHtml(l.code) + '\',this)" title="' + (isPartnerSuspended() ? '정지된 계정' : '링크 삭제') + '"' + (isPartnerSuspended() ? ' disabled style="opacity:.45;cursor:not-allowed;"' : '') + '>🗑 삭제</button></td>' +
+      '<td data-label="링크명"><div class="td-link">' + escHtml(name) + '</div></td>' +
+      '<td data-label="파트너 URL"><div class="td-url" title="' + escHtml(purl) + '">' + escHtml(purl) + '</div></td>' +
+      '<td data-label="쇼핑몰"><div class="td-url">' + escHtml(shop) + '</div></td>' +
+      '<td data-label="클릭" class="td-num">' + (l.clicks || 0) + '</td>' +
+      '<td data-label="전환" class="td-num">' + (convCountByLink[l.id] || 0) + '</td>' +
+      '<td data-label="수익" class="td-earn">' + formatWon(earningsByLink[l.id]) + '</td>' +
+      '<td data-label="생성일" style="font-size:12px;color:var(--text3)">' + date + '</td>' +
+      '<td data-label="상태"><span class="status-pill active"><span class="live-dot"></span>활성</span></td>' +
+      '<td data-label="관리" style="text-align:right;"><div class="issued-link-actions"><button class="issued-copy-btn" onclick="copyIssuedLink(\'' + escHtml(l.code) + '\',this)">📋 링크 복사</button><button class="link-del-btn" onclick="deleteLink(\'' + escHtml(l.code) + '\',this)" title="' + (isPartnerSuspended() ? '정지된 계정' : '링크 삭제') + '"' + (isPartnerSuspended() ? ' disabled style="opacity:.45;cursor:not-allowed;"' : '') + '>🗑 삭제</button></div></td>' +
       '</tr>';
   }).join('');
   setActionButtonsForStatus();
+}
+
+function copyIssuedLink(code, btn) {
+  const url = 'https://partner.yuanfnb.com/r/' + code;
+  navigator.clipboard?.writeText(url).then(function () {
+    const original = btn.textContent; btn.textContent = '✓ 복사됨';
+    setTimeout(function () { btn.textContent = original; }, 1300);
+  }).catch(function () { prompt('아래 링크를 복사해주세요.', url); });
 }
 
 // ── 링크 삭제

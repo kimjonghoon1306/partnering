@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="../css/variables.css?v=20260731c">
 <link rel="stylesheet" href="../css/reset.css?v=20260731c">
-<link rel="stylesheet" href="../css/dashboard.css?v=20260816a">
+<link rel="stylesheet" href="../css/dashboard.css?v=20260816b">
 </head>
 <body>
 
@@ -41,7 +41,7 @@
       </a>
       <a class="nav-item" data-page="links">
         <span class="nav-icon">🔗</span>
-        <span class="nav-label">내 링크</span>
+        <span class="nav-label">상품·내 링크</span>
         <span class="nav-badge" id="link-count-badge" style="display:none;">0</span>
       </a>
       <a class="nav-item" data-page="earnings">
@@ -99,16 +99,29 @@
     <div class="page" id="page-overview">
 
       <section class="partner-service-guide" aria-label="온종일 서비스 안내">
-        <a class="service-guide-card farm" href="https://app.yuanfnb.com" target="_blank" rel="noopener">
-          <span class="service-guide-icon">🌱</span><span><b>온종일팜</b><small>신선한 상품을 고르고 파트너 링크로 수익을 만들어보세요.</small></span><em>상품 보러가기 →</em>
-        </a>
-        <div class="service-guide-card trial">
-          <span class="service-guide-icon">🎁</span><span><b>온종일 체험단</b><small>상품과 매장을 직접 체험하고 콘텐츠의 가치와 영향력을 키워보세요.</small></span><em>곧 출시됩니다</em>
-        </div>
-        <a class="service-guide-card publy" href="https://publy.blogautopro.com" target="_blank" rel="noopener">
-          <span class="service-guide-icon">P</span><span><b>퍼블리</b><small>데스크탑·노트북 설치형 네이버 블로그 최적화 자동화 프로그램. AI 글쓰기·발행·서이추·공감·댓글 관리를 더 빠르게.</small></span><em>퍼블리 시작하기 →</em>
-        </a>
+        <button class="service-guide-card farm" type="button" onclick="openServiceBenefit('farm')">
+          <span class="service-guide-icon">🌱</span><span><b>온종일팜</b><small>팔고 싶은 상품을 찾는 순간, 내 수익 링크가 시작됩니다.</small></span><em>기능·혜택 자세히 보기 →</em>
+        </button>
+        <button class="service-guide-card trial" type="button" onclick="openServiceBenefit('trial')">
+          <span class="service-guide-icon">🎁</span><span><b>온종일 체험단</b><small>좋아하는 상품을 직접 경험하고, 리뷰 경쟁력까지 키워보세요.</small></span><em>곧 출시됩니다 · 자세히 보기 →</em>
+        </button>
+        <button class="service-guide-card publy" type="button" onclick="openServiceBenefit('publy')">
+          <span class="service-guide-icon">P</span><span><b>퍼블리</b><small>상품 하나를 검색되는 블로그 글과 자동 발행으로 바꿔보세요.</small></span><em>기능·혜택 자세히 보기 →</em>
+        </button>
       </section>
+
+      <div class="service-benefit-modal" id="service-benefit-modal" hidden>
+        <div class="service-benefit-backdrop" onclick="closeServiceBenefit()"></div>
+        <section class="service-benefit-dialog" role="dialog" aria-modal="true" aria-labelledby="service-benefit-title">
+          <button class="service-benefit-close" type="button" onclick="closeServiceBenefit()" aria-label="닫기">×</button>
+          <div class="service-benefit-kicker" id="service-benefit-kicker"></div>
+          <h2 id="service-benefit-title"></h2>
+          <p class="service-benefit-hook" id="service-benefit-hook"></p>
+          <div class="service-benefit-list" id="service-benefit-list"></div>
+          <div class="service-benefit-flow" id="service-benefit-flow"></div>
+          <div class="service-benefit-footer" id="service-benefit-footer"></div>
+        </section>
+      </div>
 
       <!-- 파트너 추천 광고 -->
       <section class="partner-ad-slider" id="partner-ad-slider" style="display:none;" aria-label="추천 광고">
@@ -213,7 +226,13 @@
     <!-- ══════════ 페이지: 내 링크 ══════════ -->
     <div class="page" id="page-links">
 
+      <div class="link-workspace-tabs" role="tablist" aria-label="상품과 내 링크 구분">
+        <button class="link-workspace-tab active" id="link-tab-products" type="button" onclick="setLinkWorkspace('products')">🛍️ 전체 상품</button>
+        <button class="link-workspace-tab" id="link-tab-mine" type="button" onclick="setLinkWorkspace('mine')">🔗 내가 발급한 링크 <span id="mine-link-tab-count"></span></button>
+      </div>
+
       <!-- 온종일팜 상품 카탈로그 -->
+      <section class="link-workspace-section active" id="link-workspace-products">
       <div class="catalog-panel">
         <div class="catalog-head">
           <div>
@@ -242,6 +261,7 @@
           <button class="catalog-more" id="catalog-more" type="button">더 보기</button>
         </div>
       </div>
+      </section>
 
       <!-- 링크 받기 결과 토스트 -->
       <div class="linktoast" id="linktoast" style="display:none;">
@@ -255,12 +275,12 @@
       </div>
 
       <!-- 링크 목록 -->
+      <section class="link-workspace-section" id="link-workspace-mine">
       <div class="table-card">
         <div class="table-header">
           <div class="table-title">전체 링크 (12)</div>
           <div class="table-actions">
             <input class="search-input" id="links-search" type="text" placeholder="링크 검색...">
-            <button class="btn-ghost">필터</button>
           </div>
         </div>
         <div class="table-wrap">
@@ -284,6 +304,7 @@
           </table>
         </div>
       </div>
+      </section>
     </div>
 
     <!-- ══════════ 페이지: 수익 현황 ══════════ -->
@@ -755,6 +776,6 @@
     window.location.href = 'login.html';
   }
 </script>
-<script src="../js/dashboard.js?v=20260816a"></script>
+<script src="../js/dashboard.js?v=20260816b"></script>
 </body>
 </html>
