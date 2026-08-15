@@ -1278,3 +1278,11 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 .catalog-detail-dl:active { transform:scale(.97); }
 .catalog-detail-dl:disabled { opacity:.6; cursor:wait; transform:none; }
 @media (max-width:560px){#links-table .issued-link-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:3px}#links-table .issued-copy-btn,#links-table .link-del-btn{width:100%;min-height:38px;margin:0}}
+@media (max-width:560px){
+  .catalog-card{display:flex;flex-direction:column;gap:0;padding:0}
+  .catalog-img{width:100%;height:150px;border-radius:0;font-size:32px}
+  .catalog-info{display:flex;padding:13px;gap:7px}
+  .catalog-name{font-size:14px;font-weight:800}
+  .catalog-getlink{display:flex!important;align-items:center;justify-content:center;width:100%;min-height:46px;margin-top:5px;background:var(--lime);border:1px solid var(--lime);color:#101400;font-size:14px;font-weight:950;box-shadow:0 5px 16px rgba(190,255,0,.18)}
+  .admin-view-mode .catalog-getlink{display:none!important}
+}
