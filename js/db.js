@@ -6,7 +6,13 @@
     return;
   }
   const { SUPABASE_URL, SUPABASE_ANON_KEY } = window.ONPARTNER_CONFIG;
-  window.opClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  window.opClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true
+    }
+  });
 })();
 
 // 선택된 태그 값 배열 (예: #channel-tags 의 .selected)
