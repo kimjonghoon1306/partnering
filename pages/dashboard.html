@@ -780,5 +780,53 @@
 </script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="../js/dashboard.js?v=20260818x"></script>
+
+<!-- ══════════ PWA: 업데이트 배너 + 서비스워커 (대시보드용) ══════════ -->
+<div class="pwa-update" id="pwaUpdate">
+  <span class="pwa-update-txt">🎉 새 버전이 나왔어요</span>
+  <button class="pwa-update-btn" id="pwaUpdateBtn">업데이트하세요</button>
+</div>
+<style>
+  .pwa-update{position:fixed;left:50%;bottom:20px;transform:translateX(-50%) translateY(160%);
+    z-index:99999;display:flex;align-items:center;gap:14px;padding:11px 12px 11px 20px;
+    background:#0f0f0f;color:#fff;border-radius:999px;font-weight:700;font-size:15px;
+    box-shadow:0 12px 34px rgba(0,0,0,.45);border:1px solid rgba(190,255,0,.35);
+    transition:transform .45s cubic-bezier(.2,1.25,.3,1);max-width:calc(100vw - 32px);}
+  .pwa-update.show{transform:translateX(-50%) translateY(0);}
+  .pwa-update-txt{white-space:nowrap;}
+  .pwa-update-btn{background:#BEFF00;color:#0A0A0A;border:none;border-radius:999px;
+    padding:10px 20px;font-weight:800;font-size:14px;cursor:pointer;flex-shrink:0;
+    transition:transform .15s;}
+  .pwa-update-btn:active{transform:scale(.94);}
+</style>
+<script>
+(function(){
+  if(!('serviceWorker' in navigator)) return;
+  var refreshing=false;
+  navigator.serviceWorker.addEventListener('controllerchange',function(){
+    if(refreshing) return; refreshing=true; window.location.reload();
+  });
+  function showUpdate(reg){
+    var el=document.getElementById('pwaUpdate'); if(!el) return;
+    el.classList.add('show');
+    document.getElementById('pwaUpdateBtn').onclick=function(){
+      if(reg.waiting) reg.waiting.postMessage('skipWaiting'); else window.location.reload();
+    };
+  }
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('/sw.js').then(function(reg){
+      if(reg.waiting && navigator.serviceWorker.controller) showUpdate(reg);
+      reg.addEventListener('updatefound',function(){
+        var nw=reg.installing; if(!nw) return;
+        nw.addEventListener('statechange',function(){
+          if(nw.state==='installed' && navigator.serviceWorker.controller) showUpdate(reg);
+        });
+      });
+      // 주기적으로 업데이트 체크(대시보드는 오래 켜두니까)
+      setInterval(function(){ reg.update().catch(function(){}); }, 60000);
+    }).catch(function(){});
+  });
+})();
+</script>
 </body>
 </html>

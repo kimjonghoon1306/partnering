@@ -1,10 +1,10 @@
 // 온파트너 서비스워커 — PWA 설치 + 업데이트 배너용
 // 배포마다 VERSION을 올리면 새 SW가 설치되고, 클라이언트에 업데이트 배너가 뜬다.
-const VERSION = 'onpartner-20260818-20';
+const VERSION = 'onpartner-20260818-21';
 
 self.addEventListener('install', (e) => {
-  // 새 SW를 곧바로 대기 상태로 (waiting) — 페이지가 "업데이트하세요"를 띄운다
-  self.skipWaiting();
+  // ★자동 skipWaiting 제거 — 새 SW를 "대기(waiting)" 상태로 둬야 페이지가 업데이트 배너를 띄운다.
+  //   사용자가 "업데이트하세요" 누르면 message로 skipWaiting 실행됨.
 });
 
 self.addEventListener('activate', (e) => {
