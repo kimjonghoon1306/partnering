@@ -1,11 +1,11 @@
 /* 온파트너 추적 스크립트 (온종일팜 등 쇼핑몰에 삽입)
- * 1) 페이지 진입 시 URL의 op_ref 파라미터 → localStorage(30일 유지)
+ * 1) 페이지 진입 시 URL의 op_ref 파라미터 → localStorage(72시간 유지)
  * 2) 구매완료 페이지에서 Partnering.track({ orderId, amount, orderType }) 호출 → 수수료 적립
  * 삽입: <script src="https://partnering.vercel.app/tracker.js"></script>
  */
 (function () {
   var ENDPOINT = 'https://partnering.vercel.app/api/track';
-  var KEY = 'op_ref', KEY_T = 'op_ref_t', TTL = 2592000000; // 30일(ms)
+  var KEY = 'op_ref', KEY_T = 'op_ref_t', TTL = 259200000; // 72시간(3일, ms) — 클릭 후 이 기간 내 모든 구매 적립
 
   // 1) 유입 캡처
   try {
@@ -43,8 +43,8 @@
           keepalive: true
         }).catch(function () {});
       } catch (e) {}
-      // 적립 후 재적립 방지(구매 1건=1회)
-      try { localStorage.removeItem(KEY); localStorage.removeItem(KEY_T); } catch (e) {}
+      // ★op_ref는 지우지 않는다 — 30일 동안 그 손님의 모든 구매를 계속 적립(쿠팡식).
+      //   같은 주문 중복 적립은 서버가 order_id로 차단(409)하므로 안전.
     }
   };
 })();

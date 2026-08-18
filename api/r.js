@@ -33,7 +33,7 @@ module.exports = async (req, res) => {
       fetch(SUPA + '/rest/v1/partner_links?select=id,product_url,product_id,product_name,product_image,product_price,title,partner_id,partners(status)&code=eq.' + encodeURIComponent(code), { headers }),
       fetch(SUPA + '/rest/v1/op_settings?select=value&key=eq.cookie_days', { headers }).catch(() => null)
     ]);
-    let cookieDays = 30;
+    let cookieDays = 3; // 기본 72시간(3일). op_settings.cookie_days로 관리자 조정 가능(1~90일)
     try { const csr = cs && await cs.json(); if (Array.isArray(csr) && csr[0]) { const n = parseInt(csr[0].value, 10); if (n >= 1 && n <= 90) cookieDays = n; } } catch (e) {}
     const rows = await q.json();
     if (!Array.isArray(rows) || !rows.length) return go(FALLBACK);
