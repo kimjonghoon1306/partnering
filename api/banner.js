@@ -35,9 +35,13 @@ export default async function handler(req) {
     const code = (url.searchParams.get('code') || '').trim();
     if (!/^[a-z0-9-]{4,64}$/i.test(code) || !SUPA || !SRK) return Response.redirect(FALLBACK_IMG, 302);
 
+    const dbg = url.searchParams.get('debug') === '1';
     const headers = { apikey: SRK, Authorization: 'Bearer ' + SRK };
-    const rows = await (await fetch(SUPA + '/rest/v1/partner_links?select=product_id,product_name,product_image,product_price,title&code=eq.' + encodeURIComponent(code) + '&limit=1', { headers })).json();
+    const linkRes = await fetch(SUPA + '/rest/v1/partner_links?select=product_id,product_name,product_image,product_price,title&code=eq.' + encodeURIComponent(code) + '&limit=1', { headers });
+    const linkTxt = await linkRes.text();
+    let rows = null; try { rows = JSON.parse(linkTxt); } catch (e) {}
     const link = Array.isArray(rows) ? rows[0] : null;
+    if (dbg) return new Response('linkStatus=' + linkRes.status + ' body=' + linkTxt.slice(0, 300), { status: 200, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
     if (!link) return Response.redirect(FALLBACK_IMG, 302);
 
     let name = link.product_name || link.title || '온종일팜 상품';
