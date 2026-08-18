@@ -29,6 +29,9 @@ export default async function handler(req) {
     const SUPA = process.env.SUPABASE_URL;
     const SRK = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const url = new URL(req.url, 'https://partner.yuanfnb.com');
+    if (url.searchParams.get('envcheck') === '1') {
+      return new Response('SUPA=' + (SUPA ? 'set' : 'MISSING') + ' SRK=' + (SRK ? 'set' : 'MISSING') + ' keys=' + Object.keys(process.env).filter(k=>/SUPA|SERVICE/i.test(k)).join(','), { status: 200, headers: { 'Content-Type': 'text/plain' } });
+    }
     const code = (url.searchParams.get('code') || '').trim();
     if (!/^[a-z0-9-]{4,64}$/i.test(code) || !SUPA || !SRK) return Response.redirect(FALLBACK_IMG, 302);
 
