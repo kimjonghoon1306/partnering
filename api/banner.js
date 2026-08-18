@@ -19,7 +19,8 @@ function normImg(v) {
 async function loadKoFont(text) {
   const api = 'https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@800&text=' + encodeURIComponent(text);
   const css = await (await fetch(api, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.102 Safari/537.36' } })).text();
-  const m = css.match(/src:\s*url\((https:[^)]+\.ttf)\)/);
+  // 구글폰트는 ttf(...ttf) 또는 subset(.../l/font?kit=...) 형태로 URL을 준다 — 둘 다 잡는다.
+  const m = css.match(/src:\s*url\((https:\/\/[^)]+)\)/);
   if (!m) throw new Error('font_url_not_found');
   return await (await fetch(m[1])).arrayBuffer();
 }
