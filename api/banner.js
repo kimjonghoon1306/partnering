@@ -64,6 +64,9 @@ export default async function handler(req) {
     const LIVE = '지금 주문 가능';
     let font, fontErr = '';
     try { font = await loadKoFont(); } catch (fe) { fontErr = 'FONT:' + (fe && fe.message ? fe.message : String(fe)); }
+    if (url.searchParams.get('debug') === '1') {
+      return new Response('fontBytes=' + (font ? font.byteLength : 'null') + ' fontErr=' + fontErr, { status: 200, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+    }
     const noimg = url.searchParams.get('noimg') === '1';
     // satori는 이미지를 arrayBuffer로 미리 받아 data URL로 넘기면 훨씬 안정적(외부 fetch 실패/타임아웃 방지)
     let imgData = image;
