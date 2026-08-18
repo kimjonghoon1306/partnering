@@ -389,6 +389,26 @@
           .catalog-grid.compact .catalog-img{height:88px;}
         }
         @media(max-width:400px){ .catalog-grid.compact{grid-template-columns:repeat(2,minmax(0,1fr));} }
+
+        /* 🔳 내 링크 모아보기: 표 → 카드 그리드(링크명+수익+복사만), 나머지 컬럼 숨김 */
+        #links-table.compact{display:block;}
+        #links-table.compact thead{display:none;}
+        #links-table.compact tbody{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(200px,100%),1fr));gap:9px;}
+        #links-table.compact tr{display:flex;flex-direction:column;gap:4px;padding:11px 12px;border:1px solid var(--border);border-radius:12px;background:var(--dark2);}
+        #links-table.compact td{display:block;padding:0;border:0;}
+        #links-table.compact td::before{content:none !important;}
+        #links-table.compact td[data-label="파트너 URL"],
+        #links-table.compact td[data-label="쇼핑몰"],
+        #links-table.compact td[data-label="클릭"],
+        #links-table.compact td[data-label="전환"],
+        #links-table.compact td[data-label="생성일"],
+        #links-table.compact td[data-label="상태"]{display:none !important;}
+        #links-table.compact .td-link{font-size:12.5px;font-weight:800;white-space:normal;max-width:none;line-height:1.3;}
+        #links-table.compact td[data-label="수익"]{font-size:12px;color:var(--lime);font-weight:800;}
+        #links-table.compact td[data-label="수익"]::after{content:' 수익';font-size:9px;color:var(--text3);font-weight:600;}
+        #links-table.compact .issued-link-actions{display:flex;gap:6px;margin-top:2px;}
+        #links-table.compact .issued-copy-btn,#links-table.compact .link-del-btn{flex:1;min-height:32px;font-size:11px;padding:0;justify-content:center;}
+        @media(max-width:640px){ #links-table.compact tbody{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;} }
       </style>
       <script>
         (function(){ try{ if(localStorage.getItem('op_catalog_compact')==='1'){ window.__catalogCompactInit=true; } }catch(e){} })();
@@ -400,15 +420,25 @@
           if(btn) btn.classList.toggle('active', on);
           try{ localStorage.setItem('op_catalog_compact', on?'1':'0'); }catch(e){}
         }
-        // 렌더 후 저장된 상태 복원 (catalog가 다시 그려질 때마다)
+        function toggleLinksCompact(){
+          var tbl=document.getElementById('links-table'); var btn=document.getElementById('links-compact-btn');
+          if(!tbl) return;
+          var on=!tbl.classList.contains('compact');
+          tbl.classList.toggle('compact', on);
+          if(btn) btn.classList.toggle('active', on);
+          try{ localStorage.setItem('op_links_compact', on?'1':'0'); }catch(e){}
+        }
+        // 렌더 후 저장된 상태 복원 (catalog/links가 비동기로 다시 그려질 때마다)
         (function(){
           var _apply=function(){
-            var grid=document.getElementById('catalog-grid'); var btn=document.getElementById('catalog-compact-btn');
-            var on=false; try{ on=localStorage.getItem('op_catalog_compact')==='1'; }catch(e){}
-            if(grid){ grid.classList.toggle('compact', on); if(btn) btn.classList.toggle('active', on); }
+            var grid=document.getElementById('catalog-grid'); var cbtn=document.getElementById('catalog-compact-btn');
+            var con=false; try{ con=localStorage.getItem('op_catalog_compact')==='1'; }catch(e){}
+            if(grid){ grid.classList.toggle('compact', con); if(cbtn) cbtn.classList.toggle('active', con); }
+            var tbl=document.getElementById('links-table'); var lbtn=document.getElementById('links-compact-btn');
+            var lon=false; try{ lon=localStorage.getItem('op_links_compact')==='1'; }catch(e){}
+            if(tbl){ tbl.classList.toggle('compact', lon); if(lbtn) lbtn.classList.toggle('active', lon); }
           };
           document.addEventListener('DOMContentLoaded', _apply);
-          // catalog가 비동기로 그려지므로 잠깐 뒤에도 한번 더
           setInterval(_apply, 1500);
         })();
       </script>
@@ -429,11 +459,12 @@
       <div class="table-card">
         <div class="table-header">
           <div class="table-title">전체 링크 (12)</div>
-          <div class="table-actions">
+          <div class="table-actions" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <button type="button" class="catalog-compact-btn" id="links-compact-btn" onclick="toggleLinksCompact()" title="한 화면에 여러 개 모아보기">🔳 모아보기</button>
             <input class="search-input" id="links-search" type="text" placeholder="링크 검색...">
           </div>
         </div>
-        <div class="table-wrap">
+        <div class="table-wrap" id="links-table-wrap">
           <table id="links-table">
             <thead>
               <tr>
