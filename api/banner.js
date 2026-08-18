@@ -53,37 +53,54 @@ export default async function handler(req) {
     const charset = name + '지금 주문 가능 AD 지금 보러가기 온종일팜 ▶ ' + priceTxt + '0123456789';
     let font, fontErr = '';
     try { font = await loadKoFont(charset); } catch (fe) { fontErr = 'FONT:' + (fe && fe.message ? fe.message : String(fe)); }
-    if (url.searchParams.get('debug') === '1') {
-      return new Response('fontBytes=' + (font ? font.byteLength : 'null') + ' fontErr=' + fontErr + ' image=' + image, { status: 200, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+    const noimg = url.searchParams.get('noimg') === '1';
+    // satori는 이미지를 arrayBuffer로 미리 받아 data URL로 넘기면 훨씬 안정적(외부 fetch 실패/타임아웃 방지)
+    let imgData = image;
+    try {
+      const ir = await fetch(image);
+      const ab = await ir.arrayBuffer();
+      const ct = ir.headers.get('content-type') || 'image/jpeg';
+      let b64 = ''; const bytes = new Uint8Array(ab);
+      for (let i = 0; i < bytes.length; i++) b64 += String.fromCharCode(bytes[i]);
+      imgData = 'data:' + ct + ';base64,' + btoa(b64);
+    } catch (ie) { imgData = ''; }
+
+    // ── 애드포스트보다 예쁜 배너: 상품 크게(좌) + 딥그린 그라데이션 패널(우) + 핑크 포인트 ──
+    const leftChildren = [];
+    if (!noimg && imgData) {
+      leftChildren.push({ type: 'img', props: { src: imgData, width: 640, height: 630, style: { width: '640px', height: '630px', objectFit: 'cover' } } });
+      // 이미지 위 좌상단 그라데이션 그림자 + AD 배지
+      leftChildren.push({ type: 'div', props: { style: { position: 'absolute', top: '34px', left: '34px', display: 'flex', alignItems: 'center', background: 'rgba(17,24,39,0.82)', color: '#fff', fontSize: '26px', fontWeight: 800, padding: '8px 20px', borderRadius: '999px', letterSpacing: '1px' }, children: 'AD · 온종일팜' } });
+    } else {
+      leftChildren.push({ type: 'div', props: { style: { display: 'flex', width: '640px', height: '630px', background: '#f1f5f0', alignItems: 'center', justifyContent: 'center', fontSize: '120px' }, children: '🧺' } });
     }
+
+    const rightChildren = [
+      // 핑크 라이브 점 + 문구
+      { type: 'div', props: { style: { display: 'flex', alignItems: 'center', marginBottom: '26px' }, children: [
+        { type: 'div', props: { style: { display: 'flex', width: '20px', height: '20px', borderRadius: '50%', background: '#ff2d78', marginRight: '14px', boxShadow: '0 0 18px #ff2d78' } } },
+        { type: 'div', props: { style: { display: 'flex', color: '#ffd9e6', fontSize: '30px', fontWeight: 800, letterSpacing: '1px' }, children: '지금 주문 가능' } }
+      ] } },
+      // 상품명
+      { type: 'div', props: { style: { display: 'flex', color: '#ffffff', fontSize: '64px', fontWeight: 800, lineHeight: 1.15, marginBottom: '22px' }, children: name } },
+    ];
+    if (priceTxt) {
+      rightChildren.push({ type: 'div', props: { style: { display: 'flex', alignItems: 'baseline', marginBottom: '40px' }, children: [
+        { type: 'div', props: { style: { display: 'flex', color: '#bef264', fontSize: '68px', fontWeight: 800 }, children: priceTxt } }
+      ] } });
+    } else {
+      rightChildren.push({ type: 'div', props: { style: { display: 'flex', height: '20px' } } });
+    }
+    // CTA 버튼(라임)
+    rightChildren.push({ type: 'div', props: { style: { display: 'flex', alignSelf: 'flex-start', background: '#bef264', color: '#14310f', fontSize: '36px', fontWeight: 800, padding: '20px 46px', borderRadius: '999px' }, children: '지금 보러가기  →' } });
 
     const el = {
       type: 'div',
       props: {
         style: { display: 'flex', width: '1200px', height: '630px', background: '#ffffff', fontFamily: 'ko' },
         children: [
-          // 왼쪽 상품 이미지 (정사각 cover)
-          { type: 'div', props: { style: { display: 'flex', width: '630px', height: '630px' }, children: [
-            { type: 'img', props: { src: image, width: 630, height: 630, style: { width: '630px', height: '630px', objectFit: 'cover' } } }
-          ] } },
-          // 오른쪽 패널
-          { type: 'div', props: { style: { display: 'flex', flexDirection: 'column', flexGrow: 1, padding: '56px 48px', position: 'relative', justifyContent: 'center' }, children: [
-            // AD 배지
-            { type: 'div', props: { style: { position: 'absolute', top: '40px', right: '44px', display: 'flex', background: '#111827', color: '#ffffff', fontSize: '30px', fontWeight: 800, padding: '6px 20px', borderRadius: '12px' }, children: 'AD' } },
-            // 핑크 라이브
-            { type: 'div', props: { style: { display: 'flex', alignItems: 'center', marginBottom: '20px' }, children: [
-              { type: 'div', props: { style: { display: 'flex', width: '18px', height: '18px', borderRadius: '50%', background: '#ff2d78', marginRight: '12px' } } },
-              { type: 'div', props: { style: { display: 'flex', color: '#ff2d78', fontSize: '30px', fontWeight: 800 }, children: '지금 주문 가능' } }
-            ] } },
-            // 상품명
-            { type: 'div', props: { style: { display: 'flex', color: '#111827', fontSize: '60px', fontWeight: 800, lineHeight: 1.15, marginBottom: '18px' }, children: name } },
-            // 가격
-            priceTxt
-              ? { type: 'div', props: { style: { display: 'flex', color: '#e5457a', fontSize: '54px', fontWeight: 800, marginBottom: '34px' }, children: priceTxt } }
-              : { type: 'div', props: { style: { display: 'flex', height: '10px' } } },
-            // CTA
-            { type: 'div', props: { style: { display: 'flex', alignSelf: 'flex-start', background: '#16a34a', color: '#ffffff', fontSize: '34px', fontWeight: 800, padding: '18px 40px', borderRadius: '18px' }, children: '지금 보러가기 ▶' } }
-          ] } }
+          { type: 'div', props: { style: { display: 'flex', position: 'relative', width: '640px', height: '630px' }, children: leftChildren } },
+          { type: 'div', props: { style: { display: 'flex', flexDirection: 'column', flexGrow: 1, height: '630px', padding: '0 56px', justifyContent: 'center', background: 'linear-gradient(135deg,#14532d 0%,#166534 55%,#0f3d22 100%)' }, children: rightChildren } }
         ]
       }
     };
