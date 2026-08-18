@@ -1095,8 +1095,8 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 .link-del-btn:active { transform:scale(.94); }
 .link-del-btn:disabled { opacity:.5; cursor:default; }
 .issued-link-actions{display:flex;justify-content:flex-end;gap:6px}.issued-copy-btn{padding:5px 11px;border-radius:8px;border:1px solid var(--lime-border);background:var(--lime-glow);color:var(--lime);font-size:12px;font-weight:800;cursor:pointer;font-family:var(--font);white-space:nowrap}
-/* ── 태블릿(≤1024px): 발급 링크 표를 카드형으로 전환해 '관리(삭제)' 칸이 잘리지 않게 ── */
-@media (max-width:1024px){
+/* ── 태블릿(≤1366px, 아이패드 가로 12.9" 포함): 발급 링크 표를 카드형으로 전환해 '관리(삭제)' 칸이 잘리지 않게 ── */
+@media (max-width:1366px){
   #links-table{display:block;min-width:0;padding:8px}
   #links-table thead{display:none}
   #links-table tbody{display:grid;gap:9px}
