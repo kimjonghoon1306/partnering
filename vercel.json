@@ -1,5 +1,19 @@
 {
   "rewrites": [
     { "source": "/r/:code", "destination": "/api/r?code=:code" }
+  ],
+  "headers": [
+    {
+      "source": "/pages/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/js/dashboard.js",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, must-revalidate" }
+      ]
+    }
   ]
 }
