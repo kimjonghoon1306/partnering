@@ -1044,20 +1044,21 @@ document.getElementById('banner-ratios')?.addEventListener('click', function (e)
 function drawDetailWatermark(ctx, W, H) {
   ctx.save();
   const text = '온파트너  ·  partner.yuanfnb.com';
-  const fs = Math.max(20, Math.round(W / 24));
+  const fs = Math.max(22, Math.round(W / 22));
   ctx.font = '800 ' + fs + 'px Pretendard, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.rotate(-Math.PI / 6);                 // 좌표계 -30도 회전
   const diag = Math.sqrt(W * W + H * H);
-  const stepX = fs * 17;
-  const stepY = fs * 8;
-  ctx.lineWidth = Math.max(2, fs / 12);
+  const stepX = fs * 15;
+  const stepY = fs * 6.5;
+  ctx.lineWidth = Math.max(2, fs / 10);
+  // 밝은 배경/어두운 배경 모두에서 또렷하게 보이도록 외곽선(검정)+본문(흰) 이중, 투명도 상향
   for (let y = -diag; y < diag; y += stepY) {
     for (let x = -diag; x < diag; x += stepX) {
-      ctx.strokeStyle = 'rgba(0,0,0,0.16)';   // 밝은 배경에서도 보이는 외곽선
+      ctx.strokeStyle = 'rgba(0,0,0,0.30)';
       ctx.strokeText(text, x, y);
-      ctx.fillStyle = 'rgba(255,255,255,0.28)';
+      ctx.fillStyle = 'rgba(255,255,255,0.45)';
       ctx.fillText(text, x, y);
     }
   }
