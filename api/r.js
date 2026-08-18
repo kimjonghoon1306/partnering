@@ -76,8 +76,9 @@ module.exports = async (req, res) => {
       res.setHeader('Set-Cookie', 'op_ref=' + encodeURIComponent(code) + '; Max-Age=' + (cookieDays * 86400) + '; Path=/; SameSite=Lax; Secure');
     }
 
-    // 사람에겐 즉시 리다이렉트(JS+meta), 크롤러에겐 리다이렉트 없이 OG만
-    const redirectHead = isBot ? '' : '<meta http-equiv="refresh" content="0;url=' + esc(dest) + '">';
+    // 사람은 JS로만 즉시 이동시킨다(정적 OG 스크래퍼는 JS를 실행 안 하므로 상품 OG를 그대로 읽음).
+    //   ※ meta-refresh는 스크래퍼가 따라가서 도착지 SPA의 기본 OG(관리시스템)를 읽어버리므로 쓰지 않는다.
+    const redirectHead = '';
     const redirectScript = isBot ? '' : '<script>location.replace(' + JSON.stringify(dest) + ');</script>';
     const html = '<!doctype html><html lang="ko"><head><meta charset="utf-8">'
       + '<meta name="viewport" content="width=device-width, initial-scale=1">'
