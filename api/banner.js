@@ -14,14 +14,13 @@ function normImg(v) {
   return '';
 }
 
-// 구글폰트에서 "필요한 글자만" subset TTF로 받는다(구형 UA로 요청해야 woff2 대신 ttf 반환).
-async function loadKoFont(text) {
-  const api = 'https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@800&text=' + encodeURIComponent(text);
-  const css = await (await fetch(api, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.102 Safari/537.36' } })).text();
-  // 구글폰트는 ttf(...ttf) 또는 subset(.../l/font?kit=...) 형태로 URL을 준다 — 둘 다 잡는다.
-  const m = css.match(/src:\s*url\((https:\/\/[^)]+)\)/);
-  if (!m) throw new Error('font_url_not_found');
-  return await (await fetch(m[1])).arrayBuffer();
+// 완전한 한글 TTF(Do Hyeon, 단일파일)를 통째로 받는다.
+//   ※ 구글폰트 &text= 서브셋 TTF는 satori가 파싱 못해 빈 이미지가 나옴 → 완전 TTF 사용.
+const KO_FONT_URL = 'https://raw.githubusercontent.com/google/fonts/main/ofl/dohyeon/DoHyeon-Regular.ttf';
+async function loadKoFont() {
+  const r = await fetch(KO_FONT_URL, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+  if (!r.ok) throw new Error('font_fetch_' + r.status);
+  return await r.arrayBuffer();
 }
 
 export default async function handler(req) {
@@ -50,14 +49,11 @@ export default async function handler(req) {
     if (!image) return Response.redirect(FALLBACK_IMG, 302);
 
     const priceTxt = price > 0 ? price.toLocaleString('ko-KR') + '원' : '';
-    // ★서브셋 폰트에 렌더되는 글자가 하나라도 빠지면 satori가 크래시 → 실제 렌더 문자열 전부로 charset 구성
     const CTA = '지금 보러가기  →';
     const AD_LABEL = 'AD · 온종일팜';
     const LIVE = '지금 주문 가능';
-    const allText = name + priceTxt + CTA + AD_LABEL + LIVE + '0123456789,원 ';
-    const charset = Array.from(new Set(Array.from(allText))).join('');
     let font, fontErr = '';
-    try { font = await loadKoFont(charset); } catch (fe) { fontErr = 'FONT:' + (fe && fe.message ? fe.message : String(fe)); }
+    try { font = await loadKoFont(); } catch (fe) { fontErr = 'FONT:' + (fe && fe.message ? fe.message : String(fe)); }
     const noimg = url.searchParams.get('noimg') === '1';
     // satori는 이미지를 arrayBuffer로 미리 받아 data URL로 넘기면 훨씬 안정적(외부 fetch 실패/타임아웃 방지)
     let imgData = image;
@@ -113,7 +109,7 @@ export default async function handler(req) {
     return new ImageResponse(el, {
       width: 1200,
       height: 630,
-      fonts: font ? [{ name: 'ko', data: font, weight: 800, style: 'normal' }] : [],
+      fonts: font ? [{ name: 'ko', data: font, weight: 400, style: 'normal' }] : [],
       headers: { 'Cache-Control': 'public, max-age=600, s-maxage=86400' }
     });
   } catch (e) {
