@@ -1043,10 +1043,10 @@ document.getElementById('banner-ratios')?.addEventListener('click', function (e)
 // 이미지 전체에 대각선으로 반복되는 워터마크를 얹어 무단 재배포를 억제
 function drawDetailWatermark(ctx, W, H) {
   const text = '온파트너  ·  partner.yuanfnb.com';
-  const fs = Math.max(22, Math.round(W / 22));
-  const stepX = fs * 13;   // 가로 간격
-  const stepY = fs * 5.5;  // 세로 간격(촘촘히 → 위/중간/아래 모두 덮임)
-  const lw = Math.max(2.5, fs / 8);
+  const fs = Math.max(24, Math.round(W / 20));
+  const stepX = fs * 12;   // 가로 간격
+  const stepY = fs * 5;    // 세로 간격(촘촘히 → 위/중간/아래 모두 덮임)
+  const lw = Math.max(3, fs / 7);
   // ★실제 좌표(0~H)를 직접 순회하며 각 위치에서 텍스트를 -30°로 개별 회전 → 긴 이미지도 전체 균일 커버.
   //   행마다 가로로 반칸씩 어긋나게(벽돌쌓기) 해서 빈틈 없이.
   let row = 0;
@@ -1060,9 +1060,9 @@ function drawDetailWatermark(ctx, W, H) {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.lineWidth = lw;
-      ctx.strokeStyle = 'rgba(255,255,255,0.55)';   // 어두운 영역용 밝은 외곽선
+      ctx.strokeStyle = 'rgba(255,255,255,0.85)';   // 어두운 영역용 밝은 외곽선(강)
       ctx.strokeText(text, 0, 0);
-      ctx.fillStyle = 'rgba(0,0,0,0.22)';           // 흰 배경에서도 보이는 진한 글자
+      ctx.fillStyle = 'rgba(0,0,0,0.42)';           // 복잡한 사진에서도 또렷한 진한 글자
       ctx.fillText(text, 0, 0);
       ctx.restore();
     }
