@@ -596,7 +596,11 @@
         <div style="flex:1;"><label class="admin-label">캠페인 제목</label><input class="admin-input" id="cm-title-input" placeholder="예: 설 명절 선물세트 캠페인"></div>
       </div>
       <div style="margin-bottom:14px;"><label class="admin-label">설명 (파트너에게 노출)</label><input class="admin-input" id="cm-desc" placeholder="예: 기간 내 선물세트 판매 시 수수료 +3%"></div>
-      <div class="campaign-guide-box">캠페인 추가 수수료는 <b>기존 상품 마진에 더해집니다.</b><br>예) 상품 마진 5% + 캠페인 3% = 파트너 수수료 8%.</div>
+      <div style="margin-bottom:10px;"><label class="admin-label">기본 추가 수수료율 <span style="color:var(--text3);font-weight:600;">상품별로 따로 정하지 않은 상품에 공통 적용 (1~10%)</span></label>
+        <select class="admin-input" id="cm-bonus" onchange="onCampBonusChange()">
+          <option value="1">+1%</option><option value="2">+2%</option><option value="3" selected>+3%</option><option value="4">+4%</option><option value="5">+5%</option><option value="6">+6%</option><option value="7">+7%</option><option value="8">+8%</option><option value="9">+9%</option><option value="10">+10%</option>
+        </select></div>
+      <div class="campaign-guide-box" id="cm-guide">캠페인 추가 수수료 <b>+3%</b>가 <b>기존 상품 마진에 더해집니다.</b><br>예) 상품 마진 5% + 캠페인 3% = 파트너 수수료 <b>8%</b>.</div>
       <div style="display:flex;gap:10px;margin-bottom:14px;">
         <div style="flex:1;"><label class="admin-label">대상</label>
           <select class="admin-input" id="cm-target-type" onchange="onCampTargetChange()">
@@ -620,10 +624,6 @@
         <input class="admin-input" id="cm-product-search" placeholder="상품명 검색..." oninput="renderCampaignProductPicker()">
         <div class="campaign-product-list" id="cm-product-list"></div>
       </div>
-      <div style="margin-bottom:14px;"><label class="admin-label">기본 추가 수수료율 <span style="color:var(--text3);font-weight:600;">상품별로 따로 정하지 않은 상품에 공통 적용 (1~10%)</span></label>
-        <select class="admin-input" id="cm-bonus" onchange="renderCampaignProductPicker()">
-          <option value="1">+1%</option><option value="2">+2%</option><option value="3" selected>+3%</option><option value="4">+4%</option><option value="5">+5%</option><option value="6">+6%</option><option value="7">+7%</option><option value="8">+8%</option><option value="9">+9%</option><option value="10">+10%</option>
-        </select></div>
       <div style="display:flex;gap:10px;margin-bottom:16px;">
         <div style="flex:1;"><label class="admin-label">시작일</label><input class="admin-input" id="cm-start" type="date"></div>
         <div style="flex:1;"><label class="admin-label">종료일</label><input class="admin-input" id="cm-end" type="date"></div>
@@ -643,6 +643,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../js/config.js?v=20260731c"></script>
 <script src="../js/db.js?v=20260816a"></script>
-<script src="../js/admin.js?v=20260818b"></script>
+<script src="../js/admin.js?v=20260818c"></script>
 </body>
 </html>

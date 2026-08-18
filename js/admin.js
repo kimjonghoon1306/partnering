@@ -1720,6 +1720,16 @@ function clampCampaignBonusPct(v) {
   if (n > 10) return 10;   // 캠페인 추가 수수료는 1~10%
   return Math.round(n);     // 1%p 단위
 }
+// 기본 수수료율 변경 → 안내문 숫자 갱신 + 상품별 '기본값(+X%)' 표시 갱신
+function onCampBonusChange() {
+  const pct = clampCampaignBonusPct(document.getElementById('cm-bonus')?.value) || 3;
+  const guide = document.getElementById('cm-guide');
+  if (guide) {
+    guide.innerHTML = '캠페인 추가 수수료 <b>+' + pct + '%</b>가 <b>기존 상품 마진에 더해집니다.</b><br>'
+      + '예) 상품 마진 5% + 캠페인 ' + pct + '% = 파트너 수수료 <b>' + (5 + pct) + '%</b>.';
+  }
+  renderCampaignProductPicker();
+}
 // 상품별 추가율 드롭다운 옵션(빈값=기본값 공통적용, 1~10%)
 function campRateOptions(sel) {
   const base = clampCampaignBonusPct(document.getElementById('cm-bonus')?.value) || 3;
@@ -1812,6 +1822,7 @@ async function openCampaignModal(id) {
   const productSearch = document.getElementById('cm-product-search');
   if (productSearch) productSearch.value = '';
   document.getElementById('cm-bonus').value = c ? String(clampCampaignBonusPct(Number(c.bonus_rate) * 100) || 3) : '3';
+  onCampBonusChange();   // 안내문 숫자를 로드된 기본율에 맞춤
   document.getElementById('cm-start').value = c ? c.starts_at : '';
   document.getElementById('cm-end').value = c ? c.ends_at : '';
   document.getElementById('cm-active').checked = c ? c.is_active : true;
