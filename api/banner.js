@@ -90,6 +90,12 @@ export default async function handler(req) {
       headers: { 'Cache-Control': 'public, max-age=600, s-maxage=86400' }
     });
   } catch (e) {
+    try {
+      const u = new URL(req.url);
+      if (u.searchParams.get('debug') === '1') {
+        return new Response('ERR: ' + (e && e.message ? e.message : String(e)) + '\n' + (e && e.stack ? e.stack : ''), { status: 500, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+      }
+    } catch (_) {}
     return Response.redirect(FALLBACK_IMG, 302);
   }
 }
