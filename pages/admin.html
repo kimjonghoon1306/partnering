@@ -620,7 +620,10 @@
         <input class="admin-input" id="cm-product-search" placeholder="상품명 검색..." oninput="renderCampaignProductPicker()">
         <div class="campaign-product-list" id="cm-product-list"></div>
       </div>
-      <div style="margin-bottom:14px;"><label class="admin-label">기본 추가 수수료율 (%) <span style="color:var(--text3);font-weight:600;">상품별로 따로 정하지 않은 상품에 공통 적용</span></label><input class="admin-input" id="cm-bonus" type="number" min="0" max="30" step="0.5" value="3"></div>
+      <div style="margin-bottom:14px;"><label class="admin-label">기본 추가 수수료율 <span style="color:var(--text3);font-weight:600;">상품별로 따로 정하지 않은 상품에 공통 적용 (1~10%)</span></label>
+        <select class="admin-input" id="cm-bonus" onchange="renderCampaignProductPicker()">
+          <option value="1">+1%</option><option value="2">+2%</option><option value="3" selected>+3%</option><option value="4">+4%</option><option value="5">+5%</option><option value="6">+6%</option><option value="7">+7%</option><option value="8">+8%</option><option value="9">+9%</option><option value="10">+10%</option>
+        </select></div>
       <div style="display:flex;gap:10px;margin-bottom:16px;">
         <div style="flex:1;"><label class="admin-label">시작일</label><input class="admin-input" id="cm-start" type="date"></div>
         <div style="flex:1;"><label class="admin-label">종료일</label><input class="admin-input" id="cm-end" type="date"></div>
@@ -640,6 +643,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../js/config.js?v=20260731c"></script>
 <script src="../js/db.js?v=20260816a"></script>
-<script src="../js/admin.js?v=20260818a"></script>
+<script src="../js/admin.js?v=20260818b"></script>
 </body>
 </html>

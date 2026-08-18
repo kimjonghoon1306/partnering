@@ -1683,7 +1683,7 @@ function renderCampaignProductPicker() {
       '<span class="campaign-product-thumb" style="' + (img ? "background-image:url('" + admEsc(img) + "')" : '') + '">' + (img ? '' : '🛒') + '</span>' +
       '<span class="campaign-product-info"><span class="campaign-product-name">' + admEsc(p.name) + (p.is_active === false ? ' <em>(비활성)</em>' : '') + '</span>' +
       '<span class="campaign-product-meta">' + (categoryMap[String(p.category_id)] ? admEsc(categoryMap[String(p.category_id)]) + ' · ' : '') + '₩' + admEsc(price) + '</span></span>' +
-      '<span class="campaign-product-rate"><input type="number" min="0" max="30" step="0.5" value="' + admEsc(rateValue) + '" placeholder="' + admEsc(clampCampaignBonusPct(document.getElementById('cm-bonus')?.value)) + '" ' + (isChecked ? '' : 'disabled ') + 'oninput="setCampaignProductRate(\'' + admEsc(id) + '\',this.value)"><span>%</span></span>' +
+      '<span class="campaign-product-rate"><select ' + (isChecked ? '' : 'disabled ') + 'onchange="setCampaignProductRate(\'' + admEsc(id) + '\',this.value)">' + campRateOptions(rateValue) + '</select></span>' +
     '</div>';
   }).join('');
 }
@@ -1696,9 +1696,18 @@ function campStatus(c) {
 function fmtRate(r) { return (Number(r) * 100).toFixed(1).replace(/\.0$/, ''); }
 function clampCampaignBonusPct(v) {
   const n = Number(v);
-  if (!Number.isFinite(n) || n < 0) return 0;
-  if (n > 30) return 30;
-  return n;
+  if (!Number.isFinite(n) || n <= 0) return 0;   // 빈값/0 → 기본값 사용
+  if (n < 1) return 1;
+  if (n > 10) return 10;   // 캠페인 추가 수수료는 1~10%
+  return Math.round(n);     // 1%p 단위
+}
+// 상품별 추가율 드롭다운 옵션(빈값=기본값 공통적용, 1~10%)
+function campRateOptions(sel) {
+  const base = clampCampaignBonusPct(document.getElementById('cm-bonus')?.value) || 3;
+  const cur = (sel == null || sel === '') ? '' : String(Math.round(Number(sel)));
+  let html = '<option value=""' + (cur === '' ? ' selected' : '') + '>기본값(+' + base + '%)</option>';
+  for (let i = 1; i <= 10; i++) html += '<option value="' + i + '"' + (cur === String(i) ? ' selected' : '') + '>+' + i + '%</option>';
+  return html;
 }
 function renderCampaigns() {
   const box = document.getElementById('campaign-list');
@@ -1783,7 +1792,7 @@ async function openCampaignModal(id) {
   renderCampaignProductFilters();
   const productSearch = document.getElementById('cm-product-search');
   if (productSearch) productSearch.value = '';
-  document.getElementById('cm-bonus').value = c ? Number(c.bonus_rate) * 100 : 3;
+  document.getElementById('cm-bonus').value = c ? String(clampCampaignBonusPct(Number(c.bonus_rate) * 100) || 3) : '3';
   document.getElementById('cm-start').value = c ? c.starts_at : '';
   document.getElementById('cm-end').value = c ? c.ends_at : '';
   document.getElementById('cm-active').checked = c ? c.is_active : true;
