@@ -2029,6 +2029,9 @@ async function openAdModal(id) {
   document.getElementById('ad-start').value = ad ? toDatetimeLocal(ad.starts_at) : '';
   document.getElementById('ad-end').value = ad ? toDatetimeLocal(ad.ends_at) : '';
   document.getElementById('ad-active').checked = ad ? ad.is_active : true;
+  var thumb0 = document.getElementById('ad-image-thumb');
+  var url0 = ad ? (ad.image_url || '') : '';
+  if (thumb0) thumb0.innerHTML = url0 ? '<img src="' + admEsc(url0) + '" alt="현재 이미지" style="width:100%;max-height:120px;object-fit:cover;border-radius:10px;border:1px solid var(--border);">' : '';
   renderAdPreview();
   openModal('ad-modal');
 }
@@ -2049,6 +2052,35 @@ function renderAdPreview() {
       '<p>' + admEsc(sub) + '</p>' +
       '<button type="button">' + admEsc(cta) + ' →</button>' +
     '</div>';
+}
+// 광고 이미지 파일 업로드 → products 버킷 → 공개URL을 이미지칸에 채움
+async function uploadAdImage(input) {
+  const file = input && input.files && input.files[0];
+  if (!file || !window.opClient) return;
+  if (!/^image\//.test(file.type)) { alert('이미지 파일만 올릴 수 있어요.'); input.value = ''; return; }
+  if (file.size > 8 * 1024 * 1024) { alert('이미지는 8MB 이하로 올려주세요.'); input.value = ''; return; }
+  const btn = document.getElementById('ad-image-upload-btn');
+  const orig = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = '업로드 중...'; }
+  try {
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+    const path = 'ad-images/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
+    const { error } = await window.opClient.storage.from('products').upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type });
+    if (error) throw error;
+    const { data } = window.opClient.storage.from('products').getPublicUrl(path);
+    const url = data && data.publicUrl;
+    if (!url) throw new Error('URL 생성 실패');
+    const imgEl = document.getElementById('ad-image-url');
+    if (imgEl) imgEl.value = url;
+    renderAdPreview();
+    const thumb = document.getElementById('ad-image-thumb');
+    if (thumb) thumb.innerHTML = '<img src="' + admEsc(url) + '" alt="업로드 이미지" style="width:100%;max-height:120px;object-fit:cover;border-radius:10px;border:1px solid var(--border);">';
+  } catch (e) {
+    alert('이미지 업로드 실패: ' + ((e && e.message) || '다시 시도해주세요'));
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = orig || '📤 이미지 업로드'; }
+    input.value = '';
+  }
 }
 async function saveAd(btn) {
   if (!window.opClient) return;

@@ -513,8 +513,13 @@
       <input type="hidden" id="ad-id">
       <div class="ad-form-grid">
         <div>
-          <label class="admin-label" for="ad-image-url">이미지 URL <span style="font-weight:500;color:var(--text3);text-transform:none;letter-spacing:0;">· 연결 상품 선택 시 자동 입력</span></label>
-          <input class="admin-input" id="ad-image-url" placeholder="상품을 선택하면 자동으로 채워져요 (직접 입력도 가능)">
+          <label class="admin-label" for="ad-image-url">광고 이미지 <span style="font-weight:500;color:var(--text3);text-transform:none;letter-spacing:0;">· 상품 선택 시 자동 / 직접 업로드·URL 가능</span></label>
+          <div style="display:flex;gap:8px;align-items:stretch;">
+            <input class="admin-input" id="ad-image-url" style="flex:1;" placeholder="상품 선택 시 자동 채움 (URL 직접 입력도 가능)" oninput="renderAdPreview()">
+            <button type="button" class="admin-action-btn" id="ad-image-upload-btn" style="flex-shrink:0;white-space:nowrap;padding:0 14px;" onclick="document.getElementById('ad-image-file').click()">📤 이미지 업로드</button>
+            <input type="file" id="ad-image-file" accept="image/*" style="display:none;" onchange="uploadAdImage(this)">
+          </div>
+          <div id="ad-image-thumb" style="margin-top:8px;"></div>
         </div>
         <div>
           <label class="admin-label" for="ad-tag">태그</label>
@@ -635,6 +640,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../js/config.js?v=20260731c"></script>
 <script src="../js/db.js?v=20260816a"></script>
-<script src="../js/admin.js?v=20260816b"></script>
+<script src="../js/admin.js?v=20260818a"></script>
 </body>
 </html>
