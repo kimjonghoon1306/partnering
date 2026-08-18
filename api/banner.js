@@ -29,19 +29,12 @@ export default async function handler(req) {
     const SUPA = process.env.SUPABASE_URL;
     const SRK = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const url = new URL(req.url, 'https://partner.yuanfnb.com');
-    if (url.searchParams.get('envcheck') === '1') {
-      return new Response('SUPA=' + (SUPA ? 'set' : 'MISSING') + ' SRK=' + (SRK ? 'set' : 'MISSING') + ' keys=' + Object.keys(process.env).filter(k=>/SUPA|SERVICE/i.test(k)).join(','), { status: 200, headers: { 'Content-Type': 'text/plain' } });
-    }
     const code = (url.searchParams.get('code') || '').trim();
     if (!/^[a-z0-9-]{4,64}$/i.test(code) || !SUPA || !SRK) return Response.redirect(FALLBACK_IMG, 302);
 
-    const dbg = url.searchParams.get('debug') === '1';
     const headers = { apikey: SRK, Authorization: 'Bearer ' + SRK };
-    const linkRes = await fetch(SUPA + '/rest/v1/partner_links?select=product_id,product_name,product_image,product_price,title&code=eq.' + encodeURIComponent(code) + '&limit=1', { headers });
-    const linkTxt = await linkRes.text();
-    let rows = null; try { rows = JSON.parse(linkTxt); } catch (e) {}
+    const rows = await (await fetch(SUPA + '/rest/v1/partner_links?select=product_id,product_name,product_image,product_price,title&code=eq.' + encodeURIComponent(code) + '&limit=1', { headers })).json();
     const link = Array.isArray(rows) ? rows[0] : null;
-    if (dbg) return new Response('linkStatus=' + linkRes.status + ' body=' + linkTxt.slice(0, 300), { status: 200, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
     if (!link) return Response.redirect(FALLBACK_IMG, 302);
 
     let name = link.product_name || link.title || '온종일팜 상품';
@@ -98,12 +91,6 @@ export default async function handler(req) {
       headers: { 'Cache-Control': 'public, max-age=600, s-maxage=86400' }
     });
   } catch (e) {
-    try {
-      const u = new URL(req.url);
-      if (u.searchParams.get('debug') === '1') {
-        return new Response('ERR: ' + (e && e.message ? e.message : String(e)) + '\n' + (e && e.stack ? e.stack : ''), { status: 500, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
-      }
-    } catch (_) {}
     return Response.redirect(FALLBACK_IMG, 302);
   }
 }
