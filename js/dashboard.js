@@ -1052,13 +1052,13 @@ function drawDetailWatermark(ctx, W, H) {
   const diag = Math.sqrt(W * W + H * H);
   const stepX = fs * 15;
   const stepY = fs * 6.5;
-  ctx.lineWidth = Math.max(2, fs / 10);
-  // 밝은 배경/어두운 배경 모두에서 또렷하게 보이도록 외곽선(검정)+본문(흰) 이중, 투명도 상향
+  ctx.lineWidth = Math.max(2.5, fs / 8);
+  // ★상세페이지는 대부분 흰/밝은 배경 → 어두운 글자(진하게)+밝은 외곽선으로 뒤집어 어디서든 또렷하게.
   for (let y = -diag; y < diag; y += stepY) {
     for (let x = -diag; x < diag; x += stepX) {
-      ctx.strokeStyle = 'rgba(0,0,0,0.30)';
+      ctx.strokeStyle = 'rgba(255,255,255,0.55)';   // 어두운 이미지 영역용 밝은 외곽선
       ctx.strokeText(text, x, y);
-      ctx.fillStyle = 'rgba(255,255,255,0.45)';
+      ctx.fillStyle = 'rgba(0,0,0,0.22)';           // 흰 배경에서도 보이는 진한 글자
       ctx.fillText(text, x, y);
     }
   }
