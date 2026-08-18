@@ -15,12 +15,22 @@ function normImg(v) {
 }
 
 // 완전한 한글 TTF(Do Hyeon, 단일파일)를 통째로 받는다.
-//   ※ 구글폰트 &text= 서브셋 TTF는 satori가 파싱 못해 빈 이미지가 나옴 → 완전 TTF 사용.
-const KO_FONT_URL = 'https://raw.githubusercontent.com/google/fonts/main/ofl/dohyeon/DoHyeon-Regular.ttf';
+//   ※ 구글폰트 &text= 서브셋 TTF는 satori가 파싱 못해 빈 이미지. GitHub raw는 rate-limit로 불안정.
+//   → 우리 도메인 정적파일(assets/DoHyeon.ttf) 우선, 실패 시 GitHub 폴백.
+const KO_FONT_URLS = [
+  'https://partner.yuanfnb.com/assets/DoHyeon.ttf',
+  'https://raw.githubusercontent.com/google/fonts/main/ofl/dohyeon/DoHyeon-Regular.ttf',
+];
 async function loadKoFont() {
-  const r = await fetch(KO_FONT_URL, { headers: { 'User-Agent': 'Mozilla/5.0' } });
-  if (!r.ok) throw new Error('font_fetch_' + r.status);
-  return await r.arrayBuffer();
+  let lastErr;
+  for (const u of KO_FONT_URLS) {
+    try {
+      const r = await fetch(u, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+      if (r.ok) { const ab = await r.arrayBuffer(); if (ab && ab.byteLength > 10000) return ab; }
+      lastErr = new Error('font_' + r.status);
+    } catch (e) { lastErr = e; }
+  }
+  throw lastErr || new Error('font_fail');
 }
 
 export default async function handler(req) {
