@@ -348,6 +348,7 @@
         <div class="catalog-toolbar">
           <div class="catalog-filters" id="catalog-filters"></div>
           <div class="catalog-tools">
+            <button type="button" class="catalog-compact-btn" id="catalog-compact-btn" onclick="toggleCatalogCompact()" title="한 화면에 여러 개 모아보기">🔳 모아보기</button>
             <label class="catalog-camp-toggle"><input type="checkbox" id="catalog-camp-only"> 🎁 캠페인만</label>
             <select class="catalog-sort" id="catalog-sort">
               <option value="latest">최신순</option>
@@ -366,6 +367,51 @@
         </div>
       </div>
       </section>
+
+      <style>
+        .catalog-compact-btn{border:1.5px solid var(--border);background:var(--bg);color:var(--text2);border-radius:10px;padding:8px 12px;font-size:12.5px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap;transition:.15s;}
+        .catalog-compact-btn.active{background:var(--lime);color:#0A0A0A;border-color:var(--lime);}
+        /* 🔳 모아보기: 작은 썸네일로 촘촘히(모바일 3~4개/줄), 버튼·링크·상세는 숨김 → 탭하면 상세 */
+        .catalog-grid.compact{grid-template-columns:repeat(auto-fill,minmax(min(150px,100%),1fr));gap:10px;}
+        .catalog-grid.compact .catalog-img{height:96px;font-size:26px;}
+        .catalog-grid.compact .catalog-info{padding:8px 9px;cursor:pointer;}
+        .catalog-grid.compact .catalog-name{font-size:12px;line-height:1.3;max-height:2.6em;overflow:hidden;}
+        .catalog-grid.compact .catalog-price{font-size:13px;margin-top:2px;}
+        .catalog-grid.compact .catalog-earn{font-size:11px;margin-top:2px;}
+        .catalog-grid.compact .catalog-category,
+        .catalog-grid.compact .catalog-campaign-badge,
+        .catalog-grid.compact .catalog-viewrow,
+        .catalog-grid.compact .catalog-btnrow,
+        .catalog-grid.compact .catalog-mylink{display:none !important;}
+        .catalog-grid.compact .catalog-tap-hint{display:block;font-size:9.5px;color:var(--lime);font-weight:800;margin-top:5px;}
+        @media(max-width:640px){
+          .catalog-grid.compact{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+          .catalog-grid.compact .catalog-img{height:88px;}
+        }
+        @media(max-width:400px){ .catalog-grid.compact{grid-template-columns:repeat(2,minmax(0,1fr));} }
+      </style>
+      <script>
+        (function(){ try{ if(localStorage.getItem('op_catalog_compact')==='1'){ window.__catalogCompactInit=true; } }catch(e){} })();
+        function toggleCatalogCompact(){
+          var grid=document.getElementById('catalog-grid'); var btn=document.getElementById('catalog-compact-btn');
+          if(!grid) return;
+          var on=!grid.classList.contains('compact');
+          grid.classList.toggle('compact', on);
+          if(btn) btn.classList.toggle('active', on);
+          try{ localStorage.setItem('op_catalog_compact', on?'1':'0'); }catch(e){}
+        }
+        // 렌더 후 저장된 상태 복원 (catalog가 다시 그려질 때마다)
+        (function(){
+          var _apply=function(){
+            var grid=document.getElementById('catalog-grid'); var btn=document.getElementById('catalog-compact-btn');
+            var on=false; try{ on=localStorage.getItem('op_catalog_compact')==='1'; }catch(e){}
+            if(grid){ grid.classList.toggle('compact', on); if(btn) btn.classList.toggle('active', on); }
+          };
+          document.addEventListener('DOMContentLoaded', _apply);
+          // catalog가 비동기로 그려지므로 잠깐 뒤에도 한번 더
+          setInterval(_apply, 1500);
+        })();
+      </script>
 
       <!-- 링크 받기 결과 토스트 -->
       <div class="linktoast" id="linktoast" style="display:none;">
