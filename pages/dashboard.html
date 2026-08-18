@@ -98,6 +98,96 @@
     <!-- ══════════ 페이지: 오버뷰 ══════════ -->
     <div class="page" id="page-overview">
 
+      <!-- ⭐ 72시간 적립 정책 안내 배너 -->
+      <section class="op72-banner" aria-label="적립 정책 안내">
+        <div class="op72-banner-left">
+          <div class="op72-badge">NEW</div>
+          <div class="op72-txt">
+            <b>🎁 한 번 클릭하면 <span class="op72-hl">72시간</span> 동안 모든 구매가 내 수익!</b>
+            <small>손님이 내 링크를 누른 뒤 3일 안에 무엇을·몇 번을 사든 전부 적립돼요.</small>
+          </div>
+        </div>
+        <button type="button" class="op72-btn" onclick="openOp72()">📖 기능 설명 보기</button>
+      </section>
+
+      <!-- 72시간 적립 설명 팝업 -->
+      <div class="op72-modal" id="op72-modal" hidden>
+        <div class="op72-backdrop" onclick="closeOp72()"></div>
+        <section class="op72-dialog" role="dialog" aria-modal="true" aria-labelledby="op72-title">
+          <button class="op72-close" type="button" onclick="closeOp72()" aria-label="닫기">×</button>
+          <div class="op72-kicker">적립 정책 · 꼭 알아두세요</div>
+          <h2 id="op72-title">🎁 72시간 적립, 이렇게 작동해요</h2>
+          <p class="op72-lead">손님이 내 추천 링크(<b>partner.yuanfnb.com/r/…</b>)를 <b>한 번</b> 클릭하면,
+            그 순간부터 <b class="op72-hl">72시간(3일)</b> 동안 <b>그 손님이 온종일팜에서 사는 모든 상품</b>이 내 수익으로 잡혀요. (쿠팡파트너스와 같은 방식이에요.)</p>
+
+          <div class="op72-cards">
+            <div class="op72-card ok">
+              <div class="op72-card-h">✅ 이런 건 계속 적립돼요</div>
+              <ul>
+                <li><b>72시간 안 여러 번 구매</b> — 매일 들어와 사도 전부 적립</li>
+                <li><b>추천한 상품이 아니어도</b> — 다른 상품을 사도 적립</li>
+                <li><b>로그아웃했다 다시 로그인</b> — 유지돼요 (안 끊겨요)</li>
+                <li><b>앱/브라우저 껐다 켜기</b> — 같은 기기·브라우저면 유지</li>
+              </ul>
+            </div>
+            <div class="op72-card no">
+              <div class="op72-card-h">⚠️ 이런 경우엔 끊겨요</div>
+              <ul>
+                <li><b>72시간(3일)이 지나면</b> — 자동 만료</li>
+                <li><b>손님이 브라우저 기록/데이터를 삭제하면</b></li>
+                <li><b>시크릿(비공개) 모드</b>로 봤다가 창을 닫으면</li>
+                <li><b>다른 파트너 링크를 누르면</b> — 그 사람 걸로 바뀜</li>
+                <li><b>다른 기기/브라우저로 구매</b> — 그 기기엔 기록이 없어요</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="op72-tip">💡 <b>같은 폰·브라우저로 3일 안에 사면 무조건 내 수익</b>이에요. 손님이 일부러 기록을 지우거나 다른 파트너 링크를 누르지 않는 한 끊기지 않아요.</div>
+          <div class="op72-note">※ 같은 주문이 두 번 적립되는 일은 없어요(시스템이 자동으로 막아요).</div>
+
+          <button type="button" class="op72-dialog-btn" onclick="closeOp72()">확인했어요</button>
+        </section>
+      </div>
+
+      <style>
+        .op72-banner{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+          background:linear-gradient(135deg,rgba(190,255,0,.14),rgba(255,107,53,.10));
+          border:1.5px solid rgba(190,255,0,.4);border-radius:18px;padding:16px 18px;margin-bottom:16px;}
+        .op72-banner-left{display:flex;align-items:center;gap:14px;min-width:0;flex:1;}
+        .op72-badge{background:var(--lime,#BEFF00);color:#0A0A0A;font-weight:900;font-size:11px;padding:5px 10px;border-radius:999px;flex-shrink:0;letter-spacing:.5px;}
+        .op72-txt b{display:block;font-size:15.5px;font-weight:800;color:var(--text,#fff);line-height:1.4;}
+        .op72-txt small{display:block;font-size:12.5px;color:var(--text2,#9ca3af);margin-top:3px;line-height:1.5;}
+        .op72-hl{color:var(--lime,#7bb800);}
+        .op72-btn{flex-shrink:0;background:var(--lime,#BEFF00);color:#0A0A0A;border:none;border-radius:999px;
+          padding:12px 20px;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(190,255,0,.35);transition:transform .15s;}
+        .op72-btn:hover{transform:translateY(-2px);}
+        .op72-btn:active{transform:scale(.96);}
+        .op72-modal[hidden]{display:none;}
+        .op72-modal{position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;padding:20px;}
+        .op72-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(3px);}
+        .op72-dialog{position:relative;z-index:1;background:var(--card,#14181f);color:var(--text,#fff);border:1px solid var(--border,rgba(255,255,255,.08));
+          border-radius:22px;padding:28px 24px;max-width:600px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 30px 80px rgba(0,0,0,.5);}
+        .op72-close{position:absolute;top:14px;right:16px;background:transparent;border:none;color:var(--text3,#6b7280);font-size:26px;cursor:pointer;line-height:1;}
+        .op72-kicker{font-size:12px;font-weight:800;color:var(--lime,#7bb800);letter-spacing:1px;margin-bottom:6px;}
+        .op72-dialog h2{font-size:22px;font-weight:900;margin:0 0 12px;}
+        .op72-lead{font-size:14px;line-height:1.7;color:var(--text2,#cbd5e1);margin:0 0 18px;}
+        .op72-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+        @media(max-width:560px){.op72-cards{grid-template-columns:1fr;}}
+        .op72-card{border-radius:14px;padding:14px 16px;border:1px solid var(--border,rgba(255,255,255,.08));}
+        .op72-card.ok{background:rgba(0,200,120,.08);border-color:rgba(0,200,120,.3);}
+        .op72-card.no{background:rgba(255,90,90,.07);border-color:rgba(255,90,90,.28);}
+        .op72-card-h{font-size:13.5px;font-weight:800;margin-bottom:8px;}
+        .op72-card ul{margin:0;padding-left:18px;}
+        .op72-card li{font-size:12.5px;line-height:1.75;color:var(--text2,#cbd5e1);margin-bottom:3px;}
+        .op72-tip{background:rgba(190,255,0,.1);border:1px solid rgba(190,255,0,.3);border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.6;color:var(--text,#fff);margin-bottom:10px;}
+        .op72-note{font-size:11.5px;color:var(--text3,#6b7280);margin-bottom:18px;}
+        .op72-dialog-btn{width:100%;background:var(--lime,#BEFF00);color:#0A0A0A;border:none;border-radius:12px;padding:14px;font-weight:800;font-size:15px;cursor:pointer;font-family:inherit;}
+      </style>
+      <script>
+        function openOp72(){ var m=document.getElementById('op72-modal'); if(m){ m.hidden=false; document.body.style.overflow='hidden'; } }
+        function closeOp72(){ var m=document.getElementById('op72-modal'); if(m){ m.hidden=true; document.body.style.overflow=''; } }
+      </script>
+
       <section class="partner-service-guide" aria-label="온종일 서비스 안내">
         <button class="service-guide-card farm" type="button" onclick="openServiceBenefit('farm')">
           <span class="service-guide-icon">🌱</span><span><b>온종일팜</b><small>팔고 싶은 상품을 찾는 순간, 내 수익 링크가 시작됩니다.</small></span><em>기능·혜택 자세히 보기 →</em>
