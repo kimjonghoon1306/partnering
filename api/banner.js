@@ -50,7 +50,12 @@ export default async function handler(req) {
     if (!image) return Response.redirect(FALLBACK_IMG, 302);
 
     const priceTxt = price > 0 ? price.toLocaleString('ko-KR') + '원' : '';
-    const charset = name + '지금 주문 가능 AD 지금 보러가기 온종일팜 ▶ ' + priceTxt + '0123456789';
+    // ★서브셋 폰트에 렌더되는 글자가 하나라도 빠지면 satori가 크래시 → 실제 렌더 문자열 전부로 charset 구성
+    const CTA = '지금 보러가기  →';
+    const AD_LABEL = 'AD · 온종일팜';
+    const LIVE = '지금 주문 가능';
+    const allText = name + priceTxt + CTA + AD_LABEL + LIVE + '0123456789,원 ';
+    const charset = Array.from(new Set(Array.from(allText))).join('');
     let font, fontErr = '';
     try { font = await loadKoFont(charset); } catch (fe) { fontErr = 'FONT:' + (fe && fe.message ? fe.message : String(fe)); }
     const noimg = url.searchParams.get('noimg') === '1';
@@ -70,7 +75,7 @@ export default async function handler(req) {
     if (!noimg && imgData) {
       leftChildren.push({ type: 'img', props: { src: imgData, width: 640, height: 630, style: { width: '640px', height: '630px', objectFit: 'cover' } } });
       // 이미지 위 좌상단 그라데이션 그림자 + AD 배지
-      leftChildren.push({ type: 'div', props: { style: { position: 'absolute', top: '34px', left: '34px', display: 'flex', alignItems: 'center', background: 'rgba(17,24,39,0.82)', color: '#fff', fontSize: '26px', fontWeight: 800, padding: '8px 20px', borderRadius: '999px', letterSpacing: '1px' }, children: 'AD · 온종일팜' } });
+      leftChildren.push({ type: 'div', props: { style: { position: 'absolute', top: '34px', left: '34px', display: 'flex', alignItems: 'center', background: 'rgba(17,24,39,0.82)', color: '#fff', fontSize: '26px', fontWeight: 800, padding: '8px 20px', borderRadius: '999px', letterSpacing: '1px' }, children: AD_LABEL } });
     } else {
       leftChildren.push({ type: 'div', props: { style: { display: 'flex', width: '640px', height: '630px', background: '#f1f5f0', alignItems: 'center', justifyContent: 'center', fontSize: '120px' }, children: '🧺' } });
     }
@@ -79,7 +84,7 @@ export default async function handler(req) {
       // 핑크 라이브 점 + 문구
       { type: 'div', props: { style: { display: 'flex', alignItems: 'center', marginBottom: '26px' }, children: [
         { type: 'div', props: { style: { display: 'flex', width: '20px', height: '20px', borderRadius: '50%', background: '#ff2d78', marginRight: '14px', boxShadow: '0 0 18px #ff2d78' } } },
-        { type: 'div', props: { style: { display: 'flex', color: '#ffd9e6', fontSize: '30px', fontWeight: 800, letterSpacing: '1px' }, children: '지금 주문 가능' } }
+        { type: 'div', props: { style: { display: 'flex', color: '#ffd9e6', fontSize: '30px', fontWeight: 800, letterSpacing: '1px' }, children: LIVE } }
       ] } },
       // 상품명
       { type: 'div', props: { style: { display: 'flex', color: '#ffffff', fontSize: '64px', fontWeight: 800, lineHeight: 1.15, marginBottom: '22px' }, children: name } },
@@ -92,7 +97,7 @@ export default async function handler(req) {
       rightChildren.push({ type: 'div', props: { style: { display: 'flex', height: '20px' } } });
     }
     // CTA 버튼(라임)
-    rightChildren.push({ type: 'div', props: { style: { display: 'flex', alignSelf: 'flex-start', background: '#bef264', color: '#14310f', fontSize: '36px', fontWeight: 800, padding: '20px 46px', borderRadius: '999px' }, children: '지금 보러가기  →' } });
+    rightChildren.push({ type: 'div', props: { style: { display: 'flex', alignSelf: 'flex-start', background: '#bef264', color: '#14310f', fontSize: '36px', fontWeight: 800, padding: '20px 46px', borderRadius: '999px' }, children: CTA } });
 
     const el = {
       type: 'div',
@@ -108,7 +113,7 @@ export default async function handler(req) {
     return new ImageResponse(el, {
       width: 1200,
       height: 630,
-      fonts: [{ name: 'ko', data: font, weight: 800, style: 'normal' }],
+      fonts: font ? [{ name: 'ko', data: font, weight: 800, style: 'normal' }] : [],
       headers: { 'Cache-Control': 'public, max-age=600, s-maxage=86400' }
     });
   } catch (e) {
