@@ -51,7 +51,11 @@ export default async function handler(req) {
 
     const priceTxt = price > 0 ? price.toLocaleString('ko-KR') + '원' : '';
     const charset = name + '지금 주문 가능 AD 지금 보러가기 온종일팜 ▶ ' + priceTxt + '0123456789';
-    const font = await loadKoFont(charset);
+    let font, fontErr = '';
+    try { font = await loadKoFont(charset); } catch (fe) { fontErr = 'FONT:' + (fe && fe.message ? fe.message : String(fe)); }
+    if (url.searchParams.get('debug') === '1') {
+      return new Response('fontBytes=' + (font ? font.byteLength : 'null') + ' fontErr=' + fontErr + ' image=' + image, { status: 200, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+    }
 
     const el = {
       type: 'div',
