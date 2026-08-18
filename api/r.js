@@ -87,13 +87,13 @@ module.exports = async (req, res) => {
       + '<meta property="og:site_name" content="온종일팜">'
       + '<meta property="og:title" content="' + esc(name) + '">'
       + '<meta property="og:description" content="' + esc(desc) + '">'
-      // OG 이미지는 가로 AD 배너(1200x630)로 — 링크카드가 가로형으로 크게 노출됨
-      + (image ? '<meta property="og:image" content="https://' + PARTNER_HOST + '/api/banner?code=' + esc(code) + '"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">' : '')
+      // OG 이미지 = 상품 사진(정사각). (가로 배너는 @vercel/og edge 빈응답 이슈로 보류)
+      + (image ? '<meta property="og:image" content="' + esc(image) + '"><meta property="og:image:width" content="800"><meta property="og:image:height" content="800">' : '')
       + '<meta property="og:url" content="https://' + PARTNER_HOST + '/r/' + esc(code) + '">'
       + '<meta name="twitter:card" content="summary_large_image">'
       + '<meta name="twitter:title" content="' + esc(name) + '">'
       + '<meta name="twitter:description" content="' + esc(desc) + '">'
-      + (image ? '<meta name="twitter:image" content="https://' + PARTNER_HOST + '/api/banner?code=' + esc(code) + '">' : '')
+      + (image ? '<meta name="twitter:image" content="' + esc(image) + '">' : '')
       + '<title>' + esc(name) + '</title>'
       + '</head>'
       + '<body style="font-family:-apple-system,sans-serif;text-align:center;padding:48px 20px;color:#444">'
