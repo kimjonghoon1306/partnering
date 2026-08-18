@@ -73,7 +73,10 @@ module.exports = async (req, res) => {
         + '<body><a href="' + esc(dest) + '">' + esc(name) + '</a></body></html>';
       res.statusCode = 200;
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=600');
+      // ★캐시 금지 + UA별 분리: 이 봇용 HTML이 엣지에 캐시돼 실사용자에게 잘못 전달되면
+      //   리다이렉트/클릭집계가 깨진다. no-store로 절대 캐시되지 않게 한다.
+      res.setHeader('Cache-Control', 'no-store, max-age=0');
+      res.setHeader('Vary', 'User-Agent');
       return res.end(html);
     }
 
@@ -93,6 +96,7 @@ module.exports = async (req, res) => {
     // 전환 추적 쿠키(관리자 설정 유효기간) + 온종일팜 상품으로 이동
     const base = safeDest(link.product_url);
     const dest = base + (base.includes('?') ? '&' : '?') + 'op_ref=' + encodeURIComponent(code);
+    res.setHeader('Cache-Control', 'no-store, max-age=0');
     res.setHeader('Set-Cookie', 'op_ref=' + encodeURIComponent(code) + '; Max-Age=' + (cookieDays * 86400) + '; Path=/; SameSite=Lax; Secure');
     return go(dest);
   } catch (e) {
