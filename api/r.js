@@ -87,13 +87,13 @@ module.exports = async (req, res) => {
       + '<meta property="og:site_name" content="온종일팜">'
       + '<meta property="og:title" content="' + esc(name) + '">'
       + '<meta property="og:description" content="' + esc(desc) + '">'
-      // OG 이미지 = 가로 AD 배너(1200x630) — 링크카드가 가로로 크게 노출됨
-      + (image ? '<meta property="og:image" content="https://' + PARTNER_HOST + '/api/banner?code=' + esc(code) + '"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">' : '')
+      // OG 이미지 = 정사각 AD 배너(1080x1080) — 네이버 블로그 카드가 정사각 크롭하므로 온전히 보임
+      + (image ? '<meta property="og:image" content="https://' + PARTNER_HOST + '/api/banner?sq=1&code=' + esc(code) + '"><meta property="og:image:width" content="1080"><meta property="og:image:height" content="1080">' : '')
       + '<meta property="og:url" content="https://' + PARTNER_HOST + '/r/' + esc(code) + '">'
       + '<meta name="twitter:card" content="summary_large_image">'
       + '<meta name="twitter:title" content="' + esc(name) + '">'
       + '<meta name="twitter:description" content="' + esc(desc) + '">'
-      + (image ? '<meta name="twitter:image" content="https://' + PARTNER_HOST + '/api/banner?code=' + esc(code) + '">' : '')
+      + (image ? '<meta name="twitter:image" content="https://' + PARTNER_HOST + '/api/banner?sq=1&code=' + esc(code) + '">' : '')
       + '<title>' + esc(name) + '</title>'
       + '</head>'
       + '<body style="font-family:-apple-system,sans-serif;text-align:center;padding:48px 20px;color:#444">'

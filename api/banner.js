@@ -64,9 +64,6 @@ export default async function handler(req) {
     const LIVE = '지금 주문 가능';
     let font, fontErr = '';
     try { font = await loadKoFont(); } catch (fe) { fontErr = 'FONT:' + (fe && fe.message ? fe.message : String(fe)); }
-    if (url.searchParams.get('debug') === '1') {
-      return new Response('fontBytes=' + (font ? font.byteLength : 'null') + ' fontErr=' + fontErr, { status: 200, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
-    }
     const noimg = url.searchParams.get('noimg') === '1';
     // satori는 이미지를 arrayBuffer로 미리 받아 data URL로 넘기면 훨씬 안정적(외부 fetch 실패/타임아웃 방지)
     let imgData = image;
@@ -79,49 +76,48 @@ export default async function handler(req) {
       imgData = 'data:' + ct + ';base64,' + btoa(b64);
     } catch (ie) { imgData = ''; }
 
-    // ── 애드포스트보다 예쁜 배너: 상품 크게(좌) + 딥그린 그라데이션 패널(우) + 핑크 포인트 ──
-    const leftChildren = [];
-    if (!noimg && imgData) {
-      leftChildren.push({ type: 'img', props: { src: imgData, width: 640, height: 630, style: { width: '640px', height: '630px', objectFit: 'cover' } } });
-      // 이미지 위 좌상단 그라데이션 그림자 + AD 배지
-      leftChildren.push({ type: 'div', props: { style: { position: 'absolute', top: '34px', left: '34px', display: 'flex', alignItems: 'center', background: 'rgba(17,24,39,0.82)', color: '#fff', fontSize: '26px', fontWeight: 800, padding: '8px 20px', borderRadius: '999px', letterSpacing: '1px' }, children: AD_LABEL } });
-    } else {
-      leftChildren.push({ type: 'div', props: { style: { display: 'flex', width: '640px', height: '630px', background: '#f1f5f0', alignItems: 'center', justifyContent: 'center', fontSize: '120px' }, children: '🧺' } });
-    }
+    // sq=1 → 정사각(네이버 블로그 카드용, 카드가 정사각 크롭하므로 온전히 보임), 아니면 가로(퍼블리 본문용)
+    const square = url.searchParams.get('sq') === '1';
+    const pinkDot = { type: 'div', props: { style: { display: 'flex', width: '20px', height: '20px', borderRadius: '50%', background: '#ff2d78', marginRight: '14px', boxShadow: '0 0 18px #ff2d78' } } };
+    const adBadge = { type: 'div', props: { style: { position: 'absolute', top: '30px', left: '30px', display: 'flex', alignItems: 'center', background: 'rgba(17,24,39,0.82)', color: '#fff', fontSize: '26px', fontWeight: 800, padding: '8px 20px', borderRadius: '999px', letterSpacing: '1px' }, children: AD_LABEL } };
 
-    const rightChildren = [
-      // 핑크 라이브 점 + 문구
-      { type: 'div', props: { style: { display: 'flex', alignItems: 'center', marginBottom: '26px' }, children: [
-        { type: 'div', props: { style: { display: 'flex', width: '20px', height: '20px', borderRadius: '50%', background: '#ff2d78', marginRight: '14px', boxShadow: '0 0 18px #ff2d78' } } },
-        { type: 'div', props: { style: { display: 'flex', color: '#ffd9e6', fontSize: '30px', fontWeight: 800, letterSpacing: '1px' }, children: LIVE } }
-      ] } },
-      // 상품명
-      { type: 'div', props: { style: { display: 'flex', color: '#ffffff', fontSize: '64px', fontWeight: 800, lineHeight: 1.15, marginBottom: '22px' }, children: name } },
-    ];
-    if (priceTxt) {
-      rightChildren.push({ type: 'div', props: { style: { display: 'flex', alignItems: 'baseline', marginBottom: '40px' }, children: [
-        { type: 'div', props: { style: { display: 'flex', color: '#bef264', fontSize: '68px', fontWeight: 800 }, children: priceTxt } }
-      ] } });
+    let el;
+    if (square) {
+      // ── 정사각 1080x1080: 위 상품 이미지(정사각) + 아래 딥그린 패널 ──
+      const imgBox = { type: 'div', props: { style: { display: 'flex', position: 'relative', width: '1080px', height: '620px' }, children:
+        (!noimg && imgData)
+          ? [ { type: 'img', props: { src: imgData, width: 1080, height: 620, style: { width: '1080px', height: '620px', objectFit: 'cover' } } }, adBadge ]
+          : [ { type: 'div', props: { style: { display: 'flex', width: '1080px', height: '620px', background: '#f1f5f0', alignItems: 'center', justifyContent: 'center', fontSize: '160px' }, children: '🧺' } } ]
+      } };
+      const panel = { type: 'div', props: { style: { display: 'flex', flexDirection: 'column', width: '1080px', height: '460px', padding: '40px 54px', justifyContent: 'center', background: 'linear-gradient(135deg,#14532d 0%,#166534 55%,#0f3d22 100%)' }, children: [
+        { type: 'div', props: { style: { display: 'flex', alignItems: 'center', marginBottom: '16px' }, children: [ pinkDot, { type: 'div', props: { style: { display: 'flex', color: '#ffd9e6', fontSize: '30px', fontWeight: 800, letterSpacing: '1px' }, children: LIVE } } ] } },
+        { type: 'div', props: { style: { display: 'flex', color: '#fff', fontSize: '62px', fontWeight: 800, lineHeight: 1.1, marginBottom: '14px' }, children: name } },
+        { type: 'div', props: { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' }, children: [
+          { type: 'div', props: { style: { display: 'flex', color: '#bef264', fontSize: '64px', fontWeight: 800 }, children: priceTxt || ' ' } },
+          { type: 'div', props: { style: { display: 'flex', background: '#bef264', color: '#14310f', fontSize: '32px', fontWeight: 800, padding: '16px 34px', borderRadius: '999px' }, children: CTA } }
+        ] } }
+      ] } };
+      el = { type: 'div', props: { style: { display: 'flex', flexDirection: 'column', width: '1080px', height: '1080px', background: '#fff', fontFamily: 'ko' }, children: [imgBox, panel] } };
     } else {
-      rightChildren.push({ type: 'div', props: { style: { display: 'flex', height: '20px' } } });
+      // ── 가로 1200x630 (퍼블리 본문용) ──
+      const leftChildren = (!noimg && imgData)
+        ? [ { type: 'img', props: { src: imgData, width: 640, height: 630, style: { width: '640px', height: '630px', objectFit: 'cover' } } }, adBadge ]
+        : [ { type: 'div', props: { style: { display: 'flex', width: '640px', height: '630px', background: '#f1f5f0', alignItems: 'center', justifyContent: 'center', fontSize: '120px' }, children: '🧺' } } ];
+      const rightChildren = [
+        { type: 'div', props: { style: { display: 'flex', alignItems: 'center', marginBottom: '26px' }, children: [ pinkDot, { type: 'div', props: { style: { display: 'flex', color: '#ffd9e6', fontSize: '30px', fontWeight: 800, letterSpacing: '1px' }, children: LIVE } } ] } },
+        { type: 'div', props: { style: { display: 'flex', color: '#fff', fontSize: '64px', fontWeight: 800, lineHeight: 1.15, marginBottom: '22px' }, children: name } },
+        priceTxt ? { type: 'div', props: { style: { display: 'flex', color: '#bef264', fontSize: '68px', fontWeight: 800, marginBottom: '40px' }, children: priceTxt } } : { type: 'div', props: { style: { display: 'flex', height: '20px' } } },
+        { type: 'div', props: { style: { display: 'flex', alignSelf: 'flex-start', background: '#bef264', color: '#14310f', fontSize: '36px', fontWeight: 800, padding: '20px 46px', borderRadius: '999px' }, children: CTA } }
+      ];
+      el = { type: 'div', props: { style: { display: 'flex', width: '1200px', height: '630px', background: '#fff', fontFamily: 'ko' }, children: [
+        { type: 'div', props: { style: { display: 'flex', position: 'relative', width: '640px', height: '630px' }, children: leftChildren } },
+        { type: 'div', props: { style: { display: 'flex', flexDirection: 'column', flexGrow: 1, height: '630px', padding: '0 56px', justifyContent: 'center', background: 'linear-gradient(135deg,#14532d 0%,#166534 55%,#0f3d22 100%)' }, children: rightChildren } }
+      ] } };
     }
-    // CTA 버튼(라임)
-    rightChildren.push({ type: 'div', props: { style: { display: 'flex', alignSelf: 'flex-start', background: '#bef264', color: '#14310f', fontSize: '36px', fontWeight: 800, padding: '20px 46px', borderRadius: '999px' }, children: CTA } });
-
-    const el = {
-      type: 'div',
-      props: {
-        style: { display: 'flex', width: '1200px', height: '630px', background: '#ffffff', fontFamily: 'ko' },
-        children: [
-          { type: 'div', props: { style: { display: 'flex', position: 'relative', width: '640px', height: '630px' }, children: leftChildren } },
-          { type: 'div', props: { style: { display: 'flex', flexDirection: 'column', flexGrow: 1, height: '630px', padding: '0 56px', justifyContent: 'center', background: 'linear-gradient(135deg,#14532d 0%,#166534 55%,#0f3d22 100%)' }, children: rightChildren } }
-        ]
-      }
-    };
 
     return new ImageResponse(el, {
-      width: 1200,
-      height: 630,
+      width: square ? 1080 : 1200,
+      height: square ? 1080 : 630,
       fonts: font ? [{ name: 'ko', data: font, weight: 400, style: 'normal' }] : [],
       headers: { 'Cache-Control': 'public, max-age=600, s-maxage=86400' }
     });
