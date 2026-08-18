@@ -40,65 +40,68 @@ module.exports = async (req, res) => {
     const link = rows[0];
     if (link.partners && link.partners.status === 'suspended') return go(FALLBACK);
 
-    // ── 링크 미리보기 크롤러: 클릭 집계 없이 "상품 OG(이미지/이름/가격)"를 심은 HTML을 준다 ──
-    //    (네이버 블로그·카카오 등에서 링크 카드에 상품 이미지가 떠서 클릭을 유도)
+    // ── /r/ 은 "상품 OG(이미지/이름/가격)"를 담은 페이지를 누구에게나 준다 ──
+    //    · 크롤러(네이버 Yeti/블로그, 카카오, 페북 등): 이 OG만 읽어 링크 카드에 상품 이미지를 노출
+    //    · 실사용자: 클릭 집계 + 전환추적 쿠키 후 즉시 상품페이지로 리다이렉트(JS+meta)
+    //    ※ 예전엔 즉시 302라 크롤러가 리다이렉트를 따라가 도착지(SPA)의 기본 OG(관리시스템)를
+    //      읽는 문제가 있었음 → UA 추측에 의존하지 않고 항상 상품 OG를 직접 준다.
     const ua = String(req.headers['user-agent'] || '');
-    if (BOT_RE.test(ua)) {
-      let name = link.product_name || link.title || '온종일팜 상품';
-      let image = normImg(link.product_image);
-      let price = Number(link.product_price || 0);
-      if (link.product_id) {
-        try {
-          const pr = await fetch(SUPA + '/rest/v1/products?select=name,retail_price,image_url&id=eq.' + encodeURIComponent(String(link.product_id)) + '&limit=1', { headers });
-          if (pr.ok) { const pj = await pr.json(); const p = Array.isArray(pj) ? pj[0] : null; if (p) { if (p.name) name = p.name; if (p.image_url) image = normImg(p.image_url); if (p.retail_price) price = Number(p.retail_price); } }
-        } catch (e) {}
-      }
-      const dest = safeDest(link.product_url);
-      const priceTxt = (Number.isFinite(price) && price > 0) ? price.toLocaleString('ko-KR') + '원' : '';
-      const desc = (priceTxt ? priceTxt + ' · ' : '') + '온종일팜에서 지금 바로 확인해보세요';
-      const html = '<!doctype html><html lang="ko"><head><meta charset="utf-8">'
-        + '<meta name="viewport" content="width=device-width, initial-scale=1">'
-        + '<meta property="og:type" content="product">'
-        + '<meta property="og:site_name" content="온종일팜">'
-        + '<meta property="og:title" content="' + esc(name) + '">'
-        + '<meta property="og:description" content="' + esc(desc) + '">'
-        + (image ? '<meta property="og:image" content="' + esc(image) + '"><meta property="og:image:width" content="800"><meta property="og:image:height" content="800">' : '')
-        + '<meta property="og:url" content="https://' + PARTNER_HOST + '/r/' + esc(code) + '">'
-        + '<meta name="twitter:card" content="summary_large_image">'
-        + '<meta name="twitter:title" content="' + esc(name) + '">'
-        + '<meta name="twitter:description" content="' + esc(desc) + '">'
-        + (image ? '<meta name="twitter:image" content="' + esc(image) + '">' : '')
-        + '<title>' + esc(name) + '</title>'
-        + '<meta http-equiv="refresh" content="0;url=' + esc(dest) + '"></head>'
-        + '<body><a href="' + esc(dest) + '">' + esc(name) + '</a></body></html>';
-      res.statusCode = 200;
-      res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      // ★캐시 금지 + UA별 분리: 이 봇용 HTML이 엣지에 캐시돼 실사용자에게 잘못 전달되면
-      //   리다이렉트/클릭집계가 깨진다. no-store로 절대 캐시되지 않게 한다.
-      res.setHeader('Cache-Control', 'no-store, max-age=0');
-      res.setHeader('Vary', 'User-Agent');
-      return res.end(html);
+    const isBot = BOT_RE.test(ua) || (/naver/i.test(ua) && !/inapp/i.test(ua));
+
+    // 상품 정보(이름/이미지/가격) — 링크 저장값 우선, product_id 있으면 최신 상품으로 보강
+    let name = link.product_name || link.title || '온종일팜 상품';
+    let image = normImg(link.product_image);
+    let price = Number(link.product_price || 0);
+    if (link.product_id) {
+      try {
+        const pr = await fetch(SUPA + '/rest/v1/products?select=name,retail_price,image_url&id=eq.' + encodeURIComponent(String(link.product_id)) + '&limit=1', { headers });
+        if (pr.ok) { const pj = await pr.json(); const p = Array.isArray(pj) ? pj[0] : null; if (p) { if (p.name) name = p.name; if (p.image_url) image = normImg(p.image_url); if (p.retail_price) price = Number(p.retail_price); } }
+      } catch (e) {}
     }
-
-    // 클릭 기록 + 카운트 증가 (실패해도 리다이렉트는 진행)
-    fetch(SUPA + '/rest/v1/link_clicks', {
-      method: 'POST', headers,
-      body: JSON.stringify({
-        link_id: link.id,
-        referer: req.headers['referer'] || req.headers['referrer'] || null,
-        user_agent: req.headers['user-agent'] || null
-      })
-    }).catch(() => {});
-    fetch(SUPA + '/rest/v1/rpc/op_increment_click', {
-      method: 'POST', headers, body: JSON.stringify({ p_link: link.id })
-    }).catch(() => {});
-
-    // 전환 추적 쿠키(관리자 설정 유효기간) + 온종일팜 상품으로 이동
+    const priceTxt = (Number.isFinite(price) && price > 0) ? price.toLocaleString('ko-KR') + '원' : '';
+    const desc = (priceTxt ? priceTxt + ' · ' : '') + '온종일팜에서 지금 바로 확인해보세요';
     const base = safeDest(link.product_url);
     const dest = base + (base.includes('?') ? '&' : '?') + 'op_ref=' + encodeURIComponent(code);
+
     res.setHeader('Cache-Control', 'no-store, max-age=0');
-    res.setHeader('Set-Cookie', 'op_ref=' + encodeURIComponent(code) + '; Max-Age=' + (cookieDays * 86400) + '; Path=/; SameSite=Lax; Secure');
-    return go(dest);
+    res.setHeader('Vary', 'User-Agent');
+
+    if (!isBot) {
+      // 실사용자만: 클릭 기록 + 카운트 증가 + 전환추적 쿠키 (실패해도 이동은 진행)
+      fetch(SUPA + '/rest/v1/link_clicks', {
+        method: 'POST', headers,
+        body: JSON.stringify({ link_id: link.id, referer: req.headers['referer'] || req.headers['referrer'] || null, user_agent: ua || null })
+      }).catch(() => {});
+      fetch(SUPA + '/rest/v1/rpc/op_increment_click', { method: 'POST', headers, body: JSON.stringify({ p_link: link.id }) }).catch(() => {});
+      res.setHeader('Set-Cookie', 'op_ref=' + encodeURIComponent(code) + '; Max-Age=' + (cookieDays * 86400) + '; Path=/; SameSite=Lax; Secure');
+    }
+
+    // 사람에겐 즉시 리다이렉트(JS+meta), 크롤러에겐 리다이렉트 없이 OG만
+    const redirectHead = isBot ? '' : '<meta http-equiv="refresh" content="0;url=' + esc(dest) + '">';
+    const redirectScript = isBot ? '' : '<script>location.replace(' + JSON.stringify(dest) + ');</script>';
+    const html = '<!doctype html><html lang="ko"><head><meta charset="utf-8">'
+      + '<meta name="viewport" content="width=device-width, initial-scale=1">'
+      + '<meta property="og:type" content="product">'
+      + '<meta property="og:site_name" content="온종일팜">'
+      + '<meta property="og:title" content="' + esc(name) + '">'
+      + '<meta property="og:description" content="' + esc(desc) + '">'
+      + (image ? '<meta property="og:image" content="' + esc(image) + '"><meta property="og:image:width" content="800"><meta property="og:image:height" content="800">' : '')
+      + '<meta property="og:url" content="https://' + PARTNER_HOST + '/r/' + esc(code) + '">'
+      + '<meta name="twitter:card" content="summary_large_image">'
+      + '<meta name="twitter:title" content="' + esc(name) + '">'
+      + '<meta name="twitter:description" content="' + esc(desc) + '">'
+      + (image ? '<meta name="twitter:image" content="' + esc(image) + '">' : '')
+      + '<title>' + esc(name) + '</title>'
+      + redirectHead + redirectScript + '</head>'
+      + '<body style="font-family:-apple-system,sans-serif;text-align:center;padding:48px 20px;color:#444">'
+      + (image ? '<img src="' + esc(image) + '" alt="' + esc(name) + '" style="max-width:280px;width:100%;border-radius:14px">' : '')
+      + '<h1 style="font-size:18px;margin:18px 0 6px">' + esc(name) + '</h1>'
+      + (priceTxt ? '<p style="font-size:16px;font-weight:700;color:#e5457a;margin:0 0 14px">' + esc(priceTxt) + '</p>' : '')
+      + '<p><a href="' + esc(dest) + '" style="display:inline-block;background:#e5457a;color:#fff;text-decoration:none;padding:12px 22px;border-radius:10px;font-weight:700">상품 보러가기 →</a></p>'
+      + '</body></html>';
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    return res.end(html);
   } catch (e) {
     return go(FALLBACK);
   }
