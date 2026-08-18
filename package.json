@@ -1,0 +1,8 @@
+{
+  "name": "onpartner",
+  "private": true,
+  "description": "온파트너 정적사이트 + Vercel 서버리스 함수",
+  "dependencies": {
+    "@vercel/og": "^0.6.8"
+  }
+}
