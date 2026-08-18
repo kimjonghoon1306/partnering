@@ -1042,27 +1042,31 @@ document.getElementById('banner-ratios')?.addEventListener('click', function (e)
 // ───────── 상세페이지 저장 (온종일팜 상세페이지 이미지 + 유출방지 워터마크 타일) ─────────
 // 이미지 전체에 대각선으로 반복되는 워터마크를 얹어 무단 재배포를 억제
 function drawDetailWatermark(ctx, W, H) {
-  ctx.save();
   const text = '온파트너  ·  partner.yuanfnb.com';
   const fs = Math.max(22, Math.round(W / 22));
-  ctx.font = '800 ' + fs + 'px Pretendard, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.rotate(-Math.PI / 6);                 // 좌표계 -30도 회전
-  const diag = Math.sqrt(W * W + H * H);
-  const stepX = fs * 15;
-  const stepY = fs * 6.5;
-  ctx.lineWidth = Math.max(2.5, fs / 8);
-  // ★상세페이지는 대부분 흰/밝은 배경 → 어두운 글자(진하게)+밝은 외곽선으로 뒤집어 어디서든 또렷하게.
-  for (let y = -diag; y < diag; y += stepY) {
-    for (let x = -diag; x < diag; x += stepX) {
-      ctx.strokeStyle = 'rgba(255,255,255,0.55)';   // 어두운 이미지 영역용 밝은 외곽선
-      ctx.strokeText(text, x, y);
+  const stepX = fs * 13;   // 가로 간격
+  const stepY = fs * 5.5;  // 세로 간격(촘촘히 → 위/중간/아래 모두 덮임)
+  const lw = Math.max(2.5, fs / 8);
+  // ★실제 좌표(0~H)를 직접 순회하며 각 위치에서 텍스트를 -30°로 개별 회전 → 긴 이미지도 전체 균일 커버.
+  //   행마다 가로로 반칸씩 어긋나게(벽돌쌓기) 해서 빈틈 없이.
+  let row = 0;
+  for (let y = -stepY; y < H + stepY; y += stepY, row++) {
+    const offset = (row % 2) * (stepX / 2);
+    for (let x = -stepX + offset; x < W + stepX; x += stepX) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(-Math.PI / 6);
+      ctx.font = '800 ' + fs + 'px Pretendard, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.lineWidth = lw;
+      ctx.strokeStyle = 'rgba(255,255,255,0.55)';   // 어두운 영역용 밝은 외곽선
+      ctx.strokeText(text, 0, 0);
       ctx.fillStyle = 'rgba(0,0,0,0.22)';           // 흰 배경에서도 보이는 진한 글자
-      ctx.fillText(text, x, y);
+      ctx.fillText(text, 0, 0);
+      ctx.restore();
     }
   }
-  ctx.restore();
 }
 async function downloadDetailPage(productId, name, btn) {
   if (!window.opClient) return;
