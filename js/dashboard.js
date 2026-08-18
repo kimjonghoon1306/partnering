@@ -453,7 +453,7 @@ async function loadCatalog() {
   const uid = await currentUid();
   const [prodRes, commRes, linkRes, catRes, campRes, cpRes] = await Promise.all([
     window.opClient.from('products').select('id,name,retail_price,image_url,unit,category_id').eq('is_active', true).order('created_at', { ascending: false }),
-    window.opClient.from('product_commissions').select('product_id,commission_rate'),
+    window.opClient.from('product_commissions').select('product_id,commission_rate,hidden'),
     window.opClient.from('partner_links').select('code,product_id,product_url,product_name,title').eq('partner_id', uid || '00000000-0000-0000-0000-000000000000'),
     window.opClient.from('categories').select('id,name,sort_order').order('sort_order', { ascending: true }),
     window.opClient.from('campaigns')
@@ -465,7 +465,8 @@ async function loadCatalog() {
   ]);
   if (prodRes.error) { grid.innerHTML = '<div class="catalog-empty">상품을 불러오지 못했어요.</div>'; return; }
   const rateMap = {};
-  (commRes.data || []).forEach(c => { rateMap[c.product_id] = Number(c.commission_rate); });
+  const hiddenSet = new Set();
+  (commRes.data || []).forEach(c => { rateMap[c.product_id] = Number(c.commission_rate); if (c.hidden) hiddenSet.add(String(c.product_id)); });
   const myCodeMap = {};
   const myCodeNameMap = {};
   (linkRes.data || []).forEach(l => {
@@ -488,7 +489,7 @@ async function loadCatalog() {
       productCampaignRates[String(r.campaign_id) + ':' + String(r.product_id)] = r.bonus_rate;
     });
   }
-  __catalog = (prodRes.data || []).map(p => {
+  __catalog = (prodRes.data || []).filter(p => !hiddenSet.has(String(p.id))).map(p => {
     const product = Object.assign({}, p, {
       baseRate: clampCatalogRate(rateMap[p.id] != null ? rateMap[p.id] : (Number(__appSettings.default_commission_rate) / 100), Number(__appSettings.default_commission_rate) / 100, 0.30),
       // 오래된 링크는 product_id가 비어 있을 수 있어 상품명까지 대조한다.

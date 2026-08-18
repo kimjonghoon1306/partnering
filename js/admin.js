@@ -218,17 +218,19 @@ async function loadCommissions() {
   if (!box || !window.opClient) return;
   const [pRes, cRes, catRes] = await Promise.all([
     window.opClient.from('products').select('id,name,retail_price,image_url,is_active,category_id').order('created_at', { ascending: false }),
-    window.opClient.from('product_commissions').select('product_id,commission_rate'),
+    window.opClient.from('product_commissions').select('product_id,commission_rate,hidden'),
     window.opClient.from('categories').select('id,name,sort_order').order('sort_order', { ascending: true })
   ]);
   if (pRes.error) { box.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3);">상품을 불러오지 못했어요: ' + admEsc(pRes.error.message) + '</div>'; return; }
   const rateMap = {};
-  (cRes.data || []).forEach(c => { rateMap[c.product_id] = Math.round(Number(c.commission_rate) * 100); });
+  const hiddenMap = {};
+  (cRes.data || []).forEach(c => { rateMap[c.product_id] = Math.round(Number(c.commission_rate) * 100); hiddenMap[c.product_id] = !!c.hidden; });
   const categoryMap = {};
   __admCategories = catRes.error ? [] : (catRes.data || []);
   __admCategories.forEach(c => { categoryMap[String(c.id)] = c.name; });
   __admProducts = (pRes.data || []).map(p => Object.assign({}, p, {
     rate: (rateMap[p.id] != null ? rateMap[p.id] : 5),
+    hidden: !!hiddenMap[p.id],
     categoryName: categoryMap[String(p.category_id)] || ''
   }));
   renderCommissionFilters();
@@ -267,14 +269,15 @@ function renderCommissions() {
     const price = Number(p.retail_price) || 0;
     const img = resolveFarmImg(p.image_url);
     const earn = Math.round(price * p.rate / 100);
-    return '<div class="comm-row" data-id="' + admEsc(p.id) + '">' +
+    return '<div class="comm-row' + (p.hidden ? ' comm-hidden' : '') + '" data-id="' + admEsc(p.id) + '">' +
       '<div class="comm-thumb" style="' + (img ? "background-image:url('" + admEsc(img) + "')" : '') + '">' + (img ? '' : '🛒') + '</div>' +
-      '<div class="comm-info"><div class="comm-name">' + admEsc(p.name) + (p.is_active ? '' : ' <span style="color:var(--text3);font-size:11px;">(비활성)</span>') + '</div>' +
+      '<div class="comm-info"><div class="comm-name">' + admEsc(p.name) + (p.is_active ? '' : ' <span style="color:var(--text3);font-size:11px;">(비활성)</span>') + (p.hidden ? ' <span class="comm-hidden-badge">파트너에게 숨김</span>' : '') + '</div>' +
         '<div class="comm-price">' + (p.categoryName ? admEsc(p.categoryName) + ' · ' : '') + '판매가 ₩' + price.toLocaleString() + '</div></div>' +
       '<div class="comm-ctrl">' +
         '<input type="range" min="0" max="30" value="' + p.rate + '" class="comm-range" oninput="onCommRange(this)">' +
         '<div class="comm-rate-box"><input type="number" min="0" max="30" step="0.5" value="' + p.rate + '" class="comm-rate-input" oninput="onCommInput(this)">%</div>' +
         '<div class="comm-earn">수수료 ₩<span class="comm-earn-val">' + earn.toLocaleString() + '</span></div>' +
+        '<button class="comm-hide-btn' + (p.hidden ? ' on' : '') + '" onclick="toggleProductHidden(this,\'' + admEsc(p.id) + '\')" title="파트너 카탈로그에서 숨기기/보이기">' + (p.hidden ? '👁 보이기' : '🚫 가리기') + '</button>' +
         '<button class="comm-save" onclick="saveCommission(this,\'' + admEsc(p.id) + '\')">저장</button>' +
       '</div></div>';
   }).join('');
@@ -331,6 +334,22 @@ async function saveCommission(btn, pid) {
   btn.textContent = '✓ 저장됨'; btn.classList.remove('dirty');
   const p = __admProducts.find(x => x.id === pid); if (p) p.rate = Number(row.querySelector('.comm-range').value);
   setTimeout(() => { btn.textContent = '저장'; }, 1500);
+}
+async function toggleProductHidden(btn, pid) {
+  if (!window.opClient) return;
+  const p = __admProducts.find(x => x.id === pid);
+  if (!p) return;
+  const next = !p.hidden;
+  const t = btn.textContent; btn.disabled = true; btn.textContent = '...';
+  const { data: { user } } = await window.opClient.auth.getUser();
+  // product_commissions에 행이 없을 수 있으니 현재 수수료율도 함께 upsert(컬럼 NOT NULL 대비)
+  const { error } = await window.opClient.from('product_commissions')
+    .upsert({ product_id: pid, commission_rate: (Number(p.rate) || 5) / 100, hidden: next, updated_by: user?.id, updated_at: new Date().toISOString() }, { onConflict: 'product_id' });
+  btn.disabled = false;
+  if (error) { btn.textContent = t; alert('변경 실패: ' + error.message); return; }
+  await logAdminAction(next ? 'hide_product' : 'show_product', 'product_commission', pid, { product_id: pid, hidden: next });
+  p.hidden = next;
+  renderCommissions();
 }
 document.getElementById('comm-search')?.addEventListener('input', function () {
   __admCommVisible = ADM_COMM_PAGE_SIZE;
