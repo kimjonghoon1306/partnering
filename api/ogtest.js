@@ -1,4 +1,4 @@
-// @vercel/og 최소 테스트 — 폰트/DB 없이 렌더 되는지 확인용(진단 후 삭제)
+// @vercel/og 최소 렌더 진단(폰트/DB 없음). 확인 후 삭제 예정.
 import { ImageResponse } from '@vercel/og';
 export const config = { runtime: 'edge' };
 
