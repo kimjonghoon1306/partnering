@@ -4,8 +4,7 @@ import { ImageResponse } from '@vercel/og';
 
 export const config = { runtime: 'edge' };
 
-const SUPA = process.env.SUPABASE_URL;
-const SRK = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// ※ env(SUPABASE_*)는 반드시 핸들러 안에서 읽는다 — 모듈 최상단에서 읽으면 edge에서 undefined라 302로 떨어졌음.
 const FALLBACK_IMG = 'https://app.yuanfnb.com/og-image.png';
 
 function normImg(v) {
@@ -27,7 +26,9 @@ async function loadKoFont(text) {
 
 export default async function handler(req) {
   try {
-    const url = new URL(req.url);
+    const SUPA = process.env.SUPABASE_URL;
+    const SRK = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const url = new URL(req.url, 'https://partner.yuanfnb.com');
     const code = (url.searchParams.get('code') || '').trim();
     if (!/^[a-z0-9-]{4,64}$/i.test(code) || !SUPA || !SRK) return Response.redirect(FALLBACK_IMG, 302);
 
