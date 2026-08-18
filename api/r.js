@@ -87,13 +87,13 @@ module.exports = async (req, res) => {
       + '<meta property="og:site_name" content="온종일팜">'
       + '<meta property="og:title" content="' + esc(name) + '">'
       + '<meta property="og:description" content="' + esc(desc) + '">'
-      // OG 이미지 = 가로 AD 배너(1200x630). (테리 선호: 가로 배너)
-      + (image ? '<meta property="og:image" content="https://' + PARTNER_HOST + '/api/banner?code=' + esc(code) + '"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">' : '')
+      // OG 이미지 = 상품 사진(정사각 카드에 상품 이미지가 그대로 뜸). 배너 대신 실제 상품 이미지 사용.
+      + (image ? '<meta property="og:image" content="' + esc(image) + '"><meta property="og:image:width" content="800"><meta property="og:image:height" content="800">' : '')
       + '<meta property="og:url" content="https://' + PARTNER_HOST + '/r/' + esc(code) + '">'
-      + '<meta name="twitter:card" content="summary_large_image">'
+      + '<meta name="twitter:card" content="summary">'
       + '<meta name="twitter:title" content="' + esc(name) + '">'
       + '<meta name="twitter:description" content="' + esc(desc) + '">'
-      + (image ? '<meta name="twitter:image" content="https://' + PARTNER_HOST + '/api/banner?code=' + esc(code) + '">' : '')
+      + (image ? '<meta name="twitter:image" content="' + esc(image) + '">' : '')
       + '<title>' + esc(name) + '</title>'
       + '</head>'
       + '<body style="font-family:-apple-system,sans-serif;text-align:center;padding:48px 20px;color:#444">'
