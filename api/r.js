@@ -78,9 +78,10 @@ module.exports = async (req, res) => {
 
     // 사람은 JS로만 즉시 이동시킨다(정적 OG 스크래퍼는 JS를 실행 안 하므로 상품 OG를 그대로 읽음).
     //   ※ meta-refresh는 스크래퍼가 따라가서 도착지 SPA의 기본 OG(관리시스템)를 읽어버리므로 쓰지 않는다.
-    const redirectHead = '';
+    // ★사람은 <head> 맨 앞 인라인 스크립트로 즉시 이동(파싱 도중 실행 → 302에 준하는 속도).
+    //   OG 메타는 뒤에 있어도 스크래퍼(JS 미실행)는 전부 읽으므로 문제없다.
     const redirectScript = isBot ? '' : '<script>location.replace(' + JSON.stringify(dest) + ');</script>';
-    const html = '<!doctype html><html lang="ko"><head><meta charset="utf-8">'
+    const html = '<!doctype html><html lang="ko"><head>' + redirectScript + '<meta charset="utf-8">'
       + '<meta name="viewport" content="width=device-width, initial-scale=1">'
       + '<meta property="og:type" content="product">'
       + '<meta property="og:site_name" content="온종일팜">'
@@ -93,7 +94,7 @@ module.exports = async (req, res) => {
       + '<meta name="twitter:description" content="' + esc(desc) + '">'
       + (image ? '<meta name="twitter:image" content="' + esc(image) + '">' : '')
       + '<title>' + esc(name) + '</title>'
-      + redirectHead + redirectScript + '</head>'
+      + '</head>'
       + '<body style="font-family:-apple-system,sans-serif;text-align:center;padding:48px 20px;color:#444">'
       + (image ? '<img src="' + esc(image) + '" alt="' + esc(name) + '" style="max-width:280px;width:100%;border-radius:14px">' : '')
       + '<h1 style="font-size:18px;margin:18px 0 6px">' + esc(name) + '</h1>'
