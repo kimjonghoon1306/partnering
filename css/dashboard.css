@@ -1095,6 +1095,21 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 .link-del-btn:active { transform:scale(.94); }
 .link-del-btn:disabled { opacity:.5; cursor:default; }
 .issued-link-actions{display:flex;justify-content:flex-end;gap:6px}.issued-copy-btn{padding:5px 11px;border-radius:8px;border:1px solid var(--lime-border);background:var(--lime-glow);color:var(--lime);font-size:12px;font-weight:800;cursor:pointer;font-family:var(--font);white-space:nowrap}
+/* ── 태블릿(≤1024px): 발급 링크 표를 카드형으로 전환해 '관리(삭제)' 칸이 잘리지 않게 ── */
+@media (max-width:1024px){
+  #links-table{display:block;min-width:0;padding:8px}
+  #links-table thead{display:none}
+  #links-table tbody{display:grid;gap:9px}
+  #links-table tr{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;padding:14px;border:1px solid var(--border);border-radius:14px;background:var(--dark2)}
+  #links-table td{display:block;padding:0;border:0;font-size:13px;min-width:0}
+  #links-table td::before{content:attr(data-label);display:block;margin-bottom:2px;color:var(--text3);font-size:10px;font-weight:750}
+  #links-table td[data-label="링크명"],#links-table td[data-label="파트너 URL"],#links-table td[data-label="관리"]{grid-column:1/-1}
+  #links-table td[data-label="쇼핑몰"],#links-table td[data-label="생성일"],#links-table td[data-label="상태"]{display:none}
+  #links-table .td-link{max-width:none;font-size:14px}
+  #links-table .td-url{max-width:none;color:var(--lime);font-size:12px;word-break:break-all;white-space:normal}
+  #links-table td[data-label="관리"] .issued-link-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;justify-content:stretch}
+  #links-table td[data-label="관리"] .issued-copy-btn,#links-table td[data-label="관리"] .link-del-btn{width:100%;min-height:40px;margin:0;display:flex;align-items:center;justify-content:center}
+}
 
 @media (max-width: 560px) {
   .link-workspace-tabs{position:sticky;top:64px;z-index:20;margin:-2px 0 12px;padding:4px;background:rgba(20,20,20,.96);backdrop-filter:blur(12px)}
